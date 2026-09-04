@@ -56,9 +56,16 @@ class ParakeetServerManager {
     const modelDir = path.join(this.getModelsDir(), modelName);
     if (!fs.existsSync(modelDir)) return false;
 
-    return getRequiredModelFiles(modelName).every((file) =>
-      fs.existsSync(path.join(modelDir, file))
-    );
+    // An empty required file is a failed or interrupted install, not a model:
+    // treating it as installed makes every transcription fail later instead
+    // of offering the download again.
+    return getRequiredModelFiles(modelName).every((file) => {
+      try {
+        return fs.statSync(path.join(modelDir, file)).size > 0;
+      } catch {
+        return false;
+      }
+    });
   }
 
   async _ensureWav(audioBuffer) {

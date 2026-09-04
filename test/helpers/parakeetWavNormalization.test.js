@@ -60,6 +60,11 @@ function createPcm16Wav(sampleValue, sampleCount = 160) {
 
 test("transcribes audible mono 16 kHz float32 WAV input", async () => {
   const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "openwhispr-parakeet-wav-test-"));
+  // On Windows modelDirUtils prefers %USERPROFILE% over the stubbed home and
+  // would migrate these empty fixture files into the developer's real cache,
+  // where the app then treats them as an installed model. Pin the cache root.
+  const originalCacheRoot = process.env.OPENWHISPR_CACHE_ROOT;
+  process.env.OPENWHISPR_CACHE_ROOT = path.join(tempHome, ".cache", "neato-echo");
   const originalLoad = Module._load;
   let ffmpegUtils;
   Module._load = function loadWithElectronStub(request, parent, isMain) {
@@ -95,7 +100,8 @@ test("transcribes audible mono 16 kHz float32 WAV input", async () => {
     const modelDir = path.join(tempHome, ".cache", "neato-echo", "parakeet-models", MODEL_NAME);
     fs.mkdirSync(modelDir, { recursive: true });
     for (const file of getRequiredModelFiles(MODEL_NAME)) {
-      fs.writeFileSync(path.join(modelDir, file), "");
+      // Non-empty: isModelDownloaded treats zero-byte files as a failed install.
+      fs.writeFileSync(path.join(modelDir, file), "fixture");
     }
 
     let receivedSamples;
@@ -114,6 +120,8 @@ test("transcribes audible mono 16 kHz float32 WAV input", async () => {
     assert.ok(receivedSamples);
     assert.ok(Math.abs(receivedSamples.readFloatLE(0) - 0.5) < 0.001);
   } finally {
+    if (originalCacheRoot === undefined) delete process.env.OPENWHISPR_CACHE_ROOT;
+    else process.env.OPENWHISPR_CACHE_ROOT = originalCacheRoot;
     fs.rmSync(tempHome, { recursive: true, force: true });
   }
 });
