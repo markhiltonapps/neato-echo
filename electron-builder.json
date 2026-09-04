@@ -170,8 +170,7 @@
         "from": "resources/bin/nircmd.exe",
         "to": "bin/nircmd.exe"
       }
-    ],
-    "artifactName": "Neato-Echo-Setup-${version}.${ext}"
+    ]
   },
   "linux": {
     "target": ["AppImage", "deb", "rpm", "tar.gz"],
@@ -244,7 +243,8 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "include": "resources/nsis/installer.nsh"
+    "include": "resources/nsis/installer.nsh",
+    "artifactName": "Neato-Echo-Setup-${version}.${ext}"
   },
   "dmg": {
     "title": "OpenWhispr",
@@ -260,5 +260,8 @@
     "repo": "neato-echo",
     "private": false,
     "releaseType": "draft"
+  },
+  "portable": {
+    "artifactName": "Neato-Echo-Portable-${version}.${ext}"
   }
 }
