@@ -3685,7 +3685,7 @@ class IPCHandlers {
 
       // These caches are not owned by one account. Remove them only through
       // the explicit device-erasure path, never during normal account deletion.
-      const homeCacheRoot = path.join(os.homedir(), ".cache", "openwhispr");
+      const homeCacheRoot = path.join(os.homedir(), ".cache", "neato-echo");
       for (const cacheName of ["embedding-models", "qdrant-data", "qdrant-data-dev", "yt-dlp"]) {
         try {
           fs.rmSync(path.join(homeCacheRoot, cacheName), { recursive: true, force: true });
