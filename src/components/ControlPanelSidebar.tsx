@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import logoIcon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { cn } from "./lib/utils";
 import SupportDropdown from "./ui/SupportDropdown";
 import { getCachedPlatform } from "../utils/platform";
@@ -294,7 +295,7 @@ export default function ControlPanelSidebar({
                   </p>
                 )}
               </>
-            ) : authLoaded && !isSignedIn ? (
+            ) : ACCOUNTS_ENABLED && authLoaded && !isSignedIn ? (
               <p className="text-xs text-foreground/45 dark:text-foreground/55">
                 {t("sidebar.notSignedIn")}
               </p>

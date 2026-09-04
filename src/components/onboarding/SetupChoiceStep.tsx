@@ -1,4 +1,5 @@
 import { Fragment, forwardRef, useRef, useState } from "react";
+import { ACCOUNTS_ENABLED } from "../../config/edition";
 import {
   AlertCircle,
   BanknoteCheck,
@@ -144,11 +145,13 @@ export default function SetupChoiceStep({
     llmProviders: modelRegistry.getCloudProviders(),
   });
   const {
-    cloud: cloudAllowed,
+    cloud: cloudAllowedByPolicy,
     local: localAllowed,
     byok: byokAllowed,
     selfHosted: selfHostedAllowed,
   } = availability;
+  // Neato Echo: the cloud card only exists when accounts are enabled.
+  const cloudAllowed = ACCOUNTS_ENABLED && cloudAllowedByPolicy;
   const moreOptionsAllowed = byokAllowed || selfHostedAllowed;
 
   const chooseCloud = () => {

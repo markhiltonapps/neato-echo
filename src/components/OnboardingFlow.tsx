@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { AlertCircle } from "lucide-react";
 import { CompactAuthenticationFlow } from "./CompactAuthenticationFlow";
 import UseCaseStep from "./onboarding/UseCaseStep";
@@ -235,6 +236,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     ]
   );
   const currentStepId = reconcileStepWithRoute(session.currentStepId, route);
+
+  // Neato Echo local-first edition: with accounts disabled the sign-in step is
+  // skipped and every user takes the guest route (permissions, hotkey, setup).
+  useEffect(() => {
+    if (ACCOUNTS_ENABLED || currentStepId !== "auth") return;
+    setAuthPath("guest");
+    goTo("permissions");
+  }, [currentStepId, goTo, setAuthPath]);
   const compact = COMPACT_STEPS.has(currentStepId);
 
   useEffect(() => {

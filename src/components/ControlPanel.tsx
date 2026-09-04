@@ -1,5 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "./ui/button";
 import {
@@ -1002,7 +1003,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
             userImage={user?.image}
             isSignedIn={isSignedIn}
             authLoaded={authLoaded}
-            upsell={upsell}
+            upsell={ACCOUNTS_ENABLED ? upsell : "hide"}
             updateAction={
               !updateStatus.isDevelopment &&
               (updateStatus.updateAvailable ||

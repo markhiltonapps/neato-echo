@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LOCAL_FIRST } from "../config/edition";
 import { API_ENDPOINTS } from "../config/constants";
 import i18n, { normalizeUiLanguage } from "../i18n";
 import { ensureAgentNameInDictionary } from "../utils/agentName";
@@ -169,8 +170,11 @@ function readString(key: string, fallback: string): string {
 // store, so importing back would create a require cycle.
 const DEFAULT_COHERE_MODEL = "cohere-transcribe-03-2026";
 
-function readLocalProvider(key: string): LocalTranscriptionProvider {
-  const stored = readString(key, "whisper");
+function readLocalProvider(
+  key: string,
+  fallback: LocalTranscriptionProvider = "whisper"
+): LocalTranscriptionProvider {
+  const stored = readString(key, fallback);
   return stored === "nvidia" || stored === "cohere" ? stored : "whisper";
 }
 
@@ -1249,10 +1253,13 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   uiLanguage: normalizeUiLanguage(
     isBrowser ? localStorage.getItem("uiLanguage") || i18n.language : null
   ),
-  useLocalWhisper: readBoolean("useLocalWhisper", false),
+  useLocalWhisper: readBoolean("useLocalWhisper", LOCAL_FIRST),
   whisperModel: readString("whisperModel", "base"),
-  localTranscriptionProvider: readLocalProvider("localTranscriptionProvider"),
-  parakeetModel: readString("parakeetModel", ""),
+  localTranscriptionProvider: readLocalProvider(
+    "localTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
+  parakeetModel: readString("parakeetModel", LOCAL_FIRST ? "parakeet-tdt-0.6b-v3" : ""),
   cohereModel: readString("cohereModel", DEFAULT_COHERE_MODEL),
   allowOpenAIFallback: readBoolean("allowOpenAIFallback", false),
   allowLocalFallback: readBoolean("allowLocalFallback", false),
@@ -1288,7 +1295,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   assemblyAiStreaming: readBoolean("assemblyAiStreaming", true),
 
   autoGenerateNoteTitle: readBoolean("autoGenerateNoteTitle", true),
-  useCleanupModel: readBoolean("useCleanupModel", true),
+  useCleanupModel: readBoolean("useCleanupModel", !LOCAL_FIRST),
   useDictationAgent: readBoolean("useDictationAgent", true),
   cleanupModel: readString("cleanupModel", ""),
   cleanupProvider: readString("cleanupProvider", "openai"),
@@ -1442,7 +1449,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   isSignedIn: readBoolean("isSignedIn", false),
 
   transcriptionMode: (() => {
-    const v = readString("transcriptionMode", "openwhispr");
+    const v = readString("transcriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
@@ -1453,7 +1460,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   remoteTranscriptionUrl: readString("remoteTranscriptionUrl", ""),
   remoteTranscriptionModel: readString("remoteTranscriptionModel", ""),
   cleanupMode: (() => {
-    const v = readString("cleanupMode", "openwhispr");
+    const v = readString("cleanupMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (
       v === "openwhispr" ||
       v === "providers" ||
@@ -1467,11 +1474,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   cleanupRemoteUrl: readString("cleanupRemoteUrl", ""),
 
   meetingTranscriptionMode: (() => {
-    const v = readString("meetingTranscriptionMode", "openwhispr");
+    const v = readString("meetingTranscriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
-  meetingUseLocalWhisper: readBoolean("meetingUseLocalWhisper", false),
+  meetingUseLocalWhisper: readBoolean("meetingUseLocalWhisper", LOCAL_FIRST),
   meetingWhisperModel: readString("meetingWhisperModel", ""),
   meetingLocalTranscriptionProvider: readLocalProvider("meetingLocalTranscriptionProvider"),
   meetingParakeetModel: readString("meetingParakeetModel", ""),

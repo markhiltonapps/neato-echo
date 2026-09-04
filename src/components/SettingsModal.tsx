@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePolicyStore } from "../stores/policyStore";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import {
   Sliders,
   Mic,
@@ -126,11 +127,19 @@ export default function SettingsModal({ open, onOpenChange, initialSection }: Se
         group: t("settingsModal.groups.system"),
       },
     ];
-    return isSignedIn ? items : items.filter((item) => item.id !== "workspace");
+    // Neato Echo local-first edition hides every account-bound section.
+    const hidden = new Set<SettingsSectionType>(
+      ACCOUNTS_ENABLED
+        ? isSignedIn
+          ? []
+          : ["workspace"]
+        : ["account", "plansBilling", "workspace"]
+    );
+    return items.filter((item) => !hidden.has(item.id));
   }, [t, isSignedIn]);
 
   const resolveSection = (section: string | undefined): SettingsSectionType => {
-    if (!section) return "account";
+    if (!section) return ACCOUNTS_ENABLED ? "account" : "general";
     return (SECTION_ALIASES[section] ?? section) as SettingsSectionType;
   };
 
