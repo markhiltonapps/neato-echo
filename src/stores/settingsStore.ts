@@ -1480,7 +1480,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   })(),
   meetingUseLocalWhisper: readBoolean("meetingUseLocalWhisper", LOCAL_FIRST),
   meetingWhisperModel: readString("meetingWhisperModel", ""),
-  meetingLocalTranscriptionProvider: readLocalProvider("meetingLocalTranscriptionProvider"),
+  meetingLocalTranscriptionProvider: readLocalProvider(
+    "meetingLocalTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
   meetingParakeetModel: readString("meetingParakeetModel", ""),
   meetingCohereModel: readString("meetingCohereModel", ""),
   meetingCloudTranscriptionProvider: readString("meetingCloudTranscriptionProvider", ""),
@@ -1494,13 +1497,16 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   meetingRemoteTranscriptionUrl: readString("meetingRemoteTranscriptionUrl", ""),
 
   uploadTranscriptionMode: (() => {
-    const v = readString("uploadTranscriptionMode", "openwhispr");
+    const v = readString("uploadTranscriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
-  uploadUseLocalWhisper: readBoolean("uploadUseLocalWhisper", false),
+  uploadUseLocalWhisper: readBoolean("uploadUseLocalWhisper", LOCAL_FIRST),
   uploadWhisperModel: readString("uploadWhisperModel", ""),
-  uploadLocalTranscriptionProvider: readLocalProvider("uploadLocalTranscriptionProvider"),
+  uploadLocalTranscriptionProvider: readLocalProvider(
+    "uploadLocalTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
   uploadParakeetModel: readString("uploadParakeetModel", ""),
   uploadCohereModel: readString("uploadCohereModel", ""),
   uploadCloudTranscriptionProvider: readString("uploadCloudTranscriptionProvider", ""),
