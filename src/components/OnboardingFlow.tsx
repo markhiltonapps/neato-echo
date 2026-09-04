@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ACCOUNTS_ENABLED } from "../config/edition";
+import { ACCOUNTS_ENABLED, LOCAL_FIRST } from "../config/edition";
 import { AlertCircle } from "lucide-react";
 import { CompactAuthenticationFlow } from "./CompactAuthenticationFlow";
 import UseCaseStep from "./onboarding/UseCaseStep";
@@ -465,11 +465,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       // values from before the pick. Reading it stale configured the other three
       // scopes to the defaults (groq / openai/gpt-oss-120b) with no key.
       const { chatAgentProvider, chatAgentModel } = useSettingsStore.getState();
+      // Local-first keeps dictation cleanup off: routing every dictation through
+      // the on-device LLM adds seconds before the text pastes, and the local
+      // speech models already punctuate. The summary and assistant still use
+      // the model; cleanup stays one toggle away in Settings.
       settingsStore.setCloudReasoningForAllScopes({
         cleanupCloudMode: mode,
         cleanupProvider: chatAgentProvider,
         cleanupModel: chatAgentModel,
-        useCleanupModel: true,
+        useCleanupModel: !(LOCAL_FIRST && mode === "local"),
         useDictationAgent: true,
       });
     },

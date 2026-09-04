@@ -8,6 +8,7 @@ import {
   modelRegistry,
 } from "../../models/ModelRegistry";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { LOCAL_FIRST } from "../../config/edition";
 import {
   consumePendingLocalModel,
   forgetPendingLocalModel,
@@ -83,11 +84,13 @@ function activatePendingLocalModel(kind: PendingLocalModelKind, modelId: string)
   store.setChatAgentMode("local");
   store.setChatAgentProvider(selection.provider);
   store.setChatAgentModel(selection.modelId);
+  // See OnboardingFlow.applyReasoningSelectionToAllScopes: local-first keeps
+  // dictation cleanup off so dictations paste without an LLM round trip.
   store.setCloudReasoningForAllScopes({
     cleanupCloudMode: "local",
     cleanupProvider: selection.provider,
     cleanupModel: selection.modelId,
-    useCleanupModel: true,
+    useCleanupModel: !LOCAL_FIRST,
     useDictationAgent: true,
   });
 }
