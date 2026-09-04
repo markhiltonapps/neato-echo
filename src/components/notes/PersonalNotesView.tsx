@@ -9,10 +9,12 @@ import { ContainerOverview } from "./overview/ContainerOverview";
 import NotesStructureIntroDialog from "./NotesStructureIntroDialog";
 import ActionPicker from "./ActionPicker";
 import ActionManagerDialog from "./ActionManagerDialog";
+import PostRecordingSummaryDialog from "./PostRecordingSummaryDialog";
+import { shouldAskForSummaryAfterRecording } from "./summaryPromptPreference";
 import AddNotesToFolderDialog from "./AddNotesToFolderDialog";
 import { useActionProcessing } from "../../hooks/useActionProcessing";
 import type { NoteMoveTarget } from "../../hooks/useNoteDragAndDrop";
-import type { NoteItem } from "../../types/electron";
+import type { ActionItem, NoteItem } from "../../types/electron";
 import {
   useSettingsStore,
   selectIsCloudNoteFormattingMode,
@@ -144,6 +146,35 @@ export default function PersonalNotesView({
   const draftRef = useRef<NoteEditorDraft | null>(null);
   const [showActionManager, setShowActionManager] = useState(false);
   const [showAddNotesDialog, setShowAddNotesDialog] = useState(false);
+  // Neato Echo: offer a summary preset once a meeting recording ends.
+  const [pendingSummary, setPendingSummary] = useState<{
+    noteId: number;
+    transcript: string;
+  } | null>(null);
+  const recordingWatchRef = useRef<{ isRecording: boolean; noteId: number | null }>({
+    isRecording: false,
+    noteId: null,
+  });
+  useEffect(
+    () =>
+      useMeetingRecordingStore.subscribe((state) => {
+        const previous = recordingWatchRef.current;
+        recordingWatchRef.current = {
+          isRecording: state.isRecording,
+          noteId: state.recordingNoteId ?? previous.noteId,
+        };
+        if (
+          previous.isRecording &&
+          !state.isRecording &&
+          previous.noteId != null &&
+          state.transcript.trim() &&
+          shouldAskForSummaryAfterRecording()
+        ) {
+          setPendingSummary({ noteId: previous.noteId, transcript: state.transcript });
+        }
+      }),
+    []
+  );
   const pendingDocumentRef = useRef<PendingDocumentSave | null>(null);
   const pendingEnhancedRef = useRef<PendingEnhancedSave | null>(null);
 
@@ -692,6 +723,66 @@ export default function PersonalNotesView({
     );
   }
 
+  const handleRunAction = async (action: ActionItem, transcriptOverride?: string) => {
+    if (!editorNote) return;
+    const { recordingNoteId: liveNoteId, transcript: liveTranscript } =
+      useMeetingRecordingStore.getState();
+    const rawTranscript =
+      transcriptOverride ||
+      (liveNoteId === activeNote?.id ? liveTranscript : "") ||
+      activeNoteRawTranscript;
+    const noteContent = editorNote.content;
+    const hasNotes = !!noteContent.trim();
+    if (!hasNotes && !rawTranscript) return;
+
+    let formattedTranscript = "";
+    let meetingContext = "";
+    let isMeetingNote = false;
+    let knownPeople: MentionPerson[] = [];
+    if (rawTranscript) {
+      const segments = parseTranscriptSegments(rawTranscript);
+      if (segments.length > 0) {
+        isMeetingNote = true;
+        const mappingRows =
+          (await window.electronAPI?.getSpeakerMappings?.(editorNote.id).catch(() => [])) || [];
+        const speakerMappings: Record<string, string> = {};
+        for (const m of mappingRows) speakerMappings[m.speaker_id] = m.display_name;
+
+        const identity: MeetingIdentity = {
+          selfName: user?.name?.trim() || null,
+          selfEmail: user?.email?.trim() || null,
+          participants: parseNoteParticipants(editorNote.participants),
+        };
+        const selfLabel = identity.selfName || t("notes.speaker.you");
+        meetingContext = buildMeetingContext(identity, selfLabel);
+        formattedTranscript = buildLlmTranscript(segments, speakerMappings, selfLabel, t);
+        knownPeople = collectKnownPeople(identity, speakerMappings, segments);
+      }
+      if (!formattedTranscript) {
+        formattedTranscript = rawTranscript;
+      }
+    }
+
+    const parts = [
+      hasNotes ? noteContent : "",
+      meetingContext,
+      formattedTranscript ? `## Meeting Transcript\n${formattedTranscript}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    runAction(action, parts, makeContentHash(`${noteContent}\n${rawTranscript}`), {
+      isCloudMode,
+      modelId: effectiveModelId,
+      isMeetingNote,
+      knownPeople,
+      allowTitleGeneration: isRegenerableNoteTitle(
+        editorNote.title,
+        [t("notes.list.untitledNote"), t("notes.list.newNote"), t("notes.sidebar.newNote")],
+        calendarEventName
+      ),
+    });
+  };
+
   return (
     <div className="flex h-full">
       <div
@@ -766,75 +857,7 @@ export default function PersonalNotesView({
               actionName={actionName}
               actionPicker={
                 <ActionPicker
-                  onRunAction={async (action) => {
-                    if (!editorNote) return;
-                    const { recordingNoteId: liveNoteId, transcript: liveTranscript } =
-                      useMeetingRecordingStore.getState();
-                    const rawTranscript =
-                      (liveNoteId === activeNote?.id ? liveTranscript : "") ||
-                      activeNoteRawTranscript;
-                    const noteContent = editorNote.content;
-                    const hasNotes = !!noteContent.trim();
-                    if (!hasNotes && !rawTranscript) return;
-
-                    let formattedTranscript = "";
-                    let meetingContext = "";
-                    let isMeetingNote = false;
-                    let knownPeople: MentionPerson[] = [];
-                    if (rawTranscript) {
-                      const segments = parseTranscriptSegments(rawTranscript);
-                      if (segments.length > 0) {
-                        isMeetingNote = true;
-                        const mappingRows =
-                          (await window.electronAPI
-                            ?.getSpeakerMappings?.(editorNote.id)
-                            .catch(() => [])) || [];
-                        const speakerMappings: Record<string, string> = {};
-                        for (const m of mappingRows) speakerMappings[m.speaker_id] = m.display_name;
-
-                        const identity: MeetingIdentity = {
-                          selfName: user?.name?.trim() || null,
-                          selfEmail: user?.email?.trim() || null,
-                          participants: parseNoteParticipants(editorNote.participants),
-                        };
-                        const selfLabel = identity.selfName || t("notes.speaker.you");
-                        meetingContext = buildMeetingContext(identity, selfLabel);
-                        formattedTranscript = buildLlmTranscript(
-                          segments,
-                          speakerMappings,
-                          selfLabel,
-                          t
-                        );
-                        knownPeople = collectKnownPeople(identity, speakerMappings, segments);
-                      }
-                      if (!formattedTranscript) {
-                        formattedTranscript = rawTranscript;
-                      }
-                    }
-
-                    const parts = [
-                      hasNotes ? noteContent : "",
-                      meetingContext,
-                      formattedTranscript ? `## Meeting Transcript\n${formattedTranscript}` : "",
-                    ]
-                      .filter(Boolean)
-                      .join("\n\n");
-                    runAction(action, parts, makeContentHash(`${noteContent}\n${rawTranscript}`), {
-                      isCloudMode,
-                      modelId: effectiveModelId,
-                      isMeetingNote,
-                      knownPeople,
-                      allowTitleGeneration: isRegenerableNoteTitle(
-                        editorNote.title,
-                        [
-                          t("notes.list.untitledNote"),
-                          t("notes.list.newNote"),
-                          t("notes.sidebar.newNote"),
-                        ],
-                        calendarEventName
-                      ),
-                    });
-                  }}
+                  onRunAction={(action) => void handleRunAction(action)}
                   onManageActions={() => setShowActionManager(true)}
                   disabled={
                     (!editorNote?.content?.trim() &&
@@ -846,6 +869,21 @@ export default function PersonalNotesView({
               }
             />
             <ActionManagerDialog open={showActionManager} onOpenChange={setShowActionManager} />
+            <PostRecordingSummaryDialog
+              open={pendingSummary != null && activeNote?.id === pendingSummary.noteId}
+              onSkip={() => setPendingSummary(null)}
+              onPick={(action) => {
+                const pending = pendingSummary;
+                setPendingSummary(null);
+                if (!pending) return;
+                const live = useMeetingRecordingStore.getState();
+                const transcript =
+                  live.recordingNoteId === pending.noteId && live.transcript.trim()
+                    ? live.transcript
+                    : pending.transcript;
+                void handleRunAction(action, transcript);
+              }}
+            />
           </>
         ) : activeContext && overviewSpace ? (
           <ContainerOverview

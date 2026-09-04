@@ -1,4 +1,5 @@
 const Database = require("better-sqlite3");
+const { SUMMARY_PRESETS, SUMMARY_PRESETS_SEED_KEY } = require("../config/summaryPresets");
 const path = require("path");
 const fs = require("fs");
 const { randomUUID } = require("crypto");
@@ -536,6 +537,9 @@ class DatabaseManager {
           "notes.actions.builtin.generateNotes",
           "notes.actions.builtin.generateNotes"
         );
+
+      // Neato Echo: seed the editable summary presets once (see summaryPresets.js).
+      this.seedSummaryPresets();
 
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS google_calendar_tokens (
@@ -2636,6 +2640,35 @@ class DatabaseManager {
     } catch (error) {
       debugLogger.error("Error getting note by cloud_id", { error: error.message }, "notes");
       throw error;
+    }
+  }
+
+  seedSummaryPresets() {
+    try {
+      this.db.exec(
+        "CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+      );
+      const seeded = this.db
+        .prepare("SELECT value FROM app_meta WHERE key = ?")
+        .get(SUMMARY_PRESETS_SEED_KEY);
+      if (seeded) return;
+
+      const maxOrder = this.db.prepare("SELECT MAX(sort_order) as max_order FROM actions").get();
+      let sortOrder = (maxOrder?.max_order ?? 0) + 1;
+      const insert = this.db.prepare(
+        "INSERT INTO actions (name, description, prompt, icon, is_builtin, sort_order) VALUES (?, ?, ?, ?, 0, ?)"
+      );
+      const markSeeded = this.db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)");
+      this.db.transaction(() => {
+        for (const preset of SUMMARY_PRESETS) {
+          insert.run(preset.name, preset.description, preset.prompt, preset.icon, sortOrder++);
+        }
+        markSeeded.run(SUMMARY_PRESETS_SEED_KEY, new Date().toISOString());
+      })();
+      debugLogger.info("Seeded summary presets", { count: SUMMARY_PRESETS.length }, "notes");
+    } catch (error) {
+      // Presets are a convenience; never block database startup on them.
+      debugLogger.error("Failed to seed summary presets", { error: error.message }, "notes");
     }
   }
 

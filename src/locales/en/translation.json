@@ -3279,6 +3279,12 @@
       "emptyEditorDescription": "Choose an action from the list or create a new one",
       "runAction": "Run {{name}}",
       "selectAction": "Select action",
+      "summaryPrompt": {
+        "title": "Summarize this recording?",
+        "description": "Pick a summary style for the note you just recorded. You can run a different one later from the Actions menu.",
+        "skip": "Not now",
+        "dontAsk": "Don't ask again"
+      },
       "builtin": {
         "generateNotes": {
           "name": "Generate Notes",
