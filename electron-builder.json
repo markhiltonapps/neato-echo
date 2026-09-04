@@ -255,11 +255,9 @@
     }
   },
   "publish": {
-    "provider": "github",
-    "owner": "markhiltonapps",
-    "repo": "neato-echo",
-    "private": false,
-    "releaseType": "draft"
+    "provider": "generic",
+    "url": "https://github.com/markhiltonapps/neato-echo/releases/latest/download",
+    "channel": "latest"
   },
   "portable": {
     "artifactName": "Neato-Echo-Portable-${version}.${ext}"
