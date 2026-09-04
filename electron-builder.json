@@ -170,7 +170,8 @@
         "from": "resources/bin/nircmd.exe",
         "to": "bin/nircmd.exe"
       }
-    ]
+    ],
+    "artifactName": "Neato-Echo-Setup-${version}.${ext}"
   },
   "linux": {
     "target": ["AppImage", "deb", "rpm", "tar.gz"],
