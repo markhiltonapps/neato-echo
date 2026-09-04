@@ -38,13 +38,11 @@
     !insertmacro DeleteAutoStartEntry "com.neatoventures.neatoecho.staging"
     !insertmacro DeleteAutoStartEntry "com.neatoventures.neatoecho.development"
     nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="${SHERPA_FIREWALL_RULE}"'
-    StrCpy $0 "$PROFILE\.cache
-eato-echo\models"
+    StrCpy $0 "$PROFILE\.cache\neato-echo\models"
     IfFileExists "$0\*.*" 0 +3
       RMDir /r "$0"
       DetailPrint "Removed Neato Echo cached models"
-    StrCpy $1 "$PROFILE\.cache
-eato-echo"
+    StrCpy $1 "$PROFILE\.cache\neato-echo"
     RMDir "$1"
   ${endIf}
 !macroend
