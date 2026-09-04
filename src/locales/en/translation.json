@@ -289,10 +289,10 @@
         }
       },
       "setupChoice": {
-        "title": "Choose your Neato Echo setup",
-        "titleLineOne": "Choose your",
-        "titleLineTwo": "Neato Echo setup",
-        "description": "Pick the option that fits how you work.",
+        "title": "Where should Neato Echo do its thinking?",
+        "titleLineOne": "Where should Neato Echo",
+        "titleLineTwo": "do its thinking?",
+        "description": "We recommend right here on this PC. Nothing you say ever leaves your machine.",
         "unavailable": {
           "title": "No setup option is available",
           "description": "Your workspace policy does not allow a complete transcription and AI setup. Contact your administrator."
@@ -310,19 +310,19 @@
           }
         },
         "byok": {
-          "title": "API Provider",
-          "description": "Use your own API key."
+          "title": "API provider",
+          "description": "Send audio and text to OpenAI, Google, or Anthropic with your own key. You pay them per use."
         },
         "local": {
-          "title": "On your device",
-          "description": "Private offline transcription. Needs at least {{minimumSpace}} GB free space.",
-          "badge": "Free",
-          "download": "Download models",
+          "title": "On this PC",
+          "description": "Your voice, notes, and summaries stay on this machine. One download of about {{minimumSpace}} GB, then it works offline.",
+          "badge": "Recommended",
+          "download": "Set up on this PC",
           "features": {
-            "device": "Runs on your device",
-            "offline": "Works offline after setup",
-            "models": "Choose models for dictation and assistant",
-            "free": "Forever free to use"
+            "device": "Nothing is uploaded, ever",
+            "offline": "Works offline once the download is done",
+            "models": "Speech and summary models picked for you",
+            "free": "No account, no subscription"
           }
         },
         "warnings": {
@@ -337,32 +337,32 @@
             }
           },
           "local": {
-            "title": "Local setup takes a few extra steps",
-            "description": "Local processing keeps your speech on this device, but requires a one-time setup and at least {{minimumSpace}} GB of free space.",
-            "continue": "Setup Locally",
+            "title": "One download, then it works offline",
+            "description": "Neato Echo needs two models on this PC: one that turns your speech into text and one that writes your summaries. Together they need about {{minimumSpace}} GB of free space.",
+            "continue": "Start the download",
             "steps": {
-              "1": "Choose a transcription engine",
-              "2": "Configure or download a model, about {{modelSize}}",
-              "3": "Wait for installation and activation"
+              "1": "Pick the speech model. The recommended one is marked.",
+              "2": "Pick a summary model, about {{modelSize}}. Also marked.",
+              "3": "Wait for the downloads to finish. That is it."
             }
           }
         },
         "useCloud": "Use Cloud instead",
         "continueSetup": "Continue setup",
-        "showMore": "Show More Options",
+        "showMore": "Advanced: use an API key or your own server",
         "moreOptions": {
-          "title": "Choose your API setup",
-          "description": "Add an API key or connect a self-hosted model.",
+          "title": "Advanced setup",
+          "description": "For people who would rather run the AI somewhere else. Neither option is needed for normal use.",
           "selfHosted": {
             "title": "Self-hosted",
-            "description": "Connect your own hosted model."
+            "description": "Connect a model server you run yourself."
           }
         }
       },
       "provider": {
         "progress": "Provider setup progress",
-        "dictation": "Dictation",
-        "assistant": "Assistant",
+        "dictation": "Speech",
+        "assistant": "Summaries",
         "title": "Connect your AI provider",
         "description": "Choose a provider, add your credentials, and test the connection.",
         "descriptionLineOne": "Choose a provider and add",
@@ -403,12 +403,13 @@
         }
       },
       "local": {
-        "title": "Set up local models",
-        "description": "Choose the models you want to run on your device.",
-        "descriptionLineOne": "Choose the models you want",
-        "descriptionLineTwo": "to run on your device.",
+        "title": "Download your models",
+        "description": "Pick one speech model and one summary model. The recommended ones are marked.",
+        "descriptionLineOne": "Pick one speech model and one summary model.",
+        "descriptionLineTwo": "The recommended ones are marked.",
         "providerLabel": "Provider",
-        "agent": "Agent",
+        "agent": "Summaries",
+        "stepOf": "Step {{step}} of {{total}}",
         "download": "Download",
         "downloadingShort": "Downloading",
         "selected": "Selected",
@@ -463,12 +464,12 @@
       "preferredLanguage": "Preferred Language"
     },
     "activation": {
-      "title": "Dictation Setup",
-      "description": "Configure how you trigger dictation",
+      "title": "How should your shortcut work?",
+      "description": "You have chosen the key. Now choose what a press does. You can change this later in Settings.",
       "hotkey": "Hotkey",
       "mode": "Mode",
-      "tapDescription": "Press to start/stop",
-      "holdDescription": "Hold while speaking",
+      "tapDescription": "Tap: press once to start listening, press again to stop. Best for longer dictation.",
+      "holdDescription": "Hold: keep the key down while you talk, let go to stop. Best for quick phrases.",
       "test": "Test",
       "hotkeyToStartStop": "{{hotkey}} to start/stop",
       "holdHotkey": "Hold {{hotkey}}",

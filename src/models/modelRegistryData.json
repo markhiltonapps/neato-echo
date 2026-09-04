@@ -5,6 +5,7 @@
       "description": "Fast multilingual ASR with auto language detection",
       "size": "680MB",
       "sizeMb": 680,
+      "recommended": true,
       "language": "multilingual",
       "supportedLanguages": [
         "bg",
@@ -760,7 +761,6 @@
           "quantization": "q4_k_m",
           "contextLength": 262144,
           "hfRepo": "bartowski/Qwen_Qwen3.5-9B-GGUF",
-          "recommended": true,
           "supportsThinking": true,
           "descriptionKey": "models.descriptions.local.qwen_qwen3_5_9b_q4_k_m"
         },
@@ -774,6 +774,7 @@
           "quantization": "q4_k_m",
           "contextLength": 262144,
           "hfRepo": "bartowski/Qwen_Qwen3.5-4B-GGUF",
+          "recommended": true,
           "supportsThinking": true,
           "descriptionKey": "models.descriptions.local.qwen_qwen3_5_4b_q4_k_m"
         },

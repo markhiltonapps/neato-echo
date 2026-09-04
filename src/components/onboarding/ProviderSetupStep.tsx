@@ -74,6 +74,9 @@ export function SetupStageStepper({ stepId }: { stepId: OnboardingStepId }) {
             : t("onboarding.rehaul.provider.assistant")}
         </span>
       </div>
+      <span className="sr-only">
+        {t("onboarding.rehaul.local.stepOf", { step: assistant ? 2 : 1, total: 2 })}
+      </span>
     </div>
   );
 }
@@ -658,6 +661,7 @@ export function LocalModelSetupStep({
         name: model.name,
         size: model.size,
         recommended: model.recommended,
+        description: model.description,
         icon: selectedProvider,
       }));
     }
@@ -671,6 +675,7 @@ export function LocalModelSetupStep({
           name: model.name,
           size: model.size.replace(/(?<=\d)(?=[A-Za-z])/, " "),
           recommended: model.recommended,
+          description: model.description,
           icon: "nvidia",
         }));
     }
@@ -679,6 +684,7 @@ export function LocalModelSetupStep({
       name: model.name,
       size: model.size.replace(/(?<=\d)(?=[A-Za-z])/, " "),
       recommended: model.recommended,
+      description: model.description,
       icon: "openai",
     }));
   }, [assistant, selectedProvider]);
@@ -836,7 +842,8 @@ export function LocalModelSetupStep({
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-[var(--onboarding-text-secondary)]">
                   {model.size}
-                  {!assistant && model.recommended && ` - ${t("common.recommended")}`}
+                  {model.recommended && ` · ${t("common.recommended")}`}
+                  {model.description && ` · ${model.description}`}
                 </span>
               </button>
 
