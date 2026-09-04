@@ -38,7 +38,10 @@ type AdvancedSetupMode = Exclude<SetupMode, "cloud">;
 // more-options modal, so a "byok" pending state is unreachable.
 type WarningSetupMode = Exclude<AdvancedSetupMode, "byok">;
 
-const REFERENCE_LOCAL_MODEL_ID = "nemotron-3.5-asr-streaming-0.6b";
+// The two downloads the local setup recommends by default; their sizes drive the
+// disk-space copy on this step so it matches what the model picker will offer.
+const REFERENCE_SPEECH_MODEL_ID = "parakeet-tdt-0.6b-v3";
+const REFERENCE_SUMMARY_MODEL_ID = "qwen3.5-4b-q4_k_m";
 
 interface SetupChoiceStepProps {
   isSignedIn: boolean;
@@ -129,14 +132,19 @@ export default function SetupChoiceStep({
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [showMore, setShowMore] = useState(false);
 
-  const localReferenceModel = getParakeetModelInfo(REFERENCE_LOCAL_MODEL_ID);
-  const localModelSize = (localReferenceModel?.size ?? t("common.unknown")).replace(
+  const speechReferenceModel = getParakeetModelInfo(REFERENCE_SPEECH_MODEL_ID);
+  const summaryReferenceModel = modelRegistry.getModel(REFERENCE_SUMMARY_MODEL_ID)?.model;
+  const summaryModelMb = summaryReferenceModel ? summaryReferenceModel.sizeBytes / 1_000_000 : 0;
+  const localModelSize = (summaryReferenceModel?.size ?? t("common.unknown")).replace(
     /(\d)([A-Za-z])/,
     "$1 $2"
   );
-  // The model arrives as an archive and needs room to unpack, so quoting only
-  // its compressed size can send a user into a setup that runs out of disk.
-  const minimumLocalSpaceGb = Math.max(2, Math.ceil((localReferenceModel?.sizeMb ?? 0) / 1000));
+  // Speech model plus summary model, with room to unpack the speech archive, so
+  // the number quoted here does not send a user into a setup that runs out of disk.
+  const minimumLocalSpaceGb = Math.max(
+    2,
+    Math.ceil((((speechReferenceModel?.sizeMb ?? 0) + summaryModelMb) * 1.15) / 1000)
+  );
 
   const availability = getOnboardingSetupAvailability({
     policy,

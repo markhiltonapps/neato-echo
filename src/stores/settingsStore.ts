@@ -1441,7 +1441,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     if (v === "bottom-right" || v === "center" || v === "bottom-left") return v;
     return "bottom-right" as const;
   })(),
-  showTranscriptionPreview: readBoolean("showTranscriptionPreview", false),
+  // Local-first ships with the live preview on: with a streaming speech model
+  // the words appear as you talk, which is the whole point of going local.
+  showTranscriptionPreview: readBoolean("showTranscriptionPreview", LOCAL_FIRST),
   autoPasteEnabled: readBoolean("autoPasteEnabled", true),
   keepTranscriptionInClipboard: readBoolean("keepTranscriptionInClipboard", false),
   noteFilesEnabled: readBoolean("noteFilesEnabled", false),

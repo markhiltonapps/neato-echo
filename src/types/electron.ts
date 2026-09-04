@@ -1635,6 +1635,11 @@ declare global {
         } & PolicyFailureMetadata
       >;
       getParakeetDiagnostics: () => Promise<ParakeetDiagnosticsResult>;
+      parakeetServerStart: (
+        modelName: string
+      ) => Promise<{ success: boolean; error?: string } & PolicyFailureMetadata>;
+      parakeetServerStop: () => Promise<{ success: boolean; error?: string }>;
+      parakeetServerStatus: () => Promise<{ running: boolean; model?: string | null }>;
 
       // Local AI model management
       modelGetAll: () => Promise<LocalLLMModelStatus[]>;

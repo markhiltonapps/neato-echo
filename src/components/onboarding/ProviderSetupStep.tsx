@@ -716,6 +716,11 @@ export function LocalModelSetupStep({
       } else if (selectedProvider === "nvidia") {
         store.setLocalTranscriptionProvider("nvidia");
         store.setParakeetModel(modelId);
+        // Load the model now so the first dictation does not pay the
+        // server start (tens of seconds on a cold PC). Persisting the
+        // provider/model to .env happens on server start, which also
+        // makes the next launch pre-warm it.
+        window.electronAPI?.parakeetServerStart?.(modelId).catch(() => {});
       } else {
         store.setLocalTranscriptionProvider("whisper");
         store.setWhisperModel(modelId);
@@ -822,7 +827,11 @@ export function LocalModelSetupStep({
           return (
             <div
               key={model.id}
-              className="flex min-h-14 items-center gap-3 border-b border-[var(--onboarding-control-border)] px-1 py-2 last:border-b-0"
+              className={`flex min-h-14 items-center gap-3 border-b border-[var(--onboarding-control-border)] px-1 py-2 last:border-b-0 ${
+                model.recommended
+                  ? "-mx-1 my-1 rounded-xl border-b-0 bg-[var(--onboarding-surface)] px-2 ring-1 ring-[var(--onboarding-accent)]"
+                  : ""
+              }`}
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[var(--onboarding-control-border)] bg-[var(--onboarding-surface)]">
                 <ProviderIcon
@@ -837,12 +846,16 @@ export function LocalModelSetupStep({
                 onClick={() => selectInstalledModel(model.id)}
                 className="min-w-0 flex-1 text-left disabled:cursor-default"
               >
-                <span className="block truncate text-sm font-medium text-[var(--onboarding-text-primary)]">
-                  {model.name}
+                <span className="flex items-center gap-2 text-sm font-medium text-[var(--onboarding-text-primary)]">
+                  <span className="truncate">{model.name}</span>
+                  {model.recommended && (
+                    <span className="shrink-0 rounded-full bg-[var(--onboarding-accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--onboarding-accent-foreground)]">
+                      {t("common.recommended")}
+                    </span>
+                  )}
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-[var(--onboarding-text-secondary)]">
+                <span className="mt-0.5 line-clamp-2 block text-xs leading-[1.35] text-[var(--onboarding-text-secondary)]">
                   {model.size}
-                  {model.recommended && ` · ${t("common.recommended")}`}
                   {model.description && ` · ${model.description}`}
                 </span>
               </button>
@@ -900,6 +913,14 @@ export function LocalModelSetupStep({
           );
         })}
       </div>
+
+      <p className="mt-3 text-xs leading-[1.45] text-[var(--onboarding-text-secondary)]">
+        {t(
+          assistant
+            ? "onboarding.rehaul.local.otherModelsNoteAssistant"
+            : "onboarding.rehaul.local.otherModelsNoteSpeech"
+        )}
+      </p>
 
       <div className={`mt-4 grid gap-2 ${anyDownloadActive ? "grid-cols-2" : "grid-cols-1"}`}>
         {anyDownloadActive && (
