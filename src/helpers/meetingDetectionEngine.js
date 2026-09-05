@@ -500,6 +500,7 @@ class MeetingDetectionEngine {
 
     if (source === "audio" && !this.preferences.audioDetection) {
       debugLogger.debug("Audio detection disabled, ignoring", { detectionId }, "meeting");
+      this.audioActivityDetector.resetPrompt();
       return;
     }
 
@@ -597,15 +598,31 @@ class MeetingDetectionEngine {
       detection.event = event;
     }
 
-    this.windowManager.showMeetingNotification({
-      kind: "detection",
-      detectionId,
-      source,
-      key,
-      event,
-      variant,
-      joinUrl,
-    });
+    Promise.resolve(
+      this.windowManager.showMeetingNotification({
+        kind: "detection",
+        detectionId,
+        source,
+        key,
+        event,
+        variant,
+        joinUrl,
+      })
+    )
+      .then((shown) => {
+        if (shown !== false) return;
+        // Refused (onboarding owns the screen): forget the detection so the
+        // next signal can prompt, and un-mark the mic prompt or a capture
+        // that never goes idle would stay silenced for the whole session.
+        debugLogger.info("Notification not shown; detection released", { detectionId }, "meeting");
+        this.activeDetections.delete(detectionId);
+        if (source === "audio") this.audioActivityDetector.resetPrompt();
+      })
+      .catch((error) => {
+        debugLogger.error("Failed to show meeting notification", { error: error?.message }, "meeting");
+        this.activeDetections.delete(detectionId);
+        if (source === "audio") this.audioActivityDetector.resetPrompt();
+      });
   }
 
   async handleNotificationResponse(detectionId, action) {
