@@ -150,6 +150,7 @@ import ProfileSection from "./settings/ProfileSection";
 import { formatAmount } from "../utils/formatAmount";
 import { getTranscriptionProvider } from "../models/ModelRegistry";
 import { supportsLiveTranscriptionPreview } from "../utils/transcriptionPreview";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 
 export type SettingsSectionType =
   | "account"
@@ -4102,6 +4103,10 @@ EOF`,
               )}
 
               <SettingsPanel>
+                {/* Insights sync needs an account to sync to. The local-first
+                    edition has no accounts, so the row can never be enabled —
+                    hide it rather than show a permanently greyed toggle. */}
+                {ACCOUNTS_ENABLED && (
                 <SettingsPanelRow>
                   <SettingsRow
                     label={t("settingsPage.privacy.insightsSync")}
@@ -4134,6 +4139,7 @@ EOF`,
                     />
                   </SettingsRow>
                 </SettingsPanelRow>
+                )}
                 <SettingsPanelRow>
                   <SettingsRow
                     label={t("settingsPage.privacy.usageAnalytics")}
