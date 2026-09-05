@@ -444,6 +444,12 @@
         "retry": "Try again",
         "advanced": "Advanced: choose different models",
         "memoryNote": "This PC has {{gb}} GB of memory, so the smaller summary model was chosen. You can change it later in Settings, Language Models."
+      },
+      "meetingHotkey": {
+        "title": "Set up your meeting shortcut",
+        "titleLineOne": "Set up your",
+        "titleLineTwo": "meeting shortcut",
+        "description": "Press this during any call to start taking notes, without opening the app. Ctrl + Alt + M is free in Zoom, Teams, and Meet."
       }
     },
     "steps": {

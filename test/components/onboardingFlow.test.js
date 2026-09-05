@@ -390,3 +390,27 @@ test("pickAutoLocalModels: language picks the speech model, memory the summary m
   assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 7.8 }).summaryModelId, "qwen3.5-2b-q4_k_m");
   assert.equal(pickAutoLocalModels({ language: "en", memoryGb: null }).summaryModelId, "qwen3.5-4b-q4_k_m");
 });
+
+test("meetingHotkeyStep follows activation-mode on both routes", async () => {
+  const { getOnboardingRoute } = await load();
+  const guest = getOnboardingRoute({
+    authPath: "guest",
+    setupMode: null,
+    agentAllowed: true,
+    meetingHotkeyStep: true,
+  });
+  assert.equal(guest[guest.indexOf("activation-mode") + 1], "meeting-hotkey");
+  const account = getOnboardingRoute({
+    authPath: "account",
+    setupMode: null,
+    agentAllowed: true,
+    meetingHotkeyStep: true,
+  });
+  assert.equal(account[account.indexOf("activation-mode") + 1], "meeting-hotkey");
+  assert.equal(
+    getOnboardingRoute({ authPath: "guest", setupMode: null, agentAllowed: true }).includes(
+      "meeting-hotkey"
+    ),
+    false
+  );
+});

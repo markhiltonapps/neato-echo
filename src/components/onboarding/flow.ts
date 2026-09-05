@@ -12,6 +12,7 @@ export type OnboardingStepId =
   | "use-cases"
   | "dictation-hotkey"
   | "activation-mode"
+  | "meeting-hotkey"
   | "dictation-demo"
   | "assistant-hotkey"
   | "assistant-demo"
@@ -54,6 +55,11 @@ export interface OnboardingRouteContext {
    * still opt into the pickers ("Advanced") which flips this off for the session.
    */
   autoLocalSetup?: boolean;
+  /**
+   * Local-first edition: ask for a meeting-notes shortcut right after the
+   * dictation one, so recording a call never requires a trip to Settings.
+   */
+  meetingHotkeyStep?: boolean;
 }
 
 const ACCOUNT_ROUTE: OnboardingStepId[] = [
@@ -81,6 +87,7 @@ const STEP_ORDER: OnboardingStepId[] = [
   "use-cases",
   "dictation-hotkey",
   "activation-mode",
+  "meeting-hotkey",
   "dictation-demo",
   "assistant-hotkey",
   "assistant-demo",
@@ -167,6 +174,10 @@ export function getOnboardingRoute(context: OnboardingRouteContext): OnboardingS
           "notes" as const,
           ...setupChoice,
         ];
+
+  if (context.meetingHotkeyStep) {
+    route.splice(route.indexOf("activation-mode") + 1, 0, "meeting-hotkey");
+  }
 
   if (context.requiredModelsPending && context.authPath === "account") {
     route.splice(route.indexOf("auth") + 1, 0, "required-models");

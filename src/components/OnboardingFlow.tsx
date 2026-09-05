@@ -102,6 +102,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   );
   const [dictationHotkeyConfirmed, setDictationHotkeyConfirmed] = useState(false);
   const [assistantHotkeyConfirmed, setAssistantHotkeyConfirmed] = useState(false);
+  // Ctrl+Alt+M: free in every major meeting app (Teams already uses
+  // Ctrl+Shift+M for mute, so that one is not offered).
+  const [meetingHotkey, setMeetingHotkey] = useState(
+    () => parseHotkeyList(settings.meetingKey)[0] || "Control+Alt+M"
+  );
+  const [meetingHotkeyConfirmed, setMeetingHotkeyConfirmed] = useState(false);
   // Seeded from main rather than getDefaultHotkey(): main already knows when the
   // platform default can't bind (GNOME/X11 reject modifier-only combos) and
   // registered a fallback instead — recommending the unregistrable default would
@@ -231,6 +237,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         requiredModelsPending,
         skipSetupChoice: skipSetupChoiceForEnterprise,
         autoLocalSetup: LOCAL_FIRST && !localAdvanced,
+        meetingHotkeyStep: LOCAL_FIRST,
       }),
     [
       agentAllowed,
@@ -369,6 +376,31 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         serializeHotkeyList([value, ...parseHotkeyList(settings.voiceAgentKey).slice(1)])
       );
       return registered ? null : t("onboarding.rehaul.hotkey.inUse");
+    },
+    [settings, t]
+  );
+
+  const validateMeetingHotkey = useCallback(
+    (value: string) =>
+      validateHotkeyForSlot(
+        value,
+        {
+          "settingsPage.general.hotkey.title": withExtraDictationHotkeys(dictationHotkey),
+          "settingsPage.general.voiceAgentHotkey.title": assistantHotkeyConfirmed
+            ? assistantHotkey
+            : "",
+        },
+        t
+      ),
+    [assistantHotkey, assistantHotkeyConfirmed, dictationHotkey, t, withExtraDictationHotkeys]
+  );
+
+  const confirmMeetingHotkey = useCallback(
+    async (value: string) => {
+      const result = await window.electronAPI?.registerMeetingHotkey?.(value);
+      if (!result?.success) return t("onboarding.rehaul.hotkey.inUse");
+      settings.setMeetingKey(value);
+      return null;
     },
     [settings, t]
   );
@@ -525,6 +557,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         agentAllowed,
         requiredModelsPending,
         autoLocalSetup: LOCAL_FIRST && !localAdvanced,
+        meetingHotkeyStep: LOCAL_FIRST,
       });
       const next = getNextOnboardingStep("setup-choice", nextRoute);
       if (next) goTo(next);
@@ -575,6 +608,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           return;
         }
       }
+    } else if (currentStepId === "meeting-hotkey") {
+      if (parseHotkeyList(settings.meetingKey)[0] !== meetingHotkey) {
+        const problem = await confirmMeetingHotkey(meetingHotkey);
+        if (problem) {
+          setFatalError(problem);
+          return;
+        }
+      }
     } else if (currentStepId === "byok-dictation") {
       settingsStore.setCloudTranscriptionForAllScopes({
         useLocalWhisper: false,
@@ -616,6 +657,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   }, [
     applyReasoningSelectionToAllScopes,
     assistantHotkey,
+    confirmMeetingHotkey,
+    meetingHotkey,
     currentStepId,
     dictationHotkey,
     finalizeOnboarding,
@@ -660,6 +703,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         return dictationDemoSuccess;
       case "assistant-hotkey":
         return assistantHotkeyConfirmed;
+      case "meeting-hotkey":
+        return meetingHotkeyConfirmed;
       case "assistant-demo":
         return assistantDemoSuccess;
       case "notes":
@@ -837,6 +882,35 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           </div>
         );
       }
+
+      case "meeting-hotkey":
+        return (
+          <div className="flex h-full min-h-0 w-full flex-col pt-2">
+            <OnboardingStepHeader
+              title={t("onboarding.rehaul.meetingHotkey.title")}
+              titleLines={[
+                t("onboarding.rehaul.meetingHotkey.titleLineOne"),
+                t("onboarding.rehaul.meetingHotkey.titleLineTwo"),
+              ]}
+              description={t("onboarding.rehaul.meetingHotkey.description")}
+            />
+            <ShortcutSetupStep
+              value={meetingHotkeyConfirmed ? meetingHotkey : ""}
+              onChange={(value) => {
+                setMeetingHotkey(value);
+                setMeetingHotkeyConfirmed(true);
+              }}
+              onClearSelection={() => setMeetingHotkeyConfirmed(false)}
+              recommended="Control+Alt+M"
+              captureLabel={t("onboarding.rehaul.hotkey.capture")}
+              recommendedLabel={t("common.recommended")}
+              chooseAnotherLabel={t("onboarding.rehaul.hotkey.chooseAnother")}
+              validate={validateMeetingHotkey}
+              onConfirm={confirmMeetingHotkey}
+              showCandidateActions
+            />
+          </div>
+        );
 
       case "activation-mode":
         return (
@@ -1077,7 +1151,10 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   };
 
   const hasShellNavigation = !compact;
-  const hotkeyStep = currentStepId === "dictation-hotkey" || currentStepId === "assistant-hotkey";
+  const hotkeyStep =
+    currentStepId === "dictation-hotkey" ||
+    currentStepId === "assistant-hotkey" ||
+    currentStepId === "meeting-hotkey";
   const demoStep = currentStepId === "dictation-demo" || currentStepId === "assistant-demo";
   const inlineGatedStep = hotkeyStep || demoStep;
   const choiceStep = currentStepId === "setup-choice";
