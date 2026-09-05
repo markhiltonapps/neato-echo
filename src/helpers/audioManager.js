@@ -21,6 +21,8 @@ import {
   PreparedMicCapture,
   disposePreparedCapture,
   discardPreRoll,
+  closeStreamingPreRoll,
+  STREAMING_PRE_ROLL_MAX_BYTES,
   PRE_ROLL_MAX_AGE_MS,
 } from "./preparedMicCapture";
 import { MicStreamHold } from "./micStreamHold";
@@ -1030,8 +1032,20 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
       const prepared = await this.preparedMicCapture.prepare(async () => {
         const constraints = await this.getAudioConstraints();
         const stream = await this._acquireCaptureStream(constraints);
-        const value = { stream, constraints, recorder: null, chunks: [], startedAt: Date.now() };
+        const value = {
+          stream,
+          constraints,
+          recorder: null,
+          chunks: [],
+          startedAt: Date.now(),
+          pcmContext: null,
+          pcmSource: null,
+          pcmProcessor: null,
+          pcmChunks: [],
+          pcmBytes: 0,
+        };
         if (!this.shouldUseStreaming()) this._startPreRollRecorder(value);
+        if (this._streamingCommitApplies()) await this._primeStreamingPreRoll(value);
         return value;
       });
       if (prepared) {
@@ -1041,6 +1055,47 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
     } catch (e) {
       logger.debug("Mic capture preparation failed (non-critical)", { error: e.message }, "audio");
       return null;
+    }
+  }
+
+  // Local online (streaming) models commit the streamed text as the final
+  // transcript, so audio that reaches the worklet before the recording is
+  // wired up is simply gone: the first syllable after a quick key-down.
+  _streamingCommitApplies() {
+    const { useLocalWhisper, localTranscriptionProvider, parakeetModel } = getSettings();
+    return (
+      !!useLocalWhisper &&
+      localTranscriptionProvider === "nvidia" &&
+      isOnlineParakeetModel(parakeetModel)
+    );
+  }
+
+  // Build the 16 kHz PCM pipeline on the prepared stream now and buffer its
+  // frames; startRecording adopts the pipeline and replays the buffer ahead of
+  // live frames, so the stream hears what was said during the key-down gap.
+  async _primeStreamingPreRoll(prepared) {
+    try {
+      const context = new AudioContext({ sampleRate: 16000 });
+      const source = context.createMediaStreamSource(prepared.stream);
+      await context.audioWorklet.addModule(this.getWorkletBlobUrl());
+      const processor = new AudioWorkletNode(context, "pcm-streaming-processor");
+      processor.port.onmessage = (event) => {
+        if (event.data === "flushed") return;
+        const bytes = event.data?.byteLength ?? 0;
+        prepared.pcmChunks.push(event.data);
+        prepared.pcmBytes += bytes;
+        while (prepared.pcmBytes > STREAMING_PRE_ROLL_MAX_BYTES && prepared.pcmChunks.length > 1) {
+          const dropped = prepared.pcmChunks.shift();
+          prepared.pcmBytes -= dropped?.byteLength ?? 0;
+        }
+      };
+      source.connect(processor);
+      prepared.pcmContext = context;
+      prepared.pcmSource = source;
+      prepared.pcmProcessor = processor;
+    } catch (e) {
+      logger.debug("Streaming pre-roll unavailable", { error: e.message }, "audio");
+      closeStreamingPreRoll(prepared);
     }
   }
 
@@ -1315,24 +1370,45 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
       // Online models stream+commit during capture, so PCM runs even with preview off.
       const streamingCommit = useLocalWhisper && isNvidia && isOnlineParakeetModel(parakeetModel);
       this._streamingCommitActive = false;
+      const primed =
+        prepared?.pcmContext && prepared.pcmProcessor && prepared.stream === micStream
+          ? prepared
+          : null;
+      if (prepared && !primed) closeStreamingPreRoll(prepared);
       if (useLocalWhisper && (showTranscriptionPreview || streamingCommit)) {
         try {
-          this._previewAudioContext = new AudioContext({ sampleRate: 16000 });
-          this._previewSource = this._previewAudioContext.createMediaStreamSource(micStream);
-          await this._previewAudioContext.audioWorklet.addModule(this.getWorkletBlobUrl());
-
-          this._previewProcessor = new AudioWorkletNode(
-            this._previewAudioContext,
-            "pcm-streaming-processor"
-          );
-          this._previewProcessor.port.onmessage = (event) => {
+          // Frames that arrive while the preview session is being announced are
+          // parked so the pre-roll can go out first, in order.
+          const parked = [];
+          let forwardLive = false;
+          const onPcm = (event) => {
             if (event.data === "flushed") {
               this._previewFlushResolve?.();
               return;
             }
-            window.electronAPI?.sendDictationPreviewAudio?.(event.data);
+            if (forwardLive) window.electronAPI?.sendDictationPreviewAudio?.(event.data);
+            else parked.push(event.data);
           };
-          this._previewSource.connect(this._previewProcessor);
+          if (primed) {
+            this._previewAudioContext = primed.pcmContext;
+            this._previewSource = primed.pcmSource;
+            this._previewProcessor = primed.pcmProcessor;
+            this._previewProcessor.port.onmessage = onPcm;
+            primed.pcmContext = null;
+            primed.pcmSource = null;
+            primed.pcmProcessor = null;
+          } else {
+            this._previewAudioContext = new AudioContext({ sampleRate: 16000 });
+            this._previewSource = this._previewAudioContext.createMediaStreamSource(micStream);
+            await this._previewAudioContext.audioWorklet.addModule(this.getWorkletBlobUrl());
+
+            this._previewProcessor = new AudioWorkletNode(
+              this._previewAudioContext,
+              "pcm-streaming-processor"
+            );
+            this._previewProcessor.port.onmessage = onPcm;
+            this._previewSource.connect(this._previewProcessor);
+          }
 
           const model = isNvidia
             ? parakeetModel
@@ -1349,6 +1425,21 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
               this.voiceAgentRequested
             ),
           });
+          // Main resets its buffer when the start message lands, then queues
+          // every frame sent after it, so the order below is the order heard:
+          // pre-roll, frames parked during setup, then live.
+          const preRollChunks = primed ? primed.pcmChunks.splice(0) : [];
+          if (primed) primed.pcmBytes = 0;
+          for (const chunk of preRollChunks) {
+            window.electronAPI?.sendDictationPreviewAudio?.(chunk);
+          }
+          for (const chunk of parked.splice(0)) {
+            window.electronAPI?.sendDictationPreviewAudio?.(chunk);
+          }
+          forwardLive = true;
+          if (preRollChunks.length) {
+            logger.debug("Streaming pre-roll replayed", { chunks: preRollChunks.length }, "audio");
+          }
           this._streamingCommitActive = streamingCommit;
         } catch (e) {
           logger.warn("Preview worklet setup failed", { error: e.message }, "audio");

@@ -138,6 +138,14 @@ class ParakeetWsServer {
             // Default 10ms decode-loop tick adds idle time to faster-than-realtime decode.
             "--loop-interval-ms=2",
             `--end-tail-padding=${ONLINE_END_TAIL_PADDING_S}`,
+            // Endpointing defaults (1.2 s of silence after speech) cut a dictation
+            // into a new segment at every thinking pause and lost the words at the
+            // seam, each fragment starting with a capital. Ordinary pauses now
+            // stay inside one segment; a long silence or a very long utterance
+            // still ends it so live meeting transcripts keep flowing.
+            "--rule1-min-trailing-silence=3.5",
+            "--rule2-min-trailing-silence=2.4",
+            "--rule3-min-utterance-length=40",
             // Nonzero --warm-up aborts startup for non-zipformer2 models; _warmUp()
             // covers it app-side.
             "--warm-up=0",
