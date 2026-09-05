@@ -1635,6 +1635,7 @@ declare global {
         } & PolicyFailureMetadata
       >;
       getParakeetDiagnostics: () => Promise<ParakeetDiagnosticsResult>;
+      getSystemMemoryGb: () => Promise<number>;
       parakeetServerStart: (
         modelName: string
       ) => Promise<{ success: boolean; error?: string } & PolicyFailureMetadata>;

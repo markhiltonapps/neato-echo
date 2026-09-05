@@ -19,6 +19,7 @@ export type OnboardingStepId =
   | "setup-choice"
   | "byok-dictation"
   | "byok-assistant"
+  | "local-auto"
   | "local-dictation"
   | "local-assistant";
 
@@ -47,6 +48,12 @@ export interface OnboardingRouteContext {
   requiredModelsPending?: boolean;
   /** A confirmed Enterprise workspace is already provisioned outside onboarding. */
   skipSetupChoice?: boolean;
+  /**
+   * Local-first edition: replace the two model-picker steps with one automatic
+   * step that downloads the recommended speech and summary models. The user can
+   * still opt into the pickers ("Advanced") which flips this off for the session.
+   */
+  autoLocalSetup?: boolean;
 }
 
 const ACCOUNT_ROUTE: OnboardingStepId[] = [
@@ -81,6 +88,7 @@ const STEP_ORDER: OnboardingStepId[] = [
   "setup-choice",
   "byok-dictation",
   "byok-assistant",
+  "local-auto",
   "local-dictation",
   "local-assistant",
 ];
@@ -164,7 +172,9 @@ export function getOnboardingRoute(context: OnboardingRouteContext): OnboardingS
     route.splice(route.indexOf("auth") + 1, 0, "required-models");
   }
 
-  if (context.setupMode && context.setupMode !== "cloud") {
+  if (context.setupMode === "local" && context.autoLocalSetup) {
+    route.push("local-auto");
+  } else if (context.setupMode && context.setupMode !== "cloud") {
     route.push(
       ...SETUP_ROUTES[context.setupMode].filter(
         (stepId) => context.agentAllowed || !stepId.endsWith("assistant")

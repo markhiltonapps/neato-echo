@@ -14,6 +14,7 @@ import DemoStep from "./onboarding/DemoStep";
 import CalendarConnectionsStep from "./onboarding/CalendarConnectionsStep";
 import SetupChoiceStep from "./onboarding/SetupChoiceStep";
 import { ByokProviderStep, LocalModelSetupStep } from "./onboarding/ProviderSetupStep";
+import { AutoLocalSetupStep } from "./onboarding/AutoLocalSetupStep";
 import { RequiredModelDownloadStep } from "./onboarding/RequiredModelDownloadStep";
 import { AlertDialog } from "./ui/dialog";
 import { useAuth } from "../hooks/useAuth";
@@ -111,6 +112,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [stageReady, setStageReady] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
+  // Local-first installs the recommended models automatically; the
+  // "Advanced" link on that step swaps the manual pickers back in.
+  const [localAdvanced, setLocalAdvanced] = useState(false);
   const [permissionAlert, setPermissionAlert] = useState<{
     title: string;
     description: string;
@@ -226,9 +230,11 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         agentAllowed,
         requiredModelsPending,
         skipSetupChoice: skipSetupChoiceForEnterprise,
+        autoLocalSetup: LOCAL_FIRST && !localAdvanced,
       }),
     [
       agentAllowed,
+      localAdvanced,
       requiredModelsPending,
       session.authPath,
       session.setupMode,
@@ -405,6 +411,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         await window.electronAPI?.saveAllKeysToEnv?.();
         await window.electronAPI?.markBundleMigrated?.();
         await window.electronAPI?.setOnboardingWindowMode?.("restore");
+        // Local-first: start with Windows (into the tray) so the speech
+        // engine is already warm before the first dictation of the day.
+        if (LOCAL_FIRST && mode === "local") {
+          try {
+            await window.electronAPI?.setAutoStartEnabled?.(true);
+          } catch {
+            // A launch-at-login failure must not block finishing setup.
+          }
+        }
 
         // hasPendingLocalModels() covers proceeding past a still-running download
         // rather than skipping: the model was remembered when the download
@@ -509,11 +524,13 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         setupMode: mode,
         agentAllowed,
         requiredModelsPending,
+        autoLocalSetup: LOCAL_FIRST && !localAdvanced,
       });
       const next = getNextOnboardingStep("setup-choice", nextRoute);
       if (next) goTo(next);
     },
     [
+      localAdvanced,
       agentAllowed,
       finalizeOnboarding,
       goTo,
@@ -579,6 +596,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         settingsStore.updateCleanupSettings({ useCleanupModel: false });
       }
     } else if (currentStepId === "local-assistant") {
+      applyReasoningSelectionToAllScopes("local");
+    } else if (currentStepId === "local-auto") {
+      settingsStore.setCloudTranscriptionForAllScopes({ useLocalWhisper: true });
       applyReasoningSelectionToAllScopes("local");
     }
 
@@ -646,6 +666,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         return !workspaceResolutionPending;
       case "byok-dictation":
       case "byok-assistant":
+      case "local-auto":
       case "local-dictation":
       case "local-assistant":
         return stageReady;
@@ -1005,6 +1026,30 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           </div>
         );
 
+      case "local-auto":
+        return (
+          <div className="h-full w-full pt-2">
+            <OnboardingStepHeader
+              title={t("onboarding.rehaul.localAuto.title")}
+              wideTitle
+              description={t("onboarding.rehaul.localAuto.description")}
+              descriptionLines={[
+                t("onboarding.rehaul.localAuto.descriptionLineOne"),
+                t("onboarding.rehaul.localAuto.descriptionLineTwo"),
+              ]}
+            />
+            <AutoLocalSetupStep
+              onReadinessChange={setStageReady}
+              onProceed={() => void continueFromCurrentStep()}
+              onSkip={() => void skipLocalSetup()}
+              onAdvanced={() => {
+                setLocalAdvanced(true);
+                goTo("local-dictation");
+              }}
+            />
+          </div>
+        );
+
       case "local-dictation":
       case "local-assistant":
         return (
@@ -1039,6 +1084,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const inlineProviderStep =
     currentStepId === "byok-dictation" ||
     currentStepId === "byok-assistant" ||
+    currentStepId === "local-auto" ||
     currentStepId === "local-dictation" ||
     currentStepId === "local-assistant";
   // Choice/provider pages own their forward action, while hotkey/demo pages

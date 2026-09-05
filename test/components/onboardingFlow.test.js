@@ -350,3 +350,43 @@ test("the tray suppression predicate matches only an active required-models sess
     false
   );
 });
+
+test("autoLocalSetup replaces the two local pickers with one automatic step", async () => {
+  const { getOnboardingRoute } = await load();
+  assert.deepEqual(
+    getOnboardingRoute({
+      authPath: "guest",
+      setupMode: "local",
+      agentAllowed: true,
+      autoLocalSetup: true,
+    }).slice(-2),
+    ["setup-choice", "local-auto"]
+  );
+  // Only the local route is affected; BYOK keeps its pair.
+  assert.deepEqual(
+    getOnboardingRoute({
+      authPath: "guest",
+      setupMode: "byok",
+      agentAllowed: true,
+      autoLocalSetup: true,
+    }).slice(-2),
+    ["byok-dictation", "byok-assistant"]
+  );
+});
+
+test("pickAutoLocalModels: language picks the speech model, memory the summary model", async () => {
+  const { pickAutoLocalModels } = await import(
+    "../../src/components/onboarding/autoLocalModels.ts"
+  );
+  assert.equal(
+    pickAutoLocalModels({ language: "en-US", memoryGb: 16 }).speechModelId,
+    "nemotron-speech-streaming-en-0.6b"
+  );
+  assert.equal(
+    pickAutoLocalModels({ language: "es", memoryGb: 16 }).speechModelId,
+    "parakeet-tdt-0.6b-v3"
+  );
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 16 }).summaryModelId, "qwen3.5-4b-q4_k_m");
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 7.8 }).summaryModelId, "qwen3.5-2b-q4_k_m");
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: null }).summaryModelId, "qwen3.5-4b-q4_k_m");
+});

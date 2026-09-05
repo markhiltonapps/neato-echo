@@ -4027,6 +4027,9 @@ class IPCHandlers {
       }
     });
 
+    // Total physical memory, for picking a local model size the PC can run.
+    ipcMain.handle("get-system-memory-gb", () => os.totalmem() / 1024 ** 3);
+
     ipcMain.handle("get-auto-start-enabled", async () => {
       try {
         return autoStart.getAutoStartState();

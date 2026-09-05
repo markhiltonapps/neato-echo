@@ -989,6 +989,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   notifyStartMinimizedChanged: (enabled) => ipcRenderer.send("start-minimized-changed", enabled),
 
   // Auto-start management
+  getSystemMemoryGb: () => ipcRenderer.invoke("get-system-memory-gb"),
   getAutoStartEnabled: () => ipcRenderer.invoke("get-auto-start-enabled"),
   setAutoStartEnabled: (enabled) => ipcRenderer.invoke("set-auto-start-enabled", enabled),
 

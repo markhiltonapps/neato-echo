@@ -90,7 +90,7 @@ export function SetupStageStepper({ stepId }: { stepId: OnboardingStepId }) {
  * weight — so the step's own call to action read quieter than the Continue
  * button sitting right under it.
  */
-function StepPrimaryAction({
+export function StepPrimaryAction({
   onClick,
   disabled = false,
   className = "",
@@ -113,7 +113,7 @@ function StepPrimaryAction({
   );
 }
 
-function StepSecondaryAction({
+export function StepSecondaryAction({
   onClick,
   className = "",
   children,
@@ -720,7 +720,7 @@ export function LocalModelSetupStep({
         // server start (tens of seconds on a cold PC). Persisting the
         // provider/model to .env happens on server start, which also
         // makes the next launch pre-warm it.
-        window.electronAPI?.parakeetServerStart?.(modelId).catch(() => {});
+        void window.electronAPI?.parakeetServerStart?.(modelId)?.catch(() => {});
       } else {
         store.setLocalTranscriptionProvider("whisper");
         store.setWhisperModel(modelId);

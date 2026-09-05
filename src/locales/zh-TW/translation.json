@@ -420,6 +420,29 @@
         "installing": "正在安裝模型…",
         "otherModelsNoteSpeech": "The marked model is the best fit for most PCs and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only), Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
         "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
+      },
+      "localAuto": {
+        "title": "Getting your PC ready",
+        "description": "Neato Echo is downloading the two models it needs. You can keep this window open or come back later.",
+        "descriptionLineOne": "Neato Echo is downloading the two models it needs.",
+        "descriptionLineTwo": "This is the long part. After it, everything works offline.",
+        "speechLabel": "Speech",
+        "speechDetail": "Turns what you say into text, as you speak.",
+        "speechDetailMultilingual": "Turns what you say into text, in your language.",
+        "summaryLabel": "Summaries",
+        "summaryDetail": "Writes meeting summaries and answers the assistant.",
+        "statusWaiting": "Waiting",
+        "statusDownloading": "{{percent}}%",
+        "statusInstalling": "Installing",
+        "statusReady": "Ready",
+        "statusFailed": "Failed",
+        "overall": "{{done}} of {{total}} models ready",
+        "allReady": "All set. Your PC is ready to dictate.",
+        "finish": "Start using Neato Echo",
+        "continueInBackground": "Continue while it downloads",
+        "retry": "Try again",
+        "advanced": "Advanced: choose different models",
+        "memoryNote": "This PC has {{gb}} GB of memory, so the smaller summary model was chosen. You can change it later in Settings, Language Models."
       }
     },
     "steps": {
