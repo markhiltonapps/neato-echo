@@ -27,11 +27,14 @@ class UpdateManager {
       return;
     }
 
+    // Neato Echo publishes to its own GitHub releases. This must match the
+    // `publish` block in electron-builder.json: the upstream GitHub feed here
+    // would otherwise override app-update.yml and offer OpenWhispr's releases
+    // as "updates" to Neato Echo.
     autoUpdater.setFeedURL({
-      provider: "github",
-      owner: "OpenWhispr",
-      repo: "openwhispr",
-      private: false,
+      provider: "generic",
+      url: "https://github.com/markhiltonapps/neato-echo/releases/latest/download",
+      channel: "latest",
     });
 
     // Use arch-specific update channel on macOS to prevent arm64/x64
