@@ -24,6 +24,7 @@ import McpIntegrationCard from "./McpIntegrationCard";
 import googleCalendarIcon from "../assets/icons/google-calendar.svg";
 import microsoftCalendarIcon from "../assets/icons/microsoft-calendar.svg";
 import appleCalendarIcon from "../assets/icons/apple-calendar.svg";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 
 const API_DOCS_URL = "https://docs.openwhispr.com/api/overview";
 
@@ -429,6 +430,11 @@ export default function IntegrationsView({ isPaid, onUpgrade }: IntegrationsView
         </SettingsPanel>
       </div>
 
+{/* API, MCP and CLI are OpenWhispr cloud/paid features with no local
+          equivalent yet. Hidden in the local-first edition; a future local CLI
+          and MCP server can reintroduce their own cards when built. */}
+      {ACCOUNTS_ENABLED && (
+        <>
       <div>
         <SectionLabel>{t("integrations.sections.api")}</SectionLabel>
         <SettingsPanel>
@@ -473,6 +479,8 @@ export default function IntegrationsView({ isPaid, onUpgrade }: IntegrationsView
         <SectionLabel>{t("integrations.sections.cli")}</SectionLabel>
         <CliIntegrationCard isPaid={isPaid} onUpgrade={onUpgrade} />
       </div>
+        </>
+      )}
 
       {!hasAccounts && (
         <div className="rounded-lg border border-border/40 dark:border-border-subtle/40 bg-muted/20 dark:bg-surface-2/30 p-4 flex items-start gap-3">
