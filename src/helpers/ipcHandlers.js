@@ -7000,6 +7000,13 @@ class IPCHandlers {
     let meetingLocalModel = null;
     let meetingLocalLanguage = null;
     let meetingLocalTranscribing = false;
+    // Live local transcription: one online (streaming) recognizer per source,
+    // fed straight from the audio chunks instead of the 5 s buffer. Falls back
+    // to the chunked path (meetingLocalLive = false) if a stream fails.
+    let meetingLocalLive = false;
+    let meetingLocalStreams = { mic: null, system: null };
+    let meetingLocalSegmentStartedAt = { mic: null, system: null };
+    let meetingLocalLastPartial = { mic: "", system: "" };
     let meetingPendingMicChunks = [];
     let meetingPendingMicFinals = [];
     let meetingPendingMicFinalTimer = null;
@@ -7072,6 +7079,10 @@ class IPCHandlers {
 
     const dispatchMeetingAudioBuffer = (buffer, source) => {
       if (meetingLocalMode) {
+        if (meetingLocalLive && meetingLocalStreams[source]) {
+          sendLiveMeetingChunk(buffer, source);
+          return;
+        }
         meetingLocalBuffers[source].push(buffer);
         return;
       }
@@ -7353,6 +7364,122 @@ class IPCHandlers {
       return started;
     };
 
+    // A finished piece of local transcript (a 5 s chunk, or a streamed segment):
+    // mic bleed suppression, duplicate checks against system audio, retractions
+    // and holdback, then the final segment to the renderer.
+    const handleLocalMeetingFinalText = (source, text, chunkDurationMs) => {
+      const segTimestamp = Date.now();
+      let micSuppression = null;
+      if (source === "mic") {
+        micSuppression = shouldSuppressMicTranscriptSegment(
+          segTimestamp - chunkDurationMs,
+          segTimestamp
+        );
+        debugLogger.debug("Local meeting transcription candidate", {
+          source,
+          text: text.slice(0, 80),
+          suppress: micSuppression.suppress,
+          reason: micSuppression.reason,
+          hasBleedEvidence: micSuppression.hasBleedEvidence,
+          likelyRenderBleed: micSuppression.likelyRenderBleed,
+          averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+          averageResidual: micSuppression.averageResidual?.toFixed(3),
+        });
+        if (micSuppression.suppress) {
+          debugLogger.debug("Suppressing contaminated local mic segment", {
+            reason: micSuppression.reason,
+            averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+            averageResidual: micSuppression.averageResidual?.toFixed(3),
+            text: text.slice(0, 80),
+          });
+          return;
+        }
+
+        if (shouldSkipDuplicateMicSegment(text, segTimestamp, micSuppression)) {
+          debugLogger.debug("Skipping duplicate local mic segment that matches system audio", {
+            text: text.slice(0, 80),
+            averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+            averageResidual: micSuppression.averageResidual?.toFixed(3),
+          });
+          return;
+        }
+      } else {
+        debugLogger.debug("Local meeting transcription candidate", {
+          source,
+          text: text.slice(0, 80),
+        });
+      }
+
+      if (source === "system") {
+        const pending = removePendingMicFinalsFor(text, segTimestamp);
+        if (pending.length > 0) {
+          debugLogger.debug(
+            "Dropping buffered local mic segments after system transcript arrived",
+            {
+              count: pending.length,
+              text: text.slice(0, 80),
+            }
+          );
+        }
+
+        const retracted = removeRacingMicEntriesFor(text, segTimestamp);
+        for (const stale of retracted) {
+          if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
+            meetingLocalWin.webContents.send("meeting-transcription-segment", {
+              text: stale.text,
+              source: "mic",
+              type: "retract",
+              timestamp: stale.timestamp,
+            });
+          }
+        }
+      }
+
+      const sendLocalSegment = (channel, payload) => {
+        if (channel !== "meeting-transcription-segment") {
+          return;
+        }
+
+        if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
+          meetingLocalWin.webContents.send(channel, payload);
+        }
+      };
+
+      if (source === "mic" && hasRiskyMicDuplicateProfile(micSuppression)) {
+        debugLogger.debug("Buffering risky local mic segment before renderer commit", {
+          text: text.slice(0, 80),
+          holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
+          reason: micSuppression?.reason,
+          hasBleedEvidence: micSuppression?.hasBleedEvidence,
+        });
+        queuePendingMicFinal({
+          text,
+          timestamp: segTimestamp,
+          micSuppression,
+          holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
+          emit: () =>
+            sendMeetingFinalSegment({
+              text,
+              source,
+              timestamp: segTimestamp,
+              micSuppression,
+              send: sendLocalSegment,
+              includeInLocalTranscript: true,
+            }),
+        });
+        return;
+      }
+
+      sendMeetingFinalSegment({
+        text,
+        source,
+        timestamp: segTimestamp,
+        micSuppression,
+        send: sendLocalSegment,
+        includeInLocalTranscript: true,
+      });
+    };
+
     const transcribeLocalMeetingChunk = async (source) => {
       const chunks = meetingLocalBuffers[source];
       if (!chunks.length) return;
@@ -7410,118 +7537,11 @@ class IPCHandlers {
         }
 
         if (result?.success && result.text?.trim()) {
-          const text = result.text.trim();
-          const segTimestamp = Date.now();
-          let micSuppression = null;
-          if (source === "mic") {
-            const chunkDurationMs = (pcm24k.length / 2 / 24000) * 1000;
-            micSuppression = shouldSuppressMicTranscriptSegment(
-              segTimestamp - chunkDurationMs,
-              segTimestamp
-            );
-            debugLogger.debug("Local meeting transcription candidate", {
-              source,
-              text: text.slice(0, 80),
-              suppress: micSuppression.suppress,
-              reason: micSuppression.reason,
-              hasBleedEvidence: micSuppression.hasBleedEvidence,
-              likelyRenderBleed: micSuppression.likelyRenderBleed,
-              averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-              averageResidual: micSuppression.averageResidual?.toFixed(3),
-            });
-            if (micSuppression.suppress) {
-              debugLogger.debug("Suppressing contaminated local mic segment", {
-                reason: micSuppression.reason,
-                averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-                averageResidual: micSuppression.averageResidual?.toFixed(3),
-                text: text.slice(0, 80),
-              });
-              return;
-            }
-
-            if (shouldSkipDuplicateMicSegment(text, segTimestamp, micSuppression)) {
-              debugLogger.debug("Skipping duplicate local mic segment that matches system audio", {
-                text: text.slice(0, 80),
-                averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-                averageResidual: micSuppression.averageResidual?.toFixed(3),
-              });
-              return;
-            }
-          } else {
-            debugLogger.debug("Local meeting transcription candidate", {
-              source,
-              text: text.slice(0, 80),
-            });
-          }
-
-          if (source === "system") {
-            const pending = removePendingMicFinalsFor(text, segTimestamp);
-            if (pending.length > 0) {
-              debugLogger.debug(
-                "Dropping buffered local mic segments after system transcript arrived",
-                {
-                  count: pending.length,
-                  text: text.slice(0, 80),
-                }
-              );
-            }
-
-            const retracted = removeRacingMicEntriesFor(text, segTimestamp);
-            for (const stale of retracted) {
-              if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
-                meetingLocalWin.webContents.send("meeting-transcription-segment", {
-                  text: stale.text,
-                  source: "mic",
-                  type: "retract",
-                  timestamp: stale.timestamp,
-                });
-              }
-            }
-          }
-
-          const sendLocalSegment = (channel, payload) => {
-            if (channel !== "meeting-transcription-segment") {
-              return;
-            }
-
-            if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
-              meetingLocalWin.webContents.send(channel, payload);
-            }
-          };
-
-          if (source === "mic" && hasRiskyMicDuplicateProfile(micSuppression)) {
-            debugLogger.debug("Buffering risky local mic segment before renderer commit", {
-              text: text.slice(0, 80),
-              holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
-              reason: micSuppression?.reason,
-              hasBleedEvidence: micSuppression?.hasBleedEvidence,
-            });
-            queuePendingMicFinal({
-              text,
-              timestamp: segTimestamp,
-              micSuppression,
-              holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
-              emit: () =>
-                sendMeetingFinalSegment({
-                  text,
-                  source,
-                  timestamp: segTimestamp,
-                  micSuppression,
-                  send: sendLocalSegment,
-                  includeInLocalTranscript: true,
-                }),
-            });
-            return;
-          }
-
-          sendMeetingFinalSegment({
-            text,
+          handleLocalMeetingFinalText(
             source,
-            timestamp: segTimestamp,
-            micSuppression,
-            send: sendLocalSegment,
-            includeInLocalTranscript: true,
-          });
+            result.text.trim(),
+            (pcm24k.length / 2 / 24000) * 1000
+          );
         }
       } catch (error) {
         debugLogger.error("Local meeting transcription chunk failed", {
@@ -7530,6 +7550,120 @@ class IPCHandlers {
         });
         if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
           meetingLocalWin.webContents.send("meeting-transcription-error", error.message);
+        }
+      }
+    };
+
+    const sendLiveMeetingChunk = (buffer, source) => {
+      const stream = meetingLocalStreams[source];
+      if (!stream || buffer.length < 2) return;
+      let pcm16k = downsample24kTo16k(buffer);
+      if (source === "mic") {
+        const { rms, peak, sampleCount } = computeChunkStats(pcm16k);
+        const verdict = resolveMicChunkAction({
+          mode: "streaming",
+          source,
+          rms,
+          peak,
+          sampleCount,
+          isSystemSpeaking: () =>
+            meetingEchoLeakDetector.isSystemSpeaking(Date.now() - MEETING_MIC_BLEED_LOOKBACK_MS),
+        });
+        if (verdict.action === "zero") pcm16k = Buffer.alloc(pcm16k.length);
+      }
+      try {
+        stream.sendPcm16(pcm16k);
+      } catch (error) {
+        debugLogger.warn("Live meeting stream send failed; falling back to chunked", {
+          source,
+          error: error.message,
+        });
+        disableLiveMeetingTranscription();
+      }
+    };
+
+    const sendLivePartial = (source, text) => {
+      if (!meetingLocalWin || meetingLocalWin.isDestroyed()) return;
+      meetingLocalWin.webContents.send("meeting-transcription-segment", {
+        text,
+        source,
+        type: "partial",
+      });
+    };
+
+    const handleLiveMeetingSegment = (source, { text, isFinal }) => {
+      if (!meetingLocalMode) return;
+      if (!isFinal) {
+        if (meetingLocalSegmentStartedAt[source] == null) {
+          meetingLocalSegmentStartedAt[source] = Date.now();
+        }
+        meetingLocalLastPartial[source] = text;
+        if (source === "mic" && meetingEchoLeakDetector.isMicProbablyRenderBleed()) {
+          sendLivePartial(source, "");
+          return;
+        }
+        sendLivePartial(source, text);
+        return;
+      }
+      const startedAt = meetingLocalSegmentStartedAt[source] ?? Date.now() - 2000;
+      meetingLocalSegmentStartedAt[source] = null;
+      meetingLocalLastPartial[source] = "";
+      sendLivePartial(source, "");
+      handleLocalMeetingFinalText(source, text, Math.max(500, Date.now() - startedAt));
+    };
+
+    const disableLiveMeetingTranscription = () => {
+      if (!meetingLocalLive) return;
+      meetingLocalLive = false;
+      for (const source of ["mic", "system"]) {
+        const stream = meetingLocalStreams[source];
+        meetingLocalStreams[source] = null;
+        try {
+          stream?.abort();
+        } catch {}
+      }
+    };
+
+    const startLiveMeetingStreams = async () => {
+      for (const source of ["mic", "system"]) {
+        meetingLocalSegmentStartedAt[source] = null;
+        meetingLocalLastPartial[source] = "";
+        meetingLocalStreams[source] = await this.parakeetManager.createOnlineStream(
+          meetingLocalModel,
+          {
+            onSegment: (segment) => handleLiveMeetingSegment(source, segment),
+            onError: (error) => {
+              debugLogger.warn("Live meeting stream error; falling back to chunked", {
+                source,
+                error: error?.message,
+              });
+              disableLiveMeetingTranscription();
+            },
+          }
+        );
+      }
+    };
+
+    const finishLiveMeetingStreams = async () => {
+      if (!meetingLocalLive) return;
+      meetingLocalLive = false;
+      for (const source of ["system", "mic"]) {
+        const stream = meetingLocalStreams[source];
+        meetingLocalStreams[source] = null;
+        if (!stream) continue;
+        try {
+          await stream.finish({ idleTimeoutMs: 4000 });
+        } catch (error) {
+          debugLogger.warn("Live meeting stream finish failed", { source, error: error.message });
+        }
+        // A partial the server never finalized is still the user's words.
+        const leftover = meetingLocalLastPartial[source];
+        if (leftover) {
+          meetingLocalLastPartial[source] = "";
+          const startedAt = meetingLocalSegmentStartedAt[source] ?? Date.now() - 2000;
+          meetingLocalSegmentStartedAt[source] = null;
+          sendLivePartial(source, "");
+          handleLocalMeetingFinalText(source, leftover, Math.max(500, Date.now() - startedAt));
         }
       }
     };
@@ -7575,6 +7709,9 @@ class IPCHandlers {
       this._activeMeetingNoteId = null;
       meetingLocalMode = false;
       meetingLocalBuffers = { mic: [], system: [] };
+      disableLiveMeetingTranscription();
+      meetingLocalSegmentStartedAt = { mic: null, system: null };
+      meetingLocalLastPartial = { mic: "", system: "" };
       if (meetingDiarizationStream) {
         meetingDiarizationStream.end();
         meetingDiarizationStream = null;
@@ -8073,6 +8210,30 @@ class IPCHandlers {
           meetingLocalWin = BrowserWindow.fromWebContents(event.sender);
           meetingLocalBuffers = { mic: [], system: [] };
           meetingLocalTranscript = "";
+          meetingLocalLive = false;
+          if (
+            options.liveTranscription !== false &&
+            isSherpaLocalProvider(meetingLocalProvider) &&
+            meetingLocalModel &&
+            this.parakeetManager?.supportsOnlineStreaming?.(meetingLocalModel)
+          ) {
+            try {
+              await startLiveMeetingStreams();
+              meetingLocalLive = true;
+              debugLogger.info(
+                "Meeting live transcription active",
+                { model: meetingLocalModel },
+                "meeting"
+              );
+            } catch (error) {
+              disableLiveMeetingTranscription();
+              debugLogger.warn(
+                "Meeting live transcription unavailable; using chunked transcription",
+                { error: error.message },
+                "meeting"
+              );
+            }
+          }
 
           await startLiveSpeakerIdentification(meetingLocalWin, systemAudioMode);
           await startMeetingAec(systemAudioMode);
@@ -8385,6 +8546,7 @@ class IPCHandlers {
             meetingLocalTimer = null;
           }
           try {
+            await finishLiveMeetingStreams();
             await transcribeAllLocalBuffers();
           } catch (err) {
             debugLogger.error("Local meeting final transcription failed", { error: err.message });

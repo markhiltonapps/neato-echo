@@ -89,6 +89,7 @@ test("local mode wins over stale cloud provider state", async () => {
       localProvider: "nvidia",
       localModel: "nemotron-speech-streaming-en-0.6b",
       language: "en",
+      liveTranscription: true,
     }
   );
 });

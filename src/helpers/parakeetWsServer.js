@@ -432,7 +432,10 @@ class ParakeetWsServer {
     }
   }
 
-  createOnlineStream({ onUpdate, onError } = {}) {
+  // onSegment receives every server message as { text, isFinal, segment } so a
+  // caller can react per segment (live meeting transcripts) rather than to the
+  // accumulated text alone.
+  createOnlineStream({ onUpdate, onError, onSegment } = {}) {
     if (!this.ready || !this.process) {
       throw new Error("parakeet-ws server is not running");
     }
@@ -529,6 +532,24 @@ class ParakeetWsServer {
       if (!closed && text && text !== lastEmitted) {
         lastEmitted = text;
         onUpdate?.(text);
+      }
+      if (!closed && onSegment) {
+        let parsed;
+        try {
+          parsed = JSON.parse(message);
+        } catch {
+          parsed = { text: message };
+        }
+        if (parsed && typeof parsed === "object") {
+          const segmentText = String(parsed.text ?? "").trim();
+          if (segmentText) {
+            onSegment({
+              text: segmentText,
+              isFinal: Boolean(parsed.is_final),
+              segment: parsed.segment ?? null,
+            });
+          }
+        }
       }
     });
 

@@ -51,6 +51,10 @@
       }
     },
     "meeting": {
+      "liveTranscript": {
+        "title": "Live transcript while recording",
+        "description": "Show words as they are spoken, using the streaming speech model. Turn off on an older or slower PC to save CPU; the transcript then updates every few seconds instead."
+      },
       "speakerDetection": {
         "title": "辨識並標記發言者",
         "description": "關閉後，逐字稿會顯示「你」和「其他人」"
