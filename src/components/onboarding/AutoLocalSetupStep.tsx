@@ -244,9 +244,7 @@ export function AutoLocalSetupStep({
         {row(
           <AudioLines className="size-4" />,
           t("onboarding.rehaul.localAuto.speechLabel"),
-          picks?.englishOnly === false
-            ? t("onboarding.rehaul.localAuto.speechDetailMultilingual")
-            : t("onboarding.rehaul.localAuto.speechDetail"),
+          t("onboarding.rehaul.localAuto.speechDetail"),
           speechName,
           speechStatus,
           speechDownload.downloadProgress.percentage,

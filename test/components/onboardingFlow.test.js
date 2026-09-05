@@ -380,7 +380,7 @@ test("pickAutoLocalModels: language picks the speech model, memory the summary m
   );
   assert.equal(
     pickAutoLocalModels({ language: "en-US", memoryGb: 16 }).speechModelId,
-    "nemotron-speech-streaming-en-0.6b"
+    "parakeet-tdt-0.6b-v3"
   );
   assert.equal(
     pickAutoLocalModels({ language: "es", memoryGb: 16 }).speechModelId,

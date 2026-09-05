@@ -53,7 +53,7 @@
     "meeting": {
       "liveTranscript": {
         "title": "Live transcript while recording",
-        "description": "Show words as they are spoken, using the streaming speech model. Turn off on an older or slower PC to save CPU; the transcript then updates every few seconds instead."
+        "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
       },
       "speakerDetection": {
         "title": "识别并标记发言者",
@@ -422,7 +422,7 @@
         "downloads": "模型下载",
         "downloading": "正在下载… {{progress}}%",
         "installing": "正在安装模型…",
-        "otherModelsNoteSpeech": "The marked model is the best fit for most PCs and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only), Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
+        "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
         "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
       },
       "localAuto": {
@@ -431,8 +431,7 @@
         "descriptionLineOne": "Neato Echo is downloading the two models it needs.",
         "descriptionLineTwo": "This is the long part. After it, everything works offline.",
         "speechLabel": "Speech",
-        "speechDetail": "Turns what you say into text, as you speak.",
-        "speechDetailMultilingual": "Turns what you say into text, in your language.",
+        "speechDetail": "Turns what you say into text, with punctuation.",
         "summaryLabel": "Summaries",
         "summaryDetail": "Writes meeting summaries and answers the assistant.",
         "statusWaiting": "Waiting",
