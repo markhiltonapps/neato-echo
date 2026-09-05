@@ -110,7 +110,9 @@ class ParakeetWsServer {
     this.modelRuntime = runtime;
     this.language = language;
 
-    const threads = Math.max(1, Math.min(4, Math.floor(os.cpus().length * 0.75)));
+    // Capped at 8 (was 4): file transcription and the two live meeting streams
+    // are CPU-bound, and modern desktop CPUs have the cores to spare.
+    const threads = Math.max(1, Math.min(8, Math.floor(os.cpus().length * 0.75)));
     const modelArgs =
       getModelType(modelName) === "cohere-transcribe"
         ? [

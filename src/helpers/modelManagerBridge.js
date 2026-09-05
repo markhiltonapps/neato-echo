@@ -199,7 +199,10 @@ class ModelManager {
         SERVER_CONTEXT_SIZE,
         modelInfo.model.contextLength || SERVER_CONTEXT_SIZE
       ),
-      threads: 4,
+      // llama.cpp scales with physical cores; Windows reports logical ones, so
+      // halve and keep it between 4 and 8. The old fixed 4 left an i7/i9 mostly
+      // idle during summaries.
+      threads: Math.max(4, Math.min(8, Math.floor(require("os").cpus().length / 2))),
       gpuLayers: 99,
     };
   }
