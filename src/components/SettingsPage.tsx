@@ -1482,16 +1482,31 @@ export default function SettingsPage({
   const readAutoStartState = useCallback(async () => {
     if (!window.electronAPI?.getAutoStartEnabled) return;
     try {
-      const state = await window.electronAPI.getAutoStartEnabled();
-      setAutoStartEnabled(state.enabled);
-      setAutoStartNeedsApproval(state.requiresApproval);
+      // A read that never settles must not leave the toggle locked forever;
+      // after the timeout the control is usable and the write reconciles it.
+      const state = await Promise.race([
+        window.electronAPI.getAutoStartEnabled(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ]);
+      if (!state) {
+        logger.warn("Auto-start status read timed out", {}, "settings");
+        return;
+      }
+      setAutoStartEnabled(Boolean(state.enabled));
+      setAutoStartNeedsApproval(Boolean(state.requiresApproval));
     } catch (error) {
       logger.error("Failed to get auto-start status", error, "settings");
     }
   }, []);
 
   useEffect(() => {
-    readAutoStartState().finally(() => setAutoStartLoading(false));
+    let cancelled = false;
+    readAutoStartState().finally(() => {
+      if (!cancelled) setAutoStartLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [readAutoStartState]);
 
   useEffect(() => {
@@ -1505,16 +1520,24 @@ export default function SettingsPage({
 
   const handleAutoStartChange = async (enabled: boolean) => {
     if (!window.electronAPI?.setAutoStartEnabled) return;
+    // Optimistic: the switch moves on click; the read-back below corrects it if
+    // the OS disagrees (Windows can have the item disabled out from under us,
+    // macOS can need approval first).
+    setAutoStartEnabled(enabled);
     try {
-      setAutoStartLoading(true);
-      const result = await window.electronAPI.setAutoStartEnabled(enabled);
-      // Read the state back rather than assuming: on Windows the OS can have the
-      // item disabled out from under us, and on macOS it can need approval first.
-      if (result.success) await readAutoStartState();
+      const result = await Promise.race([
+        window.electronAPI.setAutoStartEnabled(enabled),
+        new Promise<{ success: boolean }>((resolve) =>
+          setTimeout(() => resolve({ success: false }), 4000)
+        ),
+      ]);
+      if (!result?.success) {
+        logger.warn("Auto-start write did not confirm", { enabled }, "settings");
+      }
+      await readAutoStartState();
     } catch (error) {
       logger.error("Failed to set auto-start", error, "settings");
-    } finally {
-      setAutoStartLoading(false);
+      await readAutoStartState();
     }
   };
 
