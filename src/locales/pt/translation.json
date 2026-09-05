@@ -418,10 +418,11 @@
         "overall": "{{done}} of {{total}} models ready",
         "allReady": "All set. Your PC is ready to dictate.",
         "finish": "Start using Neato Echo",
-        "continueInBackground": "Continue while it downloads",
+        "continueInBackground": "Continue now; finish downloading in the background",
         "retry": "Try again",
         "advanced": "Advanced: choose different models",
-        "memoryNote": "This PC has {{gb}} GB of memory, so the smaller summary model was chosen. You can change it later in Settings, Language Models."
+        "memoryNote": "This PC has {{gb}} GB of memory, so the smaller summary model was chosen. You can change it later in Settings, Language Models.",
+        "downloadingButton": "Downloading… {{percent}}%"
       },
       "meetingHotkey": {
         "title": "Set up your meeting shortcut",

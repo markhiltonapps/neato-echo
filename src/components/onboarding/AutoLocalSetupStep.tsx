@@ -125,24 +125,18 @@ export function AutoLocalSetupStep({
       if (speechReady) applySpeech(decided.speechModelId);
       if (summaryReady) applySummary(decided.summaryModelId);
 
-      if (!speechReady) {
-        setSummaryStatus(summaryReady ? "ready" : "waiting");
-        startSpeech(decided.speechModelId);
-      } else if (!summaryReady) {
-        startSummary(decided.summaryModelId);
-      }
+      // Both downloads start at once: they use separate download managers, and
+      // starting the summary model only after speech finished meant a user who
+      // left this screen early never got a summary model at all. Both are also
+      // remembered as pending right away, so the background tray finishes and
+      // activates them if the user moves on.
+      if (!speechReady) startSpeech(decided.speechModelId);
+      if (!summaryReady) startSummary(decided.summaryModelId);
     })();
     return () => {
       cancelled = true;
     };
   }, [applySpeech, applySummary, startSpeech, startSummary]);
-
-  // Speech finished → summary next. Errors pin the row so Retry can restart it.
-  useEffect(() => {
-    if (speechStatus === "ready" && summaryStatus === "waiting" && picks) {
-      startSummary(picks.summaryModelId);
-    }
-  }, [speechStatus, summaryStatus, picks, startSummary]);
 
   useEffect(() => {
     if (speechDownload.downloadError && speechStatus === "downloading") setSpeechStatus("failed");
@@ -308,17 +302,31 @@ export function AutoLocalSetupStep({
         ) : anyFailed ? (
           <StepPrimaryAction onClick={retry}>{t("onboarding.rehaul.localAuto.retry")}</StepPrimaryAction>
         ) : (
-          <StepSecondaryAction onClick={onSkip}>
-            {t("onboarding.rehaul.localAuto.continueInBackground")}
-          </StepSecondaryAction>
+          // Disabled primary while downloading: the obvious button must not be
+          // the one that leaves the screen, or people click it by reflex and
+          // land on Home wondering where the models went.
+          <StepPrimaryAction onClick={() => undefined} disabled>
+            {t("onboarding.rehaul.localAuto.downloadingButton", { percent: overallPercent })}
+          </StepPrimaryAction>
         )}
-        <button
-          type="button"
-          onClick={onAdvanced}
-          className="mt-1 text-center text-xs text-[var(--onboarding-text-tertiary)] underline-offset-2 hover:text-[var(--onboarding-text-secondary)] hover:underline"
-        >
-          {t("onboarding.rehaul.localAuto.advanced")}
-        </button>
+        <div className="mt-1 flex items-center justify-center gap-3 text-xs text-[var(--onboarding-text-tertiary)]">
+          {!allReady && !anyFailed && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="underline-offset-2 hover:text-[var(--onboarding-text-secondary)] hover:underline"
+            >
+              {t("onboarding.rehaul.localAuto.continueInBackground")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onAdvanced}
+            className="underline-offset-2 hover:text-[var(--onboarding-text-secondary)] hover:underline"
+          >
+            {t("onboarding.rehaul.localAuto.advanced")}
+          </button>
+        </div>
       </div>
     </section>
   );

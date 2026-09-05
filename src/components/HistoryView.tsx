@@ -11,6 +11,7 @@ import UpcomingMeetings from "./UpcomingMeetings";
 import { useSettingsStore } from "../stores/settingsStore";
 import { effectiveLocalHistoryEnabled } from "../stores/policyRules";
 import { usePolicyStore } from "../stores/policyStore";
+import { LOCAL_FIRST } from "../config/edition";
 
 interface HistoryViewProps {
   history: TranscriptionItemType[];
@@ -136,7 +137,7 @@ export default function HistoryView({
           </div>
         )}
 
-        {!useCleanupModel && !aiCTADismissed && (
+        {!LOCAL_FIRST && !useCleanupModel && !aiCTADismissed && (
           <div className="mb-3 relative rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3">
             <button
               onClick={() => {
