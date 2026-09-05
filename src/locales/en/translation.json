@@ -238,10 +238,11 @@
         "description": "Speak a request, and Neato Echo Assistant writes the result for you."
       },
       "hotkey": {
-        "capture": "Press the keys you want to use",
+        "capture": "Or just press the keys you want, together and held for a second",
         "chooseAnother": "Choose another shortcut",
         "inUse": "That shortcut is already in use. Choose another one.",
-        "holding": "Keep holding, or press another key"
+        "holding": "Keep holding, or press another key",
+        "useRecommended": "Use {{hotkey}}"
       },
       "dictationDemo": {
         "title": "Try your first dictation",
@@ -454,6 +455,10 @@
         "titleLineOne": "Set up your",
         "titleLineTwo": "meeting shortcut",
         "description": "Press this during any call to start taking notes, without opening the app. Ctrl + Alt + M is free in Zoom, Teams, and Meet."
+      },
+      "help": {
+        "label": "Help",
+        "tooltip": "Open the step-by-step setup guide with pictures"
       }
     },
     "steps": {

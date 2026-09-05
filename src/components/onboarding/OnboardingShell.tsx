@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { OnboardingProgressState } from "./flow";
-import { Copy, Minus, Square, Undo2, X } from "lucide-react";
+import { CircleHelp, Copy, Minus, Square, Undo2, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
 import { getPlatform } from "../../utils/platform";
@@ -176,6 +176,29 @@ export function OnboardingStepHeader({
   );
 }
 
+// A step-by-step guide with pictures is one tap away on every setup screen,
+// so a stuck novice never has to leave and search. Lives in the drag band as
+// a no-drag overlay (see the title-bar note below), opposite the window
+// controls.
+function OnboardingHelpButton() {
+  const { t } = useTranslation();
+  const open = () => {
+    window.electronAPI?.openExternal?.("https://echo.neatoventures.com/docs/install-step-by-step");
+  };
+  return (
+    <button
+      type="button"
+      onClick={open}
+      className="onboarding-help-button absolute left-3 top-2.5 z-[60] flex items-center gap-1.5 rounded-full border border-[var(--onboarding-control-border)] bg-[var(--onboarding-surface)] px-3 py-1.5 text-xs font-medium text-[var(--onboarding-text-secondary)] shadow-sm hover:text-[var(--onboarding-text-primary)]"
+      style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+      title={t("onboarding.rehaul.help.tooltip")}
+    >
+      <CircleHelp className="size-4" />
+      <span>{t("onboarding.rehaul.help.label")}</span>
+    </button>
+  );
+}
+
 export default function OnboardingShell({
   compact = false,
   children,
@@ -215,6 +238,7 @@ export default function OnboardingShell({
         aria-hidden="true"
       />
       {getPlatform() !== "darwin" && <OnboardingWindowControls />}
+      <OnboardingHelpButton />
 
       <div
         // Normally nothing scrolls here: each step sizes itself to the window and

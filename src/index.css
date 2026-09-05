@@ -1766,3 +1766,29 @@ a:hover {
 .dark .rich-text-editor-content p.is-editor-empty:first-child::before {
   color: oklch(0.7 0 0 / 0.2);
 }
+
+/* Onboarding: the "listening for your keys" pulse next to the capture hint. */
+.onboarding-listening-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--onboarding-accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--onboarding-accent) 60%, transparent);
+  animation: onboarding-listening-pulse 1.6s ease-out infinite;
+}
+@keyframes onboarding-listening-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--onboarding-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--onboarding-accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--onboarding-accent) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-listening-dot {
+    animation: none;
+  }
+}

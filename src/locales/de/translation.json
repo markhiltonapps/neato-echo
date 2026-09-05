@@ -241,7 +241,8 @@
         "capture": "Drücken Sie die Tasten, die Sie verwenden möchten",
         "chooseAnother": "Anderes Tastenkürzel wählen",
         "inUse": "Dieses Tastenkürzel wird bereits verwendet. Wähle ein anderes.",
-        "holding": "Weiter halten oder eine andere Taste drücken"
+        "holding": "Weiter halten oder eine andere Taste drücken",
+        "useRecommended": "Use {{hotkey}}"
       },
       "dictationDemo": {
         "title": "Probieren Sie Ihr erstes Diktat aus",
@@ -453,6 +454,10 @@
         "titleLineOne": "Set up your",
         "titleLineTwo": "meeting shortcut",
         "description": "Press this during any call to start taking notes, without opening the app. Ctrl + Alt + M is free in Zoom, Teams, and Meet."
+      },
+      "help": {
+        "label": "Help",
+        "tooltip": "Open the step-by-step setup guide with pictures"
       }
     },
     "steps": {

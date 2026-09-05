@@ -241,7 +241,8 @@
         "capture": "請按下你想使用的按鍵",
         "chooseAnother": "選擇其他快速鍵",
         "inUse": "此快速鍵已被使用。請選擇其他快速鍵。",
-        "holding": "繼續按住，或按下另一個鍵"
+        "holding": "繼續按住，或按下另一個鍵",
+        "useRecommended": "Use {{hotkey}}"
       },
       "dictationDemo": {
         "title": "試試第一次聽寫",
@@ -453,6 +454,10 @@
         "titleLineOne": "Set up your",
         "titleLineTwo": "meeting shortcut",
         "description": "Press this during any call to start taking notes, without opening the app. Ctrl + Alt + M is free in Zoom, Teams, and Meet."
+      },
+      "help": {
+        "label": "Help",
+        "tooltip": "Open the step-by-step setup guide with pictures"
       }
     },
     "steps": {
