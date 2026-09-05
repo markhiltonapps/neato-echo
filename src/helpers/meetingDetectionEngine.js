@@ -6,6 +6,7 @@ const { createMeetingAudioActivityMonitor } = require("./meetingAudioActivityMon
 const { broadcastToWindows } = require("./windowBroadcast");
 
 const IMMINENT_THRESHOLD_MS = 5 * 60 * 1000;
+const MEETING_MODE_START_GRACE_MS = 90 * 1000;
 const AUTO_END_TICK_MS = 1000;
 const AUTO_END_RESTART_WINDOW_MS = 30_000;
 // Clicking Restart is the user saying the meeting is still live. Honour that for
@@ -61,6 +62,7 @@ class MeetingDetectionEngine {
     this.preferences = { processDetection: true, audioDetection: true };
     this._userRecording = false;
     this._meetingModeActive = false;
+    this._meetingModeWatchdog = null;
     this._notificationQueue = [];
     this._postRecordingCooldown = null;
     this._recordingSession = null;
@@ -378,12 +380,39 @@ class MeetingDetectionEngine {
     this._startAutoEndTicker();
   }
 
+  // Meeting mode is entered the moment a hotkey or a prompt creates the note,
+  // and only a finished recording session clears it. If the recording never
+  // starts (the renderer declined, the window was closed, the user walked
+  // away), every later detection would be suppressed for the rest of the app
+  // session. Give the recording a generous window to begin, then let go.
+  _armMeetingModeWatchdog() {
+    this._clearMeetingModeWatchdog();
+    this._meetingModeWatchdog = setTimeout(() => {
+      this._meetingModeWatchdog = null;
+      if (this._recordingSession || !this._meetingModeActive) return;
+      debugLogger.info(
+        "Meeting mode released: no recording started after entering it",
+        {},
+        "meeting"
+      );
+      this.setMeetingModeActive(false);
+    }, MEETING_MODE_START_GRACE_MS);
+  }
+
+  _clearMeetingModeWatchdog() {
+    if (this._meetingModeWatchdog) {
+      clearTimeout(this._meetingModeWatchdog);
+      this._meetingModeWatchdog = null;
+    }
+  }
+
   async beginRecordingSession({
     sessionId,
     autoEndEligible,
     ownerWebContents,
     systemAudioAvailable = false,
   }) {
+    this._clearMeetingModeWatchdog();
     this._clearAutoEndRecovery();
     if (this._recordingSession) this._deactivateAutoEnd();
 
@@ -679,6 +708,7 @@ class MeetingDetectionEngine {
     }
 
     this._meetingModeActive = true;
+    this._armMeetingModeWatchdog();
 
     const event = placeholderEvent("__manual__");
 
@@ -725,6 +755,7 @@ class MeetingDetectionEngine {
 
   async joinCalendarMeeting(eventId, trigger = "calendar-join") {
     this._meetingModeActive = true;
+    this._armMeetingModeWatchdog();
     debugLogger.info("Joining calendar meeting", { eventId, trigger }, "meeting");
 
     const calEvent = this.databaseManager.getCalendarEventById(eventId);
