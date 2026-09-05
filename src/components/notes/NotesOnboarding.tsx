@@ -23,6 +23,7 @@ import ReasoningModelSelector from "../ReasoningModelSelector";
 import { useSystemAudioPermission } from "../../hooks/useSystemAudioPermission";
 import { canManageSystemAudioInApp } from "../../utils/systemAudioAccess";
 import { usePolicySnapshot } from "../../hooks/usePolicy";
+import { LOCAL_FIRST } from "../../config/edition";
 
 interface NotesOnboardingProps {
   onComplete: () => void;
@@ -130,8 +131,10 @@ export default function NotesOnboarding({ onComplete }: NotesOnboardingProps) {
           </p>
         </div>
 
-        {/* LLM Configuration — non-Pro only, deferred until pro status is known */}
-        {!isProLoading && !isProUser && (
+        {/* LLM Configuration — non-Pro only, deferred until pro status is known.
+            The local edition picks the model during setup and keeps the full
+            picker in Settings, Language Models, so the section is noise here. */}
+        {!LOCAL_FIRST && !isProLoading && !isProUser && (
           <div
             className={cn(
               "rounded-lg border transition-colors duration-200",
