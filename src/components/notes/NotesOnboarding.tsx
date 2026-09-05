@@ -32,7 +32,13 @@ export default function NotesOnboarding({ onComplete }: NotesOnboardingProps) {
   const { t } = useTranslation();
   const { isProUser, isProLoading, isLLMConfigured, complete } = useNotesOnboarding();
   const actions = useActions();
+  // Start collapsed whenever a model is already set up (the local edition always
+  // is after onboarding): expanded, the model list pushes Get Started below the
+  // fold and the page reads as "configure this first".
   const [llmExpanded, setLlmExpanded] = useState(!isLLMConfigured && !isProUser);
+  useEffect(() => {
+    if (isLLMConfigured || isProUser) setLlmExpanded(false);
+  }, [isLLMConfigured, isProUser]);
   const [createExpanded, setCreateExpanded] = useState(false);
   const [actionName, setActionName] = useState("");
   const [actionDescription, setActionDescription] = useState("");
