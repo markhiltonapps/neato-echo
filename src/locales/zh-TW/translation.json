@@ -3860,7 +3860,8 @@
     "copy": "複製",
     "copied": "已複製",
     "collapse": "收合轉錄",
-    "waitingForInput": "說點什麼..."
+    "waitingForInput": "說點什麼...",
+    "accuracyNote": "即時預覽 — 最終文字會更準確。"
   },
   "transcript": {
     "speaker": {

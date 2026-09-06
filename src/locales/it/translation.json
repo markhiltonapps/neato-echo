@@ -3860,7 +3860,8 @@
     "copy": "Copia",
     "copied": "Copiato",
     "collapse": "Comprimi trascrizione",
-    "waitingForInput": "Di qualcosa..."
+    "waitingForInput": "Di qualcosa...",
+    "accuracyNote": "Anteprima dal vivo: il testo finale sarà più accurato."
   },
   "transcript": {
     "speaker": {

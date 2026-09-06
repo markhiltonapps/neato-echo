@@ -3860,7 +3860,8 @@
     "copy": "コピー",
     "copied": "コピー済み",
     "collapse": "文字起こしを折りたたむ",
-    "waitingForInput": "何か話してください..."
+    "waitingForInput": "何か話してください...",
+    "accuracyNote": "ライブプレビュー — 完成後のテキストはより正確になります。"
   },
   "transcript": {
     "speaker": {

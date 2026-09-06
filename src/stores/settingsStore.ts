@@ -1450,9 +1450,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     if (v === "bottom-right" || v === "center" || v === "bottom-left") return v;
     return "bottom-right" as const;
   })(),
-  // Local-first ships with the live preview on: with a streaming speech model
-  // the words appear as you talk, which is the whole point of going local.
-  showTranscriptionPreview: readBoolean("showTranscriptionPreview", LOCAL_FIRST),
+  // Off by default: the live preview shows the model's raw partial guesses,
+  // which read noticeably rougher than the cleaned final text and made a poor
+  // first impression. Users can opt in from Settings; when on, the panel
+  // carries a note that the final text will be more accurate.
+  showTranscriptionPreview: readBoolean("showTranscriptionPreview", false),
   polishLivePreview: readBoolean("polishLivePreview", false),
   autoPasteEnabled: readBoolean("autoPasteEnabled", true),
   keepTranscriptionInClipboard: readBoolean("keepTranscriptionInClipboard", false),

@@ -3936,7 +3936,8 @@
     "copy": "Copier",
     "copied": "Copié",
     "collapse": "Réduire la transcription",
-    "waitingForInput": "Dites quelque chose..."
+    "waitingForInput": "Dites quelque chose...",
+    "accuracyNote": "Aperçu en direct — votre texte final sera plus précis."
   },
   "transcript": {
     "speaker": {

@@ -85,10 +85,20 @@ export function LiveTranscriptPanel({
       </main>
 
       <footer
-        className="flex h-16 shrink-0 items-center justify-end px-4"
+        className="flex h-16 shrink-0 items-center justify-between gap-3 px-4"
         onMouseEnter={() => onHoldChange?.(true)}
         onMouseLeave={() => onHoldChange?.(false)}
       >
+        {/* Sets expectations: the live view is the model's raw guess; the
+            committed text runs through cleanup and reads more accurately. */}
+        <p
+          className={`min-w-0 flex-1 text-xs leading-tight text-muted-foreground/55 transition-opacity duration-200 ${
+            phase !== "final" && contentVisible ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={phase === "final" || !contentVisible}
+        >
+          {phase !== "final" ? t("transcriptionPreview.accuracyNote") : ""}
+        </p>
         <div
           className={`flex items-center gap-2 transition-[opacity,transform] duration-200 ease-out ${
             controlsVisible
