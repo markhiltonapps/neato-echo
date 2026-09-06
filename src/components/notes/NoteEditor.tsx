@@ -444,6 +444,20 @@ export default function NoteEditor({
     }
   }, [getCurrentViewText]);
 
+  // Read-only, speaker-labeled paragraphs for revisiting a finished meeting's
+  // transcript, so it reads like a document instead of a wall of one-clause
+  // rows. The live view during recording stays the interactive segment chat.
+  const readableTranscript = useMemo(
+    () =>
+      displaySegments.length > 0
+        ? formatTranscriptForReading(displaySegments, {
+            resolveLabel: (seg: TranscriptSegment) =>
+              resolveLlmSpeakerLabel(seg, speakerMappings, selfCopyLabel, t),
+          })
+        : note.transcript || "",
+    [displaySegments, speakerMappings, selfCopyLabel, t, note.transcript]
+  );
+
   const knownSpeakers = useMemo(
     () => buildKnownSpeakers(speakerProfiles, displaySegments, speakerMappings),
     [displaySegments, speakerMappings, speakerProfiles]
@@ -1247,45 +1261,27 @@ export default function NoteEditor({
 
         <div className="flex-1 relative min-h-0">
           <div ref={contentScrollRef} className="h-full overflow-y-auto">
-            {viewMode === "transcript" && (hasChatSegments || isRecording) ? (
-              isRecording ? (
-                <LiveMeetingTranscriptChat
-                  speakerMappings={speakerMappings}
-                  speakerProfiles={speakerProfiles}
-                  participants={parsedParticipants}
-                  isDiarizing={isDiarizing}
-                  sessionDiarizationEnabled={sessionDiarizationEnabled}
-                  sessionExpectedCount={sessionExpectedCount}
-                  userTouchedStepper={userTouchedStepper}
-                  onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
-                  onSetSessionExpectedCount={onSetSessionExpectedCount}
-                  onMapSpeaker={handleMapSpeaker}
-                  onConfirmSuggestion={handleConfirmSuggestion}
-                  onDismissSuggestion={handleDismissSuggestion}
-                  onAttachSpeakerEmail={handleAttachSpeakerEmail}
-                />
-              ) : (
-                <MeetingTranscriptChat
-                  segments={displaySegments}
-                  speakerMappings={speakerMappings}
-                  speakerProfiles={knownSpeakers}
-                  participants={parsedParticipants}
-                  isDiarizing={isDiarizing}
-                  sessionDiarizationEnabled={sessionDiarizationEnabled}
-                  sessionExpectedCount={sessionExpectedCount}
-                  userTouchedStepper={userTouchedStepper}
-                  onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
-                  onSetSessionExpectedCount={onSetSessionExpectedCount}
-                  onMapSpeaker={handleMapSpeaker}
-                  onConfirmSuggestion={handleConfirmSuggestion}
-                  onDismissSuggestion={handleDismissSuggestion}
-                  onAttachSpeakerEmail={handleAttachSpeakerEmail}
-                  selectedSegmentIds={selectedSegmentIds}
-                  onToggleSelect={handleToggleSelect}
-                />
-              )
+            {viewMode === "transcript" && isRecording ? (
+              <LiveMeetingTranscriptChat
+                speakerMappings={speakerMappings}
+                speakerProfiles={speakerProfiles}
+                participants={parsedParticipants}
+                isDiarizing={isDiarizing}
+                sessionDiarizationEnabled={sessionDiarizationEnabled}
+                sessionExpectedCount={sessionExpectedCount}
+                userTouchedStepper={userTouchedStepper}
+                onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
+                onSetSessionExpectedCount={onSetSessionExpectedCount}
+                onMapSpeaker={handleMapSpeaker}
+                onConfirmSuggestion={handleConfirmSuggestion}
+                onDismissSuggestion={handleDismissSuggestion}
+                onAttachSpeakerEmail={handleAttachSpeakerEmail}
+              />
             ) : viewMode === "transcript" && hasMeetingTranscript ? (
-              <RichTextEditor value={note.transcript || ""} disabled />
+              // Revisiting a finished meeting: show a read-only, speaker-labeled
+              // paragraphed transcript (readableTranscript) that reads like a
+              // document instead of one-clause rows or a single blob.
+              <RichTextEditor value={readableTranscript} disabled />
             ) : viewMode === "enhanced" && enhancement ? (
               <RichTextEditor
                 value={enhancement.content}
