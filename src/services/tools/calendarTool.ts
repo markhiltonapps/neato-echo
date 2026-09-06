@@ -1,5 +1,6 @@
 import type { ToolDefinition, ToolResult } from "./ToolRegistry";
 import { getMeetingJoinUrl } from "../../helpers/meetingJoinUrl";
+import { formatEventTimeLocal } from "./formatEventTime";
 
 type TimeRange = "today" | "tomorrow" | "week";
 
@@ -55,13 +56,24 @@ export const calendarTool: ToolDefinition = {
 
       // Rows come straight from the calendar_events table (start_time/end_time
       // columns; there is no location column — the join link is what the DB
-      // actually has for "where").
-      const events = response.events.map((event: Record<string, unknown>) => ({
-        summary: event.summary || "(No title)",
-        start: event.start_time,
-        end: event.end_time,
-        joinUrl: getMeetingJoinUrl(event),
-      }));
+      // actually has for "where"). startLocal/endLocal are pre-converted to the
+      // user's zone here (Intl handles DST) so the model never does timezone
+      // math on the raw instant — that math is where it produced off-by-an-hour
+      // times (8:30 CDT shown as 7:30).
+      const events = response.events.map((event: Record<string, unknown>) => {
+        const isAllDay = event.is_all_day === 1 || event.is_all_day === true;
+        return {
+          summary: event.summary || "(No title)",
+          startLocal: formatEventTimeLocal(event.start_time as string | null, isAllDay),
+          endLocal: isAllDay
+            ? ""
+            : formatEventTimeLocal(event.end_time as string | null, false),
+          allDay: isAllDay,
+          start: event.start_time,
+          end: event.end_time,
+          joinUrl: getMeetingJoinUrl(event),
+        };
+      });
 
       if (events.length === 0) {
         return {
