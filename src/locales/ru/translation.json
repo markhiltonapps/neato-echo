@@ -2252,6 +2252,8 @@
       },
       "transcriptionPreview": "Предпросмотр транскрипции",
       "transcriptionPreviewDescription": "Показывать транскрипцию в плавающем окне перед очисткой",
+      "polishLivePreview": "Polish live preview",
+      "polishLivePreviewDescription": "Clean up each finished sentence as you speak so the preview reads like the final text. Uses your cleanup model; the sentence you're still speaking stays raw.",
       "vad": {
         "title": "Определение голосовой активности",
         "description": "Настройте, как Silero VAD обнаруживает и сегментирует речь для локальной транскрипции Whisper",

@@ -227,7 +227,14 @@ export default function NoteEditor({
   onCancelPendingSaves,
 }: NoteEditorProps) {
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<MeetingViewMode>("raw");
+  // NoteEditor is keyed by note id, so it remounts per note — the initial view
+  // must be chosen here, not in an effect (the note-open effect's id-changed
+  // guard never fires on a fresh mount). Reopen a summarized meeting on its
+  // saved summary, a recorded-but-unsummarized one on its transcript, and a
+  // plain note on raw — so the enhanced summary is revisitable like the transcript.
+  const [viewMode, setViewMode] = useState<MeetingViewMode>(() =>
+    enhancement ? "enhanced" : note.transcript ? "transcript" : "raw"
+  );
   const [chatMode, setChatMode] = useState<EmbeddedChatMode>("hidden");
   const [folderSearch, setFolderSearch] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -479,9 +486,9 @@ export default function NoteEditor({
         setDiarizedSegments(null);
         setIsDiarizing(false);
         setSpeakerMappings({});
-        if (!isRecording) {
-          setViewMode("raw");
-        }
+        // The initial view is chosen at mount (see the viewMode useState);
+        // this effect's guard never fires on a fresh per-note remount, so it no
+        // longer resets the view here.
         if (titleRef.current && titleRef.current.textContent !== note.title) {
           titleRef.current.textContent = note.title || "";
         }

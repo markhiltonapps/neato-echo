@@ -2535,6 +2535,8 @@
       },
       "transcriptionPreview": "Aperçu en direct",
       "transcriptionPreviewDescription": "Afficher la transcription dans une fenêtre flottante avant correction",
+      "polishLivePreview": "Polish live preview",
+      "polishLivePreviewDescription": "Clean up each finished sentence as you speak so the preview reads like the final text. Uses your cleanup model; the sentence you're still speaking stays raw.",
       "vad": {
         "title": "Détection d'activité vocale",
         "description": "Configurez la manière dont Silero VAD détecte et segmente la parole pour la transcription locale Whisper",

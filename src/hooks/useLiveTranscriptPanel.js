@@ -6,6 +6,13 @@ import {
   LIVE_TRANSCRIPT_SURFACE_LIMITS,
   shouldOfferLiveTranscriptReopen,
 } from "../helpers/voicePillPresentation";
+import { createLivePreviewCleaner } from "../helpers/livePreviewCleaner";
+import ReasoningService from "../services/ReasoningService";
+import {
+  getSettings,
+  isCloudCleanupMode,
+  selectResolvedLLMConfig,
+} from "../stores/settingsStore";
 
 const LIVE_TRANSCRIPT_RENDER_INTERVAL_MS = 50;
 const LIVE_TRANSCRIPT_SHELL_GROW_MS = 180;
@@ -90,6 +97,35 @@ export function useLiveTranscriptPanel({
     }
   }, []);
 
+  // Sentence-settled live-preview cleanup (opt-in via polishLivePreview): as the
+  // raw transcript streams, completed sentences are polished by the same
+  // dictationCleanup model the final transcript uses, while the sentence still
+  // being spoken stays raw. It owns its own raw accumulation, so the cleaned
+  // text it shows never feeds back into the append bookkeeping. Cleanup never
+  // blocks display: raw shows immediately and a slow/failed model just leaves
+  // the raw preview, matching the previous behavior.
+  const livePreviewCleanerRef = useRef(null);
+  if (livePreviewCleanerRef.current === null) {
+    livePreviewCleanerRef.current = createLivePreviewCleaner({
+      onDisplay: (display) => updateText(display),
+      clean: async (settled) => {
+        const s = getSettings();
+        const cfg = selectResolvedLLMConfig(s, "dictationCleanup");
+        const reachable = !!s.useCleanupModel && (!!cfg.model?.trim() || isCloudCleanupMode());
+        if (!reachable) return "";
+        return await ReasoningService.processText(settled, cfg.model, null, {
+          inferenceScope: "dictationCleanup",
+          disableThinking: s.cleanupDisableThinking,
+        });
+      },
+    });
+  }
+
+  useEffect(() => {
+    const cleaner = livePreviewCleanerRef.current;
+    return () => cleaner?.dispose();
+  }, []);
+
   const prepareBufferedText = useCallback(() => {
     textSchedulerRef.current.cancel();
     setMeasurementText(sourceTextRef.current);
@@ -103,6 +139,7 @@ export function useLiveTranscriptPanel({
 
   const resetText = useCallback(() => {
     textSchedulerRef.current.cancel();
+    livePreviewCleanerRef.current?.reset();
     sourceTextRef.current = "";
     contentReadyRef.current = false;
     presentationGenerationRef.current += 1;
@@ -361,7 +398,11 @@ export function useLiveTranscriptPanel({
     const disposeText = window.electronAPI?.onPreviewText?.((incoming) => {
       clearFinalHide();
       const value = incoming?.trim?.() || "";
-      updateText(value);
+      if (value && getSettings().polishLivePreview) {
+        livePreviewCleanerRef.current.setRaw(value);
+      } else {
+        updateText(value);
+      }
       setPhase(value ? "live" : "listening");
       reveal();
     });
@@ -369,8 +410,13 @@ export function useLiveTranscriptPanel({
       clearFinalHide();
       const value = chunk?.trim?.();
       if (!value) return;
-      const current = sourceTextRef.current;
-      updateText(current ? `${current} ${value}` : value);
+      if (getSettings().polishLivePreview) {
+        // The cleaner owns raw accumulation, so cleaned display never feeds back.
+        livePreviewCleanerRef.current.appendRaw(value);
+      } else {
+        const current = sourceTextRef.current;
+        updateText(current ? `${current} ${value}` : value);
+      }
       setPhase("live");
       reveal();
     });

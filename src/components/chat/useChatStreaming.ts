@@ -521,11 +521,25 @@ export function useChatStreaming({
         }
 
         const hasDeliverableContent = fullContent.trim().length > 0;
-        if (!responseAnnounced && !cancelled()) {
-          // The stream ended without a visible token or tool call (think-only
-          // local model, empty completion). Show that as a reply so every
-          // listener — the assistant panel's thinking state included — sees a
-          // terminal outcome.
+        // A clipboard copy or a note create/update is self-announcing: its chip
+        // or note card is the terminal outcome, so a missing text reply is fine.
+        // Every other flow (a plain completion, or read tools like search /
+        // calendar that only gathered data) owes the user words. Without this,
+        // a query that ran tools but never summarized leaves dead "Done" chips
+        // and no answer, because a tool call alone flips responseAnnounced true.
+        const ranSelfAnnouncingAction = (
+          messagesRef.current.find((m) => m.id === assistantId)?.toolCalls ?? []
+        ).some(
+          (tc) =>
+            tc.name === "copy_to_clipboard" ||
+            tc.name === "create_note" ||
+            tc.name === "update_note"
+        );
+        if (!hasDeliverableContent && !ranSelfAnnouncingAction && !cancelled()) {
+          // The stream ended without a visible answer (think-only local model,
+          // empty completion, or tools that gathered data but were never
+          // summarized). Show a terminal reply so every listener — the
+          // assistant panel's thinking state included — sees an outcome.
           fullContent = t("agentMode.chat.emptyResponse");
           announceResponse();
           setMessages((prev) =>

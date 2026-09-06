@@ -507,6 +507,8 @@ interface TranscriptionSectionProps {
   setRemoteTranscriptionModel: (model: string) => void;
   showTranscriptionPreview: boolean;
   setShowTranscriptionPreview: (value: boolean) => void;
+  polishLivePreview: boolean;
+  setPolishLivePreview: (value: boolean) => void;
   toast: (opts: {
     title: string;
     description: string;
@@ -545,6 +547,8 @@ function TranscriptionSection({
   setRemoteTranscriptionModel,
   showTranscriptionPreview,
   setShowTranscriptionPreview,
+  polishLivePreview,
+  setPolishLivePreview,
   toast,
 }: TranscriptionSectionProps) {
   const { t } = useTranslation();
@@ -645,6 +649,16 @@ function TranscriptionSection({
           <Toggle checked={showTranscriptionPreview} onChange={setShowTranscriptionPreview} />
         </SettingsRow>
       </SettingsPanelRow>
+      {showTranscriptionPreview && (
+        <SettingsPanelRow>
+          <SettingsRow
+            label={t("settingsPage.transcription.polishLivePreview")}
+            description={t("settingsPage.transcription.polishLivePreviewDescription")}
+          >
+            <Toggle checked={polishLivePreview} onChange={setPolishLivePreview} />
+          </SettingsRow>
+        </SettingsPanelRow>
+      )}
     </SettingsPanel>
   );
 
@@ -1128,6 +1142,8 @@ export default function SettingsPage({
     setPauseMediaOnDictation,
     showTranscriptionPreview,
     setShowTranscriptionPreview,
+    polishLivePreview,
+    setPolishLivePreview,
     autoPasteEnabled,
     setAutoPasteEnabled,
     keepTranscriptionInClipboard,
@@ -4746,6 +4762,8 @@ EOF`,
                   setRemoteTranscriptionModel={setRemoteTranscriptionModel}
                   showTranscriptionPreview={showTranscriptionPreview}
                   setShowTranscriptionPreview={setShowTranscriptionPreview}
+                  polishLivePreview={polishLivePreview}
+                  setPolishLivePreview={setPolishLivePreview}
                   toast={toast}
                 />
                 {transcriptionMode === "local" &&

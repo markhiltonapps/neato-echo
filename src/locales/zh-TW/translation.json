@@ -2246,6 +2246,8 @@
       },
       "transcriptionPreview": "即時轉錄預覽",
       "transcriptionPreviewDescription": "在浮動視窗中顯示轉錄結果，再進行文字整理",
+      "polishLivePreview": "Polish live preview",
+      "polishLivePreviewDescription": "Clean up each finished sentence as you speak so the preview reads like the final text. Uses your cleanup model; the sentence you're still speaking stays raw.",
       "vad": {
         "title": "語音活動偵測",
         "description": "設定 Silero VAD 如何為本機 Whisper 轉錄偵測並切分語音",
