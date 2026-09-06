@@ -643,7 +643,9 @@
       "couldNotDownloadDescription": "请检查网络连接后重试。",
       "installing": "正在安装...",
       "installButton": "安装更新",
-      "availableButton": "有可用更新"
+      "availableButton": "有可用更新",
+      "availableTitle": "Update available",
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install."
     },
     "limit": {
       "weeklyTitle": "已达到周限额",

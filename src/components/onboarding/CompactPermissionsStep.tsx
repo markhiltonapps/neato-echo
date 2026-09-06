@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { CircleCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,6 @@ import type { UsePermissionsReturn } from "../../hooks/usePermissions";
 import type { SystemAudioAccessResult } from "../../types/electron";
 import { canManageSystemAudioInApp } from "../../utils/systemAudioAccess";
 import { getPlatform } from "../../utils/platform";
-import { areRequiredPermissionsMet } from "../../utils/permissions";
 import { needsLinuxPasteToolGuidance } from "../../utils/linuxPasteTools";
 import MicPermissionWarning from "../ui/MicPermissionWarning";
 import PasteToolsInfo from "../ui/PasteToolsInfo";
@@ -115,7 +114,6 @@ export default function CompactPermissionsStep({
   const [busyPermission, setBusyPermission] = useState<PermissionRowId | null>(null);
   const platform = getPlatform();
   const canRequestSystemAudio = canManageSystemAudioInApp(systemAudio);
-  const requiredGranted = areRequiredPermissionsMet(permissions.micPermissionGranted);
   // Only macOS has grantable Accessibility (auto-paste) and System Audio
   // permissions. Windows auto-grants both (SendKeys needs nothing, WASAPI
   // loopback is permissionless) and Linux has no in-app grant for either, so
@@ -139,14 +137,26 @@ export default function CompactPermissionsStep({
     }
   };
 
+  // Microphone is required for everything, so turn it on for the user instead
+  // of making them click — this screen just announces it's being enabled. Fires
+  // once on entry; if the OS denies, the row's Enable button and the warning
+  // below remain as a fallback. Screen Context is left opt-in (privacy), and
+  // Continue is always available so nothing gates the user here.
+  const autoRequestedMicRef = useRef(false);
+  useEffect(() => {
+    if (autoRequestedMicRef.current || permissions.micPermissionGranted) return;
+    autoRequestedMicRef.current = true;
+    void request("microphone", permissions.requestMicPermission);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <CompactOnboardingFrame showLegalNotice={false}>
       {/* Continue appears once the required permission (microphone) is granted.
           Portalled to body: inside the step wrapper it can never out-stack the
           shell's z-50 drag band (see OnboardingShell), so clicks would be
           swallowed as window drags. */}
-      {requiredGranted &&
-        createPortal(
+      {createPortal(
           <button
             type="button"
             onClick={onContinue}

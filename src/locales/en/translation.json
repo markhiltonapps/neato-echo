@@ -644,7 +644,9 @@
       "couldNotDownloadDescription": "Check your internet connection and try again.",
       "installing": "Installing...",
       "installButton": "Install Update",
-      "availableButton": "Update Available"
+      "availableButton": "Update Available",
+      "availableTitle": "Update available",
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install."
     },
     "limit": {
       "weeklyTitle": "Weekly limit reached",

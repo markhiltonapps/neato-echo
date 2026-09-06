@@ -185,6 +185,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
 
   const {
     status: updateStatus,
+    info: updateInfo,
     downloadProgress,
     isDownloading,
     isInstalling,
@@ -1074,6 +1075,45 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               </div>
             )}
             <RequiredModelsBanner />
+            {activeView === "home" &&
+              !updateStatus.isDevelopment &&
+              (updateStatus.updateAvailable ||
+                updateStatus.updateDownloaded ||
+                isDownloading ||
+                isInstalling) && (
+                <div className="max-w-3xl mx-auto w-full mb-3">
+                  <div className="rounded-lg border border-primary/20 dark:border-primary/15 bg-primary/5 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
+                        <RefreshCw size={16} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground mb-0.5">
+                          {updateStatus.updateDownloaded
+                            ? t("controlPanel.update.readyTitle")
+                            : t("controlPanel.update.availableTitle")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {updateStatus.updateDownloaded
+                            ? t("controlPanel.update.readyDescription")
+                            : t("controlPanel.update.availableBannerDescription", {
+                                version: updateInfo?.version ?? "",
+                              })}
+                        </p>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          onClick={handleUpdateClick}
+                          disabled={isInstalling || isDownloading}
+                        >
+                          {getUpdateButtonContent()}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             {usage?.isPastDue && activeView === "home" && (
               <div className="max-w-3xl mx-auto w-full mb-3">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-3">

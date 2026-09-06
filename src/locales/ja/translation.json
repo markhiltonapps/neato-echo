@@ -643,7 +643,9 @@
       "couldNotDownloadDescription": "インターネット接続を確認してもう一度お試しください。",
       "installing": "インストール中...",
       "installButton": "アップデートをインストール",
-      "availableButton": "アップデートあり"
+      "availableButton": "アップデートあり",
+      "availableTitle": "Update available",
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install."
     },
     "limit": {
       "weeklyTitle": "週間の利用上限に達しました",
