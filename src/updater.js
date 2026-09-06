@@ -27,21 +27,13 @@ class UpdateManager {
       return;
     }
 
-    // Neato Echo publishes to its OWN release channel, isolated from the
-    // OpenWhispr line that also lives in this repo. Both must match the
-    // `publish` block in electron-builder.json.
-    //
-    // We deliberately point at a FIXED, non-semver tag ("neato-echo-latest")
-    // rather than /releases/latest/download: the latter resolves to whatever
-    // GitHub marks "Latest", which is the highest-semver OpenWhispr release
-    // (e.g. 1.9.2) — so the old URL made Neato Echo check OpenWhispr's feed and
-    // offer a different, higher-versioned app as an "update". A fixed tag is a
-    // stable per-release permalink GitHub never auto-promotes, so each Neato
-    // Echo release overwrites latest.yml + the installer at this one tag and
-    // the updater reads the version from latest.yml.
+    // Neato Echo publishes to its own GitHub releases. This must match the
+    // `publish` block in electron-builder.json: the upstream GitHub feed here
+    // would otherwise override app-update.yml and offer OpenWhispr's releases
+    // as "updates" to Neato Echo.
     autoUpdater.setFeedURL({
       provider: "generic",
-      url: "https://github.com/markhiltonapps/neato-echo/releases/download/neato-echo-latest",
+      url: "https://github.com/markhiltonapps/neato-echo/releases/latest/download",
       channel: "latest",
     });
 

@@ -256,7 +256,7 @@
   },
   "publish": {
     "provider": "generic",
-    "url": "https://github.com/markhiltonapps/neato-echo/releases/download/neato-echo-latest",
+    "url": "https://github.com/markhiltonapps/neato-echo/releases/latest/download",
     "channel": "latest"
   },
   "portable": {
