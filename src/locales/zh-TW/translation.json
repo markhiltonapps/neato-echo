@@ -424,7 +424,8 @@
         "downloading": "正在下載… {{progress}}%",
         "installing": "正在安裝模型…",
         "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
-        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
+        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models.",
+        "stepOf": "第 {{step}} 步，共 {{total}} 步"
       },
       "localAuto": {
         "title": "Getting your PC ready",
@@ -3067,6 +3068,12 @@
         "noModel": "未選擇 AI 模型。請在設定中進行配置。",
         "actionFailed": "操作失敗",
         "noEndpoint": "未設定自架伺服器 URL。請在設定中進行配置。"
+      },
+      "summaryPrompt": {
+        "title": "摘要這段錄音？",
+        "description": "為剛剛錄製的筆記選擇一種摘要樣式。稍後可從「動作」選單執行其他樣式。",
+        "skip": "暫不",
+        "dontAsk": "不再詢問"
       }
     },
     "empty": {
@@ -3486,6 +3493,7 @@
     },
     "tools": {
       "search_notesName": "搜尋筆記",
+      "list_meetingsName": "列出會議",
       "get_noteName": "取得筆記",
       "create_noteName": "建立筆記",
       "update_noteName": "更新筆記",
@@ -3495,6 +3503,7 @@
       "get_calendar_eventsName": "取得行事曆事件",
       "get_calendar_availabilityName": "查看可用時段",
       "search_notesStatus": "正在搜尋筆記...",
+      "list_meetingsStatus": "正在尋找會議...",
       "web_searchStatus": "正在搜尋網頁...",
       "copy_to_clipboardStatus": "正在複製到剪貼簿...",
       "get_calendar_eventsStatus": "正在查看行事曆...",

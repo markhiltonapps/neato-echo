@@ -403,7 +403,8 @@
         "downloading": "Baixando… {{progress}}%",
         "installing": "Instalando o modelo…",
         "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
-        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
+        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models.",
+        "stepOf": "Etapa {{step}} de {{total}}"
       },
       "localAuto": {
         "title": "Getting your PC ready",
@@ -3067,6 +3068,12 @@
         "noModel": "Nenhum modelo de IA selecionado. Configure um nas Configurações.",
         "actionFailed": "A ação falhou",
         "noEndpoint": "Nenhum URL de servidor auto-hospedado definido. Configure um nas Configurações."
+      },
+      "summaryPrompt": {
+        "title": "Resumir esta gravação?",
+        "description": "Escolha um estilo de resumo para a nota que você acabou de gravar. Você pode executar outro depois pelo menu Ações.",
+        "skip": "Agora não",
+        "dontAsk": "Não perguntar novamente"
       }
     },
     "empty": {
@@ -3486,6 +3493,7 @@
     },
     "tools": {
       "search_notesName": "Pesquisar notas",
+      "list_meetingsName": "Listar reuniões",
       "get_noteName": "Obter nota",
       "create_noteName": "Criar nota",
       "update_noteName": "Atualizar nota",
@@ -3495,6 +3503,7 @@
       "get_calendar_eventsName": "Obter eventos do calendário",
       "get_calendar_availabilityName": "Verificar disponibilidade",
       "search_notesStatus": "Pesquisando notas...",
+      "list_meetingsStatus": "Procurando reuniões...",
       "web_searchStatus": "Pesquisando na web...",
       "copy_to_clipboardStatus": "Copiando para a área de transferência...",
       "get_calendar_eventsStatus": "Verificando calendário...",

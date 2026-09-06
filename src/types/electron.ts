@@ -1308,6 +1308,11 @@ declare global {
         spaceId?: number | null,
         folderId?: number | null
       ) => Promise<NoteItem[]>;
+      listMeetingsByDate: (
+        startDate?: string | null,
+        endDate?: string | null,
+        limit?: number
+      ) => Promise<NoteItem[]>;
       semanticReindexAll: () => Promise<{ success: boolean; indexed?: number; error?: string }>;
       onSemanticReindexProgress: (
         callback: (data: { done: number; total: number }) => void

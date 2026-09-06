@@ -205,6 +205,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportDictionary: (words) => ipcRenderer.invoke("export-dictionary", words),
   searchNotes: (query, limit, spaceId, folderId) =>
     ipcRenderer.invoke("db-search-notes", query, limit, spaceId, folderId),
+  listMeetingsByDate: (startDate, endDate, limit) =>
+    ipcRenderer.invoke("db-list-meetings-by-date", startDate, endDate, limit),
   semanticSearchNotes: (query, limit, spaceId, folderId) =>
     ipcRenderer.invoke("db-semantic-search-notes", query, limit, spaceId, folderId),
   semanticReindexAll: () => ipcRenderer.invoke("db-semantic-reindex-all"),

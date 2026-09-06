@@ -1857,6 +1857,10 @@ class IPCHandlers {
       return this.databaseManager.searchNotes(query, limit, spaceId, folderId);
     });
 
+    ipcMain.handle("db-list-meetings-by-date", async (_event, startDate, endDate, limit) => {
+      return this.databaseManager.getMeetingsInDateRange(startDate, endDate, limit);
+    });
+
     ipcMain.handle(
       "db-semantic-search-notes",
       async (event, query, limit = 5, spaceId, folderId) => {

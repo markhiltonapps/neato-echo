@@ -27,6 +27,8 @@ export function getWordBoost(customDictionary?: string[]): string[] {
 const TOOL_INSTRUCTIONS: Record<string, string> = {
   search_notes:
     "Use search_notes to find information from the user's past meetings, discussions, or personal notes before answering from memory.",
+  list_meetings:
+    "Use list_meetings for questions that span more than one meeting or ask about meetings in a time period — 'what meetings did I have last week', 'summarize all my meetings yesterday', 'how many calls did I have Tuesday'. Convert the user's phrasing into start/end YYYY-MM-DD dates in their local time using the current local date given below; for a single day pass the same date as start and end. Prefer each meeting's saved summary when present; otherwise summarize from its transcript excerpt. This is the right tool even when the user hasn't opened a specific meeting.",
   get_note:
     "Use get_note to fetch the full content of a specific note by ID. If the current note's ID is provided in the context, use it directly. Otherwise, use search_notes first to find the note ID.",
   create_note:
@@ -72,7 +74,10 @@ export function getAgentSystemPrompt(availableTools?: string[], noteContext?: st
     if (toolLines.length > 0) {
       prompt += "\n\nYou have access to tools. " + toolLines.join(" ");
     }
-    if (availableTools.includes("get_calendar_availability")) {
+    if (
+      availableTools.includes("get_calendar_availability") ||
+      availableTools.includes("list_meetings")
+    ) {
       prompt += "\n\n" + getLocalCalendarContext();
     }
   }

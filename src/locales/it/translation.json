@@ -424,7 +424,8 @@
         "downloading": "Download in corso… {{progress}}%",
         "installing": "Installazione del modello…",
         "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
-        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
+        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models.",
+        "stepOf": "Passaggio {{step}} di {{total}}"
       },
       "localAuto": {
         "title": "Getting your PC ready",
@@ -3067,6 +3068,12 @@
         "noModel": "Nessun modello IA selezionato. Configurane uno nelle Impostazioni.",
         "actionFailed": "Azione non riuscita",
         "noEndpoint": "Nessun URL del server self-hosted impostato. Configurane uno nelle Impostazioni."
+      },
+      "summaryPrompt": {
+        "title": "Riassumere questa registrazione?",
+        "description": "Scegli uno stile di riepilogo per la nota che hai appena registrato. Puoi eseguirne un altro più tardi dal menu Azioni.",
+        "skip": "Non ora",
+        "dontAsk": "Non chiedere più"
       }
     },
     "empty": {
@@ -3486,6 +3493,7 @@
     },
     "tools": {
       "search_notesName": "Cerca nelle note",
+      "list_meetingsName": "Elenca riunioni",
       "get_noteName": "Ottieni nota",
       "create_noteName": "Crea nota",
       "update_noteName": "Aggiorna nota",
@@ -3495,6 +3503,7 @@
       "get_calendar_eventsName": "Ottieni eventi del calendario",
       "get_calendar_availabilityName": "Verifica disponibilità",
       "search_notesStatus": "Ricerca nelle note...",
+      "list_meetingsStatus": "Ricerca riunioni...",
       "web_searchStatus": "Ricerca sul web...",
       "copy_to_clipboardStatus": "Copia negli appunti...",
       "get_calendar_eventsStatus": "Controllo del calendario...",

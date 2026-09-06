@@ -424,7 +424,8 @@
         "downloading": "正在下载… {{progress}}%",
         "installing": "正在安装模型…",
         "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
-        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models."
+        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models.",
+        "stepOf": "第 {{step}} 步，共 {{total}} 步"
       },
       "localAuto": {
         "title": "Getting your PC ready",
@@ -3067,6 +3068,12 @@
         "noModel": "未选择 AI 模型。请在设置中配置。",
         "actionFailed": "操作失败",
         "noEndpoint": "未设置自托管服务器 URL。请在设置中配置。"
+      },
+      "summaryPrompt": {
+        "title": "总结这段录音？",
+        "description": "为刚刚录制的笔记选择一种摘要样式。稍后可从“操作”菜单运行其他样式。",
+        "skip": "暂不",
+        "dontAsk": "不再询问"
       }
     },
     "empty": {
@@ -3486,6 +3493,7 @@
     },
     "tools": {
       "search_notesName": "搜索笔记",
+      "list_meetingsName": "列出会议",
       "get_noteName": "获取笔记",
       "create_noteName": "创建笔记",
       "update_noteName": "更新笔记",
@@ -3495,6 +3503,7 @@
       "get_calendar_eventsName": "获取日历事件",
       "get_calendar_availabilityName": "查看空闲时间",
       "search_notesStatus": "正在搜索笔记...",
+      "list_meetingsStatus": "正在查找会议...",
       "web_searchStatus": "正在搜索网页...",
       "copy_to_clipboardStatus": "正在复制到剪贴板...",
       "get_calendar_eventsStatus": "正在查看日历...",

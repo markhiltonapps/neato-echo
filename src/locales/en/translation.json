@@ -3658,6 +3658,7 @@
     },
     "tools": {
       "search_notesName": "Search notes",
+      "list_meetingsName": "List meetings",
       "get_noteName": "Get note",
       "create_noteName": "Create note",
       "update_noteName": "Update note",
@@ -3667,6 +3668,7 @@
       "get_calendar_eventsName": "Get calendar events",
       "get_calendar_availabilityName": "Check calendar availability",
       "search_notesStatus": "Searching notes...",
+      "list_meetingsStatus": "Finding meetings...",
       "web_searchStatus": "Searching the web...",
       "copy_to_clipboardStatus": "Copying to clipboard...",
       "get_calendar_eventsStatus": "Checking calendar...",

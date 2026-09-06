@@ -365,13 +365,6 @@ export default function NoteEditor({
   >([]);
   const editorRef = useRef<Editor | null>(null);
 
-  const embeddedChat = useEmbeddedChat({
-    noteId: note.id,
-    folderId: note.folder_id,
-    noteTitle: note.title,
-    noteContent: note.content,
-    noteTranscript: note.transcript ?? undefined,
-  });
   const titleRef = useRef<HTMLDivElement>(null);
   const prevNoteIdRef = useRef<number>(note.id);
   const autoShowDoneRef = useRef(false);
@@ -457,6 +450,19 @@ export default function NoteEditor({
         : note.transcript || "",
     [displaySegments, speakerMappings, selfCopyLabel, t, note.transcript]
   );
+
+  // The chat gets the readable, speaker-labeled transcript — never the raw
+  // JSON segments. Passing JSON bloated the system prompt (re-sent every turn),
+  // which slowed replies and overflowed smaller models into errors.
+  const embeddedChat = useEmbeddedChat({
+    noteId: note.id,
+    folderId: note.folder_id,
+    noteTitle: note.title,
+    noteContent: note.content,
+    noteTranscript: hasChatSegments ? readableTranscript || undefined : undefined,
+    noteCreatedAt: note.created_at,
+    noteType: note.note_type,
+  });
 
   const knownSpeakers = useMemo(
     () => buildKnownSpeakers(speakerProfiles, displaySegments, speakerMappings),

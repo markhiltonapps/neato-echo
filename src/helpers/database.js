@@ -4282,6 +4282,44 @@ class DatabaseManager {
     }
   }
 
+  // Recorded meetings (notes that carry a transcript) whose created_at falls in
+  // an inclusive [startDate, endDate] day range. Powers the chat agent's
+  // date-range meeting questions ("summarize my meetings yesterday"). Either
+  // bound may be null/omitted. Dates are compared by calendar day in local
+  // time so "yesterday" matches how the user thinks about it.
+  getMeetingsInDateRange(startDate = null, endDate = null, limit = 25) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      const accountScope = this._accountScopeCondition("n");
+      const params = [...accountScope.params];
+      let dateFilter = "";
+      if (startDate) {
+        dateFilter += " AND date(n.created_at, 'localtime') >= date(?)";
+        params.push(startDate);
+      }
+      if (endDate) {
+        dateFilter += " AND date(n.created_at, 'localtime') <= date(?)";
+        params.push(endDate);
+      }
+      params.push(Math.max(1, Math.min(100, limit || 25)));
+      return this.db
+        .prepare(
+          `
+        SELECT n.*
+        FROM notes n
+        WHERE n.transcript IS NOT NULL AND TRIM(n.transcript) != ''
+          AND n.deleted_at IS NULL AND ${accountScope.sql}${dateFilter}
+        ORDER BY datetime(n.created_at) DESC
+        LIMIT ?
+      `
+        )
+        .all(...params);
+    } catch (error) {
+      debugLogger.error("Error listing meetings in range", { error: error.message }, "database");
+      throw error;
+    }
+  }
+
   getUpcomingEvents(windowMinutes = 1440) {
     try {
       if (!this.db) throw new Error("Database not initialized");
