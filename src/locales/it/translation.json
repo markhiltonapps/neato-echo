@@ -2903,6 +2903,7 @@
       "transcribe": "Trascrivi",
       "processing": "Elaborazione...",
       "export": "Esporta",
+      "copy": "Copy",
       "asMarkdown": "Come Markdown",
       "asPlainText": "Come testo semplice",
       "asTranscriptText": "Come testo semplice (.txt)",

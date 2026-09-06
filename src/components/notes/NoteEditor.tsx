@@ -13,6 +13,7 @@ import {
   Search,
   Plus,
   Check,
+  Copy,
   Share2,
   Users,
 } from "lucide-react";
@@ -60,7 +61,8 @@ import NoteBottomBar from "./NoteBottomBar";
 import EmbeddedChat, { type EmbeddedChatMode } from "./EmbeddedChat";
 import { useEmbeddedChat } from "../../hooks/useEmbeddedChat";
 import { normalizeDbDate, formatRelativeTime, formatShortDate } from "../../utils/dateFormatting";
-import { collectKnownPeople } from "../../utils/llmTranscript";
+import { collectKnownPeople, resolveLlmSpeakerLabel } from "../../utils/llmTranscript";
+import { formatTranscriptForReading } from "../../utils/transcriptReadingFormat";
 import { parseTranscriptSegments } from "../../utils/parseTranscriptSegments";
 import {
   applyTranscriptSpeakerPatch,
@@ -397,6 +399,50 @@ export default function NoteEditor({
   }, [diarizedSegments, note.transcript]);
 
   const hasChatSegments = displaySegments.length > 0;
+
+  // Copy the currently-viewed content (transcript / summary / notes) to the
+  // clipboard. The transcript is rendered into readable, speaker-labeled
+  // paragraphs rather than the raw stored segments.
+  const [copiedView, setCopiedView] = useState(false);
+  const selfCopyLabel = user?.name?.trim() || t("notes.speaker.you");
+  const getCurrentViewText = useCallback(() => {
+    if (viewMode === "transcript") {
+      return displaySegments.length > 0
+        ? formatTranscriptForReading(displaySegments, {
+            resolveLabel: (seg: TranscriptSegment) =>
+              resolveLlmSpeakerLabel(seg, speakerMappings, selfCopyLabel, t),
+          })
+        : note.transcript || "";
+    }
+    if (viewMode === "enhanced") return enhancement?.content || "";
+    return note.content || "";
+  }, [
+    viewMode,
+    displaySegments,
+    speakerMappings,
+    selfCopyLabel,
+    t,
+    note.transcript,
+    note.content,
+    enhancement?.content,
+  ]);
+  const hasCopyableContent =
+    viewMode === "transcript"
+      ? hasMeetingTranscript || displaySegments.length > 0
+      : viewMode === "enhanced"
+        ? !!enhancement?.content?.trim()
+        : !!note.content?.trim();
+  const handleCopyView = useCallback(async () => {
+    const text = getCurrentViewText().trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedView(true);
+      setTimeout(() => setCopiedView(false), 1500);
+    } catch {
+      // Clipboard unavailable — nothing to recover, the user can retry.
+    }
+  }, [getCurrentViewText]);
 
   const knownSpeakers = useMemo(
     () => buildKnownSpeakers(speakerProfiles, displaySegments, speakerMappings),
@@ -1079,6 +1125,20 @@ export default function NoteEditor({
                         : "text-foreground/50 dark:text-foreground/40"
                     )}
                   />
+                </button>
+              )}
+              {hasCopyableContent && (
+                <button
+                  onClick={() => void handleCopyView()}
+                  className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md bg-foreground/4 dark:bg-white/5 text-foreground/50 dark:text-foreground/40 hover:text-foreground/70 hover:bg-foreground/8 dark:hover:text-foreground/60 dark:hover:bg-white/8 transition-colors duration-150"
+                  aria-label={t("notes.editor.copy")}
+                  title={t("notes.editor.copy")}
+                >
+                  {copiedView ? (
+                    <Check size={11} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={11} />
+                  )}
                 </button>
               )}
               {(onExportNote || onExportTranscript) && (

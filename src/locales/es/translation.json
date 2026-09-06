@@ -2951,6 +2951,7 @@
       "transcribe": "Transcribir",
       "processing": "Procesando...",
       "export": "Exportar",
+      "copy": "Copy",
       "asMarkdown": "Como Markdown",
       "asPlainText": "Como texto plano",
       "asTranscriptText": "Como texto plano (.txt)",

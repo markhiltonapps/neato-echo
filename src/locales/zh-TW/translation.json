@@ -2903,6 +2903,7 @@
       "transcribe": "轉錄",
       "processing": "處理中...",
       "export": "匯出",
+      "copy": "Copy",
       "asMarkdown": "匯出為 Markdown",
       "asPlainText": "匯出為純文字",
       "asTranscriptText": "匯出為純文字 (.txt)",

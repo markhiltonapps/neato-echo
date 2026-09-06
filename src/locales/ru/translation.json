@@ -2925,6 +2925,7 @@
       "transcribe": "Транскрибировать",
       "processing": "Обработка...",
       "export": "Экспорт",
+      "copy": "Copy",
       "asMarkdown": "Как Markdown",
       "asPlainText": "Как обычный текст",
       "asTranscriptText": "Как текстовый файл (.txt)",

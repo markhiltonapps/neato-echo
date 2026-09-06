@@ -2816,6 +2816,7 @@
       "stop": "停止",
       "processing": "処理中...",
       "export": "エクスポート",
+      "copy": "Copy",
       "asMarkdown": "Markdown 形式",
       "asPlainText": "プレーンテキスト形式",
       "asTranscriptText": "プレーンテキスト (.txt)",

@@ -3154,6 +3154,7 @@
       "transcribe": "Transcrire",
       "processing": "Traitement...",
       "export": "Exporter",
+      "copy": "Copy",
       "asMarkdown": "En Markdown",
       "asPlainText": "En texte brut",
       "asTranscriptText": "En texte brut (.txt)",
