@@ -32,7 +32,7 @@ export function getWordBoost(customDictionary?: string[]): string[] {
 const TOOL_INSTRUCTIONS: Record<string, string> = {
   search_notes: "Search the user's past notes and meetings before answering from memory.",
   list_meetings:
-    "For questions spanning multiple meetings or a time period ('meetings last week', 'summarize yesterday's meetings'), convert the phrasing to start/end YYYY-MM-DD in local time (same date twice for one day) using the current date below. Prefer each meeting's saved summary, else its transcript excerpt. Works even when no specific meeting is open.",
+    "The user's own RECORDED meetings — past calls they captured in this app, with transcripts and summaries. Use ONLY for recorded/past meetings, e.g. 'summarize the meetings I recorded yesterday', 'recap last week's calls'. Do NOT use it for the user's calendar or schedule (upcoming/scheduled meetings) — that is get_calendar_events. Convert phrasing to start/end YYYY-MM-DD in local time (same date twice for one day) using the current date below; prefer each meeting's saved summary, else its transcript excerpt.",
   get_note:
     "Fetch a note's full content by ID — use the current note's ID from context if given, else search_notes first.",
   create_note:
@@ -44,7 +44,7 @@ const TOOL_INSTRUCTIONS: Record<string, string> = {
   web_search: "Use for current events or facts you're unsure of.",
   copy_to_clipboard: "Use when asked to copy something to the clipboard.",
   get_calendar_events:
-    "Check the user's schedule or upcoming events. Each event has startLocal/endLocal already converted to local time (DST-correct) — quote those verbatim; never recompute times from the raw start/end fields.",
+    "The user's CALENDAR / SCHEDULE — upcoming and scheduled meetings and events. ALWAYS use this (not list_meetings) for any question about what is on the schedule: 'what meetings do I have today/tomorrow/this week', \"what's on my calendar\", 'my next meeting'. Each event has startLocal/endLocal already converted to local time (DST-correct) — quote those verbatim; never recompute times from the raw start/end fields.",
   get_calendar_availability:
     "Use when the user asks when they're free. Pass timezone-aware RFC3339 start/end, deriving each date's offset from the IANA zone (account for DST). Treat returned slots as authoritative — use them exactly; never recalculate, merge, or invent. For a broad multi-day request without hours, ask which hours per day, then call once per day. Describe results as 'no scheduled conflicts found', and never infer event details from availability.",
 };
