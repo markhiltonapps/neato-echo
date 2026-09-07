@@ -7,7 +7,11 @@ import { Input } from "../ui/input";
 import { ProviderIcon } from "../ui/ProviderIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useModelDownload } from "../../hooks/useModelDownload";
-import { useSettingsStore } from "../../stores/settingsStore";
+import {
+  useSettingsStore,
+  selectResolvedLLMConfig,
+  setResolvedLLMConfig,
+} from "../../stores/settingsStore";
 import { usePolicySnapshot } from "../../hooks/usePolicy";
 import {
   filterByokProviderOptionsByPolicy,
@@ -358,6 +362,24 @@ export function ByokProviderStep({
       store.setCloudTranscriptionMode("byok");
       store.switchCloudTranscriptionProvider("dictation", selectedProvider);
       store.setCloudTranscriptionModel(selectedModel);
+    }
+    if (assistant) {
+      // The assistant branches above only commit the chatIntelligence scope.
+      // Note summaries and "Generate Notes" run on the noteFormatting scope, so
+      // without this it stays empty and the first summary fails with "No AI model
+      // selected." Copy the just-committed chat config (mode/provider/model,
+      // endpoint, and any per-scope key) onto noteFormatting. disableThinking
+      // stays per-scope, matching applyReasoningConfigToAllScopes.
+      const chat = selectResolvedLLMConfig(useSettingsStore.getState(), "chatIntelligence");
+      setResolvedLLMConfig("noteFormatting", {
+        mode: chat.mode,
+        provider: chat.provider,
+        model: chat.model,
+        cloudMode: chat.cloudMode,
+        cloudBaseUrl: chat.cloudBaseUrl,
+        remoteUrl: chat.remoteUrl,
+        customApiKey: chat.customApiKey,
+      });
     }
     onProceed();
   };

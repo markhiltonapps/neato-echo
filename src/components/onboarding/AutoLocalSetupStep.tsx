@@ -69,6 +69,13 @@ export function AutoLocalSetupStep({
       store.setChatAgentMode("local");
       store.setChatAgentProvider(AUTO_SUMMARY_PROVIDER);
       store.setChatAgentModel(modelId);
+      // Note summaries and "Generate Notes" run on the noteFormatting scope, not
+      // chatIntelligence. Seeding only the chat scope leaves noteFormatting empty,
+      // so the first summary a fresh local user runs fails with "No AI model
+      // selected." Point it at the same local model here.
+      store.setNoteFormattingMode("local");
+      store.setNoteFormattingProvider(AUTO_SUMMARY_PROVIDER);
+      store.setNoteFormattingModel(modelId);
       forgetPendingLocalModel("assistant", modelId);
       setSummaryStatus("ready");
     },
