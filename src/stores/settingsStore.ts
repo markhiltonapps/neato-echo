@@ -2724,6 +2724,29 @@ export function setResolvedLLMConfig(
   if (Object.keys(updates).length > 0) useSettingsStore.setState(updates);
 }
 
+/**
+ * Copy one scope's model routing (mode, provider, model, cloud routing) onto
+ * every other LLM scope, so the user can set one model everywhere in a click
+ * instead of hunting through five tabs. The per-scope custom API key is a
+ * secret kept out of this copy — a BYOK setup still needs its key entered per
+ * scope; the common local case needs none. disableThinking stays per-scope.
+ */
+export function applyReasoningConfigToAllScopes(source: InferenceScope): void {
+  const cfg = selectResolvedLLMConfig(useSettingsStore.getState(), source);
+  const patch: Partial<Omit<ResolvedLLMConfig, "scope">> = {
+    mode: cfg.mode,
+    provider: cfg.provider,
+    model: cfg.model,
+    cloudMode: cfg.cloudMode,
+    cloudBaseUrl: cfg.cloudBaseUrl,
+    remoteUrl: cfg.remoteUrl,
+  };
+  for (const scope of Object.keys(INFERENCE_SCOPES) as InferenceScope[]) {
+    if (scope === source) continue;
+    setResolvedLLMConfig(scope, patch);
+  }
+}
+
 export function isCloudChatAgentMode() {
   return selectIsCloudChatAgentMode(getSettings());
 }

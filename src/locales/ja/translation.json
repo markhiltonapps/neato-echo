@@ -2192,7 +2192,9 @@
         "noteFormatting": "ノートのフォーマット",
         "chatIntelligence": "チャット",
         "dictationTranslation": "翻訳"
-      }
+      },
+      "applyToAll": "このモデルをすべての機能に使用",
+      "appliedToAll": "すべての機能に適用しました"
     },
     "noteFormatting": {
       "autoGenerateTitle": "ノートのタイトルを自動生成",

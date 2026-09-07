@@ -636,7 +636,11 @@ export function LocalModelSetupStep({
         ? "nvidia"
         : "whisper";
     setSelectedProvider(defaultProvider);
-    setSelectedModel("");
+    // Pre-select the provider's recommended/default model (2B for Qwen) so a
+    // user who clicks straight through onboarding still lands on the fast model
+    // for every scope, instead of an empty selection. Transcription keeps its
+    // own default flow.
+    setSelectedModel(assistant ? pickDefaultModelId(modelRegistry.getProvider(defaultProvider)) : "");
     onReadinessChange(false);
   }, [assistant, onReadinessChange, stepId]);
 

@@ -2192,7 +2192,9 @@
         "noteFormatting": "筆記格式化",
         "chatIntelligence": "聊天",
         "dictationTranslation": "翻譯"
-      }
+      },
+      "applyToAll": "對所有功能使用此模型",
+      "appliedToAll": "已套用到所有功能"
     },
     "noteFormatting": {
       "autoGenerateTitle": "自動產生筆記標題",

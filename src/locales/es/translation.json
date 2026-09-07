@@ -2240,7 +2240,9 @@
         "noteFormatting": "Formato de notas",
         "chatIntelligence": "Chat",
         "dictationTranslation": "Traducción"
-      }
+      },
+      "applyToAll": "Usar este modelo en todas las funciones",
+      "appliedToAll": "Aplicado a todas las funciones"
     },
     "noteFormatting": {
       "autoGenerateTitle": "Generar títulos de notas automáticamente",

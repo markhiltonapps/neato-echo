@@ -2481,7 +2481,9 @@
         "noteFormatting": "Notizformatierung",
         "chatIntelligence": "Chat",
         "dictationTranslation": "Übersetzung"
-      }
+      },
+      "applyToAll": "Dieses Modell für alle Funktionen verwenden",
+      "appliedToAll": "Für alle Funktionen übernommen"
     },
     "noteFormatting": {
       "autoGenerateTitle": "Notiztitel automatisch generieren",

@@ -2198,7 +2198,9 @@
         "noteFormatting": "Форматирование заметок",
         "chatIntelligence": "Чат",
         "dictationTranslation": "Перевод"
-      }
+      },
+      "applyToAll": "Использовать эту модель для всех функций",
+      "appliedToAll": "Применено ко всем функциям"
     },
     "noteFormatting": {
       "autoGenerateTitle": "Автоматически генерировать заголовки заметок",

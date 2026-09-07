@@ -2481,7 +2481,9 @@
         "noteFormatting": "Note Formatting",
         "chatIntelligence": "Chat",
         "dictationTranslation": "Translation"
-      }
+      },
+      "applyToAll": "Use this model for all features",
+      "appliedToAll": "Applied to all features"
     },
     "noteFormatting": {
       "autoGenerateTitle": "Auto-generate note titles",
