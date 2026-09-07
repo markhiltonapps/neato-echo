@@ -3018,6 +3018,14 @@
       "fileTooLarge": "Este archivo supera el límite de 500 MB.",
       "largeFileNote": "Los archivos grandes se dividen y transcriben en paralelo.",
       "chunkProgress": "Transcribiendo parte {{completed}} de {{total}}...",
+      "etaMinutes": "~{{minutes}} min restantes",
+      "etaSeconds": "~{{seconds}} s restantes",
+      "saveFailed": "No se pudo guardar la nota.",
+      "indicator": {
+        "transcribing": "Transcribiendo…",
+        "ready": "Transcripción lista",
+        "openNote": "Abrir nota"
+      },
       "paidPlanRequired": "La transcripción en la nube para archivos de más de 25 MB requiere un plan de pago. Los archivos grandes se procesan con Neato Echo Cloud para resultados fiables y de alta calidad.",
       "byokTooLarge": "Las claves API de terceros solo admiten archivos de hasta {{size}} MB.",
       "byokTooLargeDetail": "Para archivos de más de {{size}} MB, Neato Echo Cloud se encarga de dividir, procesar en paralelo y reensamblar, obteniendo resultados fiables sin depender de los límites de proveedores de terceros.",

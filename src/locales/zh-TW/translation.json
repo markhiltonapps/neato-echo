@@ -2970,6 +2970,14 @@
       "fileTooLarge": "此檔案超過 500 MB 的大小限制。",
       "largeFileNote": "大型檔案將被分割並平行轉錄。",
       "chunkProgress": "正在轉錄第 {{completed}} 部分，共 {{total}} 部分...",
+      "etaMinutes": "剩餘約 {{minutes}} 分鐘",
+      "etaSeconds": "剩餘約 {{seconds}} 秒",
+      "saveFailed": "無法儲存筆記。",
+      "indicator": {
+        "transcribing": "轉錄中…",
+        "ready": "轉錄完成",
+        "openNote": "開啟筆記"
+      },
       "paidPlanRequired": "超過 25 MB 的檔案需要付費方案才能使用雲端轉錄。大型檔案透過 Neato Echo Cloud 處理，確保可靠、高品質的結果。",
       "byokTooLarge": "第三方 API 金鑰僅支援 {{size}} MB 以內的檔案。",
       "byokTooLargeDetail": "超過 {{size}} MB 的檔案由 Neato Echo Cloud 負責分割、平行處理和重組——無需依賴第三方服務限制，即可獲得可靠的結果。",

@@ -2756,6 +2756,12 @@ class IPCHandlers {
           const result = await this.parakeetManager.transcribeLocalParakeet(audioBuffer, {
             ...options,
             signal,
+            // Uploads (which carry a requestId) get real per-segment progress on
+            // the same channel the cloud chunked path uses; dictation/voice
+            // drafts pass no requestId and stay silent.
+            onProgress: options.requestId
+              ? (payload) => event.sender.send("upload-transcription-progress", payload)
+              : undefined,
           });
           return result;
         }

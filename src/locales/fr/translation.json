@@ -3228,6 +3228,14 @@
       "paidPlanRequired": "La transcription cloud pour les fichiers de plus de 25 Mo nécessite un abonnement payant. Les fichiers volumineux sont traités avec Neato Echo Cloud pour des résultats fiables et de haute qualité.",
       "largeFileNote": "Les fichiers volumineux sont découpés et transcrits en parallèle.",
       "chunkProgress": "Transcription de la partie {{completed}} sur {{total}}...",
+      "etaMinutes": "~{{minutes}} min restantes",
+      "etaSeconds": "~{{seconds}} s restantes",
+      "saveFailed": "Impossible d'enregistrer la note.",
+      "indicator": {
+        "transcribing": "Transcription…",
+        "ready": "Transcription prête",
+        "openNote": "Ouvrir la note"
+      },
       "byokTooLarge": "Les clés API tierces ne prennent en charge que les fichiers jusqu'à {{size}} Mo.",
       "byokTooLargeDetail": "Pour les fichiers de plus de {{size}} Mo, Neato Echo Cloud gère le découpage, le traitement parallèle et le réassemblage — pour des résultats fiables sans dépendre des limites des fournisseurs tiers.",
       "byokTooLargeNeedsAccount": "Créez un compte et passez à un abonnement payant pour transcrire des fichiers plus volumineux avec Neato Echo Cloud.",

@@ -3228,6 +3228,14 @@
       "paidPlanRequired": "Cloud-Transkription für Dateien über 25 MB erfordert einen kostenpflichtigen Plan. Große Dateien werden mit Neato Echo Cloud für zuverlässige, hochwertige Ergebnisse verarbeitet.",
       "largeFileNote": "Große Dateien werden aufgeteilt und parallel transkribiert.",
       "chunkProgress": "Transkribiere Teil {{completed}} von {{total}}...",
+      "etaMinutes": "noch ~{{minutes}} Min.",
+      "etaSeconds": "noch ~{{seconds}} s",
+      "saveFailed": "Notiz konnte nicht gespeichert werden.",
+      "indicator": {
+        "transcribing": "Transkribieren…",
+        "ready": "Transkript fertig",
+        "openNote": "Notiz öffnen"
+      },
       "byokTooLarge": "API-Schlüssel von Drittanbietern unterstützen nur Dateien bis {{size}} MB.",
       "byokTooLargeDetail": "Für Dateien über {{size}} MB übernimmt Neato Echo Cloud das Aufteilen, die parallele Verarbeitung und das Zusammenführen — so erhältst du zuverlässige Ergebnisse ohne die Einschränkungen von Drittanbietern.",
       "byokTooLargeNeedsAccount": "Erstelle ein Konto und wechsle zu einem kostenpflichtigen Plan, um größere Dateien mit Neato Echo Cloud zu transkribieren.",
