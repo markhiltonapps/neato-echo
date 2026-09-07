@@ -2916,7 +2916,13 @@
     "searchChats": "Chats suchen",
     "searchTitle": "Unterhaltungen suchen",
     "searchDescription": "In allen Unterhaltungen suchen",
-    "newChatEmpty": "Fragen Sie zu Ihren Notizen, Transkripten oder anderem"
+    "newChatEmpty": "Fragen Sie zu Ihren Notizen, Transkripten oder anderem",
+    "select": "Auswählen",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Auswahl aufheben",
+    "selectedCount": "{{count}} ausgewählt",
+    "deleteSelected": "{{count}} löschen",
+    "deleteSelectedConfirm": "{{count}} Chat(s) endgültig löschen? Das kann nicht rückgängig gemacht werden."
   },
   "referral": {
     "title": "Empfehlen und Belohnungen erhalten",

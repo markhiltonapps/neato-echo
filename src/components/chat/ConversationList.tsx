@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { SquarePen, Search, Archive as ArchiveIcon } from "lucide-react";
+import { SquarePen, Search, Archive as ArchiveIcon, CheckSquare, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "../lib/utils";
@@ -18,6 +18,7 @@ interface ConversationListProps {
   onOpenSearch: () => void;
   onArchive: (id: number) => void;
   onDelete: (id: number) => void;
+  onBulkDelete: (ids: number[]) => void;
   refreshKey: number;
 }
 
@@ -64,12 +65,15 @@ export default function ConversationList({
   onOpenSearch,
   onArchive,
   onDelete,
+  onBulkDelete,
   refreshKey,
 }: ConversationListProps) {
   const { t } = useTranslation();
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const showSkeletonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(false);
@@ -122,6 +126,35 @@ export default function ConversationList({
       ? conversations.filter((c) => c.is_archived)
       : conversations.filter((c) => !c.is_archived);
   }, [conversations, showArchived]);
+
+  // A completed action (incl. bulk delete) bumps refreshKey and reloads the
+  // list; clear the selection then so it never points at deleted rows.
+  useEffect(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, [refreshKey, showArchived]);
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const allVisibleSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c.id));
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) =>
+      filtered.length > 0 && filtered.every((c) => prev.has(c.id))
+        ? new Set()
+        : new Set(filtered.map((c) => c.id))
+    );
+  }, [filtered]);
+
+  const handleBulkDeleteClick = useCallback(() => {
+    if (selectedIds.size > 0) onBulkDelete(Array.from(selectedIds));
+  }, [selectedIds, onBulkDelete]);
 
   const flatItems = useMemo(() => groupByDate(filtered, t), [filtered, t]);
 
@@ -187,47 +220,101 @@ export default function ConversationList({
 
   return (
     <div className="flex flex-col h-full" onKeyDown={handleKeyDown} tabIndex={-1}>
-      <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
-        <button
-          onClick={onNewChat}
-          className={cn(
-            "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs",
-            "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5",
-            "transition-colors duration-150",
-            "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
-          )}
-        >
-          <SquarePen size={14} className="shrink-0" />
-          {t("chat.newChat")}
-        </button>
-        <button
-          onClick={onOpenSearch}
-          className={cn(
-            "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs",
-            "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5",
-            "transition-colors duration-150",
-            "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
-          )}
-        >
-          <Search size={14} className="shrink-0" />
-          {t("chat.searchChats")}
-        </button>
-        {conversations.some((c) => c.is_archived) && (
+      {selectionMode ? (
+        <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
+          <div className="flex items-center gap-1 px-1 py-1">
+            <button
+              onClick={() => {
+                setSelectionMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+              aria-label={t("common.cancel")}
+            >
+              <X size={14} />
+            </button>
+            <span className="text-xs font-medium text-foreground flex-1">
+              {t("chat.selectedCount", { count: selectedIds.size })}
+            </span>
+            <button
+              onClick={toggleSelectAll}
+              className="text-xs text-muted-foreground/80 hover:text-foreground px-1.5 py-1 rounded-md hover:bg-foreground/5 transition-colors"
+            >
+              {allVisibleSelected ? t("chat.deselectAll") : t("chat.selectAll")}
+            </button>
+          </div>
           <button
-            onClick={() => setShowArchived((v) => !v)}
+            onClick={handleBulkDeleteClick}
+            disabled={selectedIds.size === 0}
             className={cn(
               "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs transition-colors duration-150",
-              "focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
-              showArchived
-                ? "bg-primary/8 text-primary"
-                : "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5"
+              "focus:outline-none focus-visible:ring-1 focus-visible:ring-destructive/30",
+              selectedIds.size === 0
+                ? "text-muted-foreground/40 cursor-not-allowed"
+                : "text-destructive hover:bg-destructive/10"
             )}
           >
-            <ArchiveIcon size={14} className="shrink-0" />
-            {t("chat.archived")}
+            <Trash2 size={14} className="shrink-0" />
+            {t("chat.deleteSelected", { count: selectedIds.size })}
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
+          <button
+            onClick={onNewChat}
+            className={cn(
+              "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs",
+              "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5",
+              "transition-colors duration-150",
+              "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
+            )}
+          >
+            <SquarePen size={14} className="shrink-0" />
+            {t("chat.newChat")}
+          </button>
+          <button
+            onClick={onOpenSearch}
+            className={cn(
+              "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs",
+              "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5",
+              "transition-colors duration-150",
+              "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
+            )}
+          >
+            <Search size={14} className="shrink-0" />
+            {t("chat.searchChats")}
+          </button>
+          {filtered.length > 0 && (
+            <button
+              onClick={() => setSelectionMode(true)}
+              className={cn(
+                "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs",
+                "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5",
+                "transition-colors duration-150",
+                "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
+              )}
+            >
+              <CheckSquare size={14} className="shrink-0" />
+              {t("chat.select")}
+            </button>
+          )}
+          {conversations.some((c) => c.is_archived) && (
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className={cn(
+                "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs transition-colors duration-150",
+                "focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
+                showArchived
+                  ? "bg-primary/8 text-primary"
+                  : "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5"
+              )}
+            >
+              <ArchiveIcon size={14} className="shrink-0" />
+              {t("chat.archived")}
+            </button>
+          )}
+        </div>
+      )}
 
       {flatItems.length === 0 ? (
         <EmptyConversationList onNewChat={onNewChat} />
@@ -263,6 +350,9 @@ export default function ConversationList({
                       onClick={() => onSelectConversation(item.data.id)}
                       onArchive={onArchive}
                       onDelete={onDelete}
+                      selectionMode={selectionMode}
+                      selected={selectedIds.has(item.data.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   )}
                 </div>

@@ -3345,7 +3345,13 @@
     "searchChats": "Pesquisar chats",
     "searchTitle": "Pesquisar conversas",
     "searchDescription": "Pesquisar em todas as conversas",
-    "newChatEmpty": "Pergunte sobre suas notas, transcrições ou qualquer coisa"
+    "newChatEmpty": "Pergunte sobre suas notas, transcrições ou qualquer coisa",
+    "select": "Selecionar",
+    "selectAll": "Selecionar tudo",
+    "deselectAll": "Desmarcar tudo",
+    "selectedCount": "{{count}} selecionados",
+    "deleteSelected": "Excluir {{count}}",
+    "deleteSelectedConfirm": "Excluir permanentemente {{count}} conversa(s)? Isso não pode ser desfeito."
   },
   "support": {
     "documentation": "Documentação",

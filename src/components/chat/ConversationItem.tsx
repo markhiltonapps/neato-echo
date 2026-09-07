@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { MoreHorizontal, Archive, ArchiveRestore, Trash2, Check } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -26,6 +26,10 @@ interface ConversationItemProps {
   onClick: () => void;
   onArchive: (id: number) => void;
   onDelete: (id: number) => void;
+  /** In selection mode the row toggles a checkbox instead of opening the chat. */
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
 function formatTimestamp(dateStr: string): string {
@@ -51,6 +55,9 @@ export default function ConversationItem({
   onClick,
   onArchive,
   onDelete,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
 }: ConversationItemProps) {
   const { t } = useTranslation();
   const isArchived = !!conversation.is_archived;
@@ -58,22 +65,46 @@ export default function ConversationItem({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={selectionMode ? () => onToggleSelect?.(conversation.id) : onClick}
+      aria-pressed={selectionMode ? selected : undefined}
       className={cn(
-        "group relative w-full text-left px-3 py-2 cursor-pointer transition-all duration-150",
+        "group relative w-full text-left px-3 py-2 cursor-pointer transition-all duration-150 flex items-center gap-2",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
-        isActive ? "bg-primary/8 dark:bg-primary/10" : "hover:bg-foreground/4 dark:hover:bg-white/4"
+        selectionMode && selected
+          ? "bg-primary/10"
+          : isActive && !selectionMode
+            ? "bg-primary/8 dark:bg-primary/10"
+            : "hover:bg-foreground/4 dark:hover:bg-white/4"
       )}
     >
+      {selectionMode && (
+        <span
+          className={cn(
+            "shrink-0 flex items-center justify-center h-4 w-4 rounded border transition-colors",
+            selected
+              ? "bg-primary border-primary text-primary-foreground"
+              : "border-border/60 text-transparent"
+          )}
+          aria-hidden="true"
+        >
+          <Check size={11} strokeWidth={3} />
+        </span>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <p className={cn("text-xs truncate text-foreground", isActive && "font-medium")}>
             {conversation.title}
           </p>
           <div className="flex items-center gap-0.5 shrink-0">
-            <span className="text-[10px] text-muted-foreground/40 tabular-nums group-hover:opacity-0 transition-opacity">
+            <span
+              className={cn(
+                "text-[10px] text-muted-foreground/40 tabular-nums transition-opacity",
+                !selectionMode && "group-hover:opacity-0"
+              )}
+            >
               {formatTimestamp(conversation.updated_at)}
             </span>
+            {!selectionMode && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -118,6 +149,7 @@ export default function ConversationItem({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
         </div>
         {conversation.preview && (

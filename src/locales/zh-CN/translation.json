@@ -3345,7 +3345,13 @@
     "searchChats": "搜索聊天",
     "searchTitle": "搜索对话",
     "searchDescription": "搜索所有对话",
-    "newChatEmpty": "询问关于笔记、转录或其他任何内容"
+    "newChatEmpty": "询问关于笔记、转录或其他任何内容",
+    "select": "选择",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "selectedCount": "已选择 {{count}} 个",
+    "deleteSelected": "删除 {{count}} 个",
+    "deleteSelectedConfirm": "永久删除 {{count}} 个对话？此操作无法撤销。"
   },
   "support": {
     "documentation": "文档",

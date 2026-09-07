@@ -2916,7 +2916,13 @@
     "searchChats": "Search chats",
     "searchTitle": "Search conversations",
     "searchDescription": "Search across all your conversations",
-    "newChatEmpty": "Ask about your notes, transcripts, or anything else"
+    "newChatEmpty": "Ask about your notes, transcripts, or anything else",
+    "select": "Select",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selectedCount": "{{count}} selected",
+    "deleteSelected": "Delete {{count}}",
+    "deleteSelectedConfirm": "Permanently delete {{count}} chat(s)? This can't be undone."
   },
   "referral": {
     "title": "Refer and earn rewards",

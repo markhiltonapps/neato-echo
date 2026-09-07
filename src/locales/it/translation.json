@@ -3345,7 +3345,13 @@
     "searchChats": "Cerca chat",
     "searchTitle": "Cerca conversazioni",
     "searchDescription": "Cerca in tutte le conversazioni",
-    "newChatEmpty": "Chiedi delle tue note, trascrizioni o qualsiasi altra cosa"
+    "newChatEmpty": "Chiedi delle tue note, trascrizioni o qualsiasi altra cosa",
+    "select": "Seleziona",
+    "selectAll": "Seleziona tutto",
+    "deselectAll": "Deseleziona tutto",
+    "selectedCount": "{{count}} selezionati",
+    "deleteSelected": "Elimina {{count}}",
+    "deleteSelectedConfirm": "Eliminare definitivamente {{count}} chat? L'azione è irreversibile."
   },
   "support": {
     "documentation": "Documentazione",
