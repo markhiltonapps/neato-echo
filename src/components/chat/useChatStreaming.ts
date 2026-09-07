@@ -26,8 +26,13 @@ import {
   type AgentSelectionContext,
 } from "../../utils/agentSelectionContext";
 
-const RAG_NOTE_LIMIT = 5;
-const RAG_NOTE_SNIPPET_LENGTH = 500;
+// Kept lean on purpose: this context is injected into the system prompt and
+// re-processed on every turn (twice for a tool question — the tool round and
+// the answer round). On a local CPU model that prompt-processing time is
+// linear in tokens, so trimming here directly cuts latency. The model can
+// still pull more via the search_notes tool when it needs to.
+const RAG_NOTE_LIMIT = 3;
+const RAG_NOTE_SNIPPET_LENGTH = 300;
 
 const LOCAL_TOOL_MIN_PARAMS_B = 4;
 

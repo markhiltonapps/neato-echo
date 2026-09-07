@@ -3380,7 +3380,9 @@
     "retryActivation": "重試 GPU 加速",
     "remove": "移除",
     "dismiss": "暫時不要",
-    "cancel": "取消"
+    "cancel": "取消",
+    "runningOnCpu": "正在使用 CPU 執行 — GPU 閒置",
+    "runningOnCpuDescription": "已安裝 GPU 元件，但模型正在 CPU 上執行，速度慢得多。請重試 GPU 加速。"
   },
   "app": {
     "toasts": {

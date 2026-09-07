@@ -3545,7 +3545,9 @@
     "retryActivation": "Retry GPU acceleration",
     "remove": "Remove",
     "dismiss": "Not now",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "runningOnCpu": "Running on CPU — GPU idle",
+    "runningOnCpuDescription": "The GPU pack is installed but the model is running on your CPU, which is much slower. Retry GPU acceleration."
   },
   "app": {
     "toasts": {

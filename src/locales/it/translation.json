@@ -3380,7 +3380,9 @@
     "retryActivation": "Riprova l'accelerazione GPU",
     "remove": "Rimuovi",
     "dismiss": "Non ora",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "runningOnCpu": "In esecuzione su CPU — GPU inattiva",
+    "runningOnCpuDescription": "Il pacchetto GPU è installato ma il modello è in esecuzione sulla CPU, molto più lenta. Riprova l'accelerazione GPU."
   },
   "app": {
     "toasts": {

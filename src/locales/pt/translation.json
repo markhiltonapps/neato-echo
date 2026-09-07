@@ -3380,7 +3380,9 @@
     "retryActivation": "Tentar aceleração por GPU novamente",
     "remove": "Remover",
     "dismiss": "Agora não",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "runningOnCpu": "Executando na CPU — GPU ociosa",
+    "runningOnCpuDescription": "O pacote de GPU está instalado, mas o modelo está sendo executado na CPU, que é muito mais lenta. Tente a aceleração por GPU novamente."
   },
   "app": {
     "toasts": {

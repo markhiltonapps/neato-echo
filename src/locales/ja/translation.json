@@ -3380,7 +3380,9 @@
     "retryActivation": "GPU アクセラレーションを再試行",
     "remove": "削除",
     "dismiss": "後で",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "runningOnCpu": "CPUで実行中 — GPUは未使用",
+    "runningOnCpuDescription": "GPUパックはインストールされていますが、モデルははるかに遅いCPUで実行されています。GPUアクセラレーションを再試行してください。"
   },
   "app": {
     "toasts": {
