@@ -34,7 +34,13 @@ import {
 const RAG_NOTE_LIMIT = 3;
 const RAG_NOTE_SNIPPET_LENGTH = 300;
 
-const LOCAL_TOOL_MIN_PARAMS_B = 4;
+// Minimum local model size (in billions of params) that gets tool access.
+// Lowered from 4 to 2: the fast default is now Qwen3.5 2B, a 2025-gen model
+// that reliably emits tool calls (verified on the calendar/notes toolset).
+// Gating tools off at 4 left 2B chats unable to read the calendar or notes at
+// all — the model would just claim it "can't access your calendar". Sub-2B
+// models stay excluded.
+const LOCAL_TOOL_MIN_PARAMS_B = 2;
 
 function estimateModelSizeB(modelId: string): number {
   const match = modelId.match(/-([\d.]+)[bB]/);

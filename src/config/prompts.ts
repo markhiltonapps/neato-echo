@@ -74,7 +74,15 @@ export function getAgentSystemPrompt(availableTools?: string[], noteContext?: st
   if (availableTools && availableTools.length > 0) {
     const toolLines = availableTools.map((name) => TOOL_INSTRUCTIONS[name]).filter(Boolean);
     if (toolLines.length > 0) {
-      prompt += "\n\nYou have access to tools. " + toolLines.join(" ");
+      // Small local models otherwise refuse with "I can't access your calendar
+      // / personal data" instead of calling the tool. These tools read the
+      // user's OWN data, which they've connected and authorized.
+      prompt +=
+        "\n\nYou have tools that read the user's own notes, recorded meetings, and connected " +
+        "calendar — their own data, which they have connected and authorized you to use. Never " +
+        "say you cannot access their calendar, schedule, notes, or personal data: when a question " +
+        "needs any of it, call the appropriate tool instead of refusing or guessing. " +
+        toolLines.join(" ");
     }
     if (
       availableTools.includes("get_calendar_availability") ||
