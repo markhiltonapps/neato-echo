@@ -119,13 +119,19 @@ function CalendarAccountRows({
             <button
               onClick={() => onUnlink(account.email)}
               disabled={disconnectingEmail === account.email}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
+              // Always visible (was hover-only, which made "how do I reconnect?"
+              // impossible to answer): the label spells out the disconnect →
+              // reconnect flow so a stale connection is recoverable.
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
               aria-label={t(`${i18nKey}.disconnect`)}
             >
               {disconnectingEmail === account.email ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Unlink className="h-3.5 w-3.5" />
+                <>
+                  <Unlink className="h-3.5 w-3.5" />
+                  <span>{t(`${i18nKey}.disconnect`)}</span>
+                </>
               )}
             </button>
           </div>
