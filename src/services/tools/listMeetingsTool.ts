@@ -15,7 +15,7 @@ const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
 export const listMeetingsTool: ToolDefinition = {
   name: "list_meetings",
   description:
-    "List the user's recorded meetings within a date range, newest first. Use this for questions that span multiple meetings, like 'what meetings did I have last week' or 'summarize all my meetings yesterday'. Dates are YYYY-MM-DD in the user's local time; omit both to get the most recent meetings. Returns each meeting's title, date, duration, saved summary (if any), and a transcript excerpt.",
+    "List recorded meetings in a date range (YYYY-MM-DD local, newest first; omit both for the most recent). For questions spanning multiple meetings. Returns title, date, duration, saved summary, and a transcript excerpt.",
   parameters: {
     type: "object",
     properties: {
