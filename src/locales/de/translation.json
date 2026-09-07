@@ -3271,7 +3271,11 @@
       "queueFailed": "{{n}} fehlgeschlagen",
       "urlFileTooLarge": "Die Datei ist zu groß zum Herunterladen. Die maximale Größe beträgt 500 MB.",
       "urlYoutubeBlocked": "YouTube blockiert Downloads aus Ihrem Netzwerk vorübergehend. Versuchen Sie es später erneut.",
-      "customEndpointInvalid": "Benutzerdefinierter Transkriptionsendpunkt ist nicht konfiguriert oder ungültig. Aktualisieren Sie ihn in den Einstellungen."
+      "customEndpointInvalid": "Benutzerdefinierter Transkriptionsendpunkt ist nicht konfiguriert oder ungültig. Aktualisieren Sie ihn in den Einstellungen.",
+      "leaveWhileProcessing": {
+        "title": "Transkription läuft",
+        "description": "Wenn du diesen Tab verlässt, wird der aktuelle Upload samt Transkription abgebrochen und das Ergebnis geht verloren. Trotzdem verlassen?"
+      }
     },
     "meeting": {
       "title": "Besprechungsnotizen",

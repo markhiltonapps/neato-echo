@@ -3062,7 +3062,11 @@
       "queueFailed": "{{n}} con error",
       "urlFileTooLarge": "El archivo es demasiado grande para descargar. El tamaño máximo es 500 MB.",
       "urlYoutubeBlocked": "YouTube está bloqueando temporalmente las descargas desde tu red. Inténtalo de nuevo más tarde.",
-      "customEndpointInvalid": "El endpoint de transcripción personalizado no está configurado o no es válido. Actualízalo en Ajustes."
+      "customEndpointInvalid": "El endpoint de transcripción personalizado no está configurado o no es válido. Actualízalo en Ajustes.",
+      "leaveWhileProcessing": {
+        "title": "Transcripción en curso",
+        "description": "Si sales de esta pestaña se cancelará la carga actual y su transcripción, y se perderá el resultado. ¿Salir de todos modos?"
+      }
     },
     "meeting": {
       "title": "Notas de reunión",

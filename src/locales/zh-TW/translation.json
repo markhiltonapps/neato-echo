@@ -3014,7 +3014,11 @@
       "queueFailed": "{{n}} 個失敗",
       "urlFileTooLarge": "檔案過大，無法下載。大小上限為 500 MB。",
       "urlYoutubeBlocked": "YouTube 暫時封鎖了來自您網路的下載。請稍後再試。",
-      "customEndpointInvalid": "自訂轉錄端點未設定或無效。請在設定中更新。"
+      "customEndpointInvalid": "自訂轉錄端點未設定或無效。請在設定中更新。",
+      "leaveWhileProcessing": {
+        "title": "正在轉錄",
+        "description": "離開此分頁將取消目前的上傳及其轉錄，結果將遺失。仍要離開嗎？"
+      }
     },
     "meeting": {
       "title": "會議筆記",

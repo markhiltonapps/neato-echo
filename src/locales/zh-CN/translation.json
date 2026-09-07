@@ -3014,7 +3014,11 @@
       "queueFailed": "{{n}} 个失败",
       "urlFileTooLarge": "文件过大，无法下载。最大大小为 500 MB。",
       "urlYoutubeBlocked": "YouTube 暂时阻止了来自您网络的下载。请稍后重试。",
-      "customEndpointInvalid": "自定义转写端点未配置或无效。请在设置中更新。"
+      "customEndpointInvalid": "自定义转写端点未配置或无效。请在设置中更新。",
+      "leaveWhileProcessing": {
+        "title": "正在转录",
+        "description": "离开此标签页将取消当前上传及其转录，结果将丢失。仍要离开吗？"
+      }
     },
     "meeting": {
       "title": "会议笔记",

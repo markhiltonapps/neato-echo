@@ -3271,7 +3271,11 @@
       "queueFailed": "{{n}} en échec",
       "urlFileTooLarge": "Le fichier est trop volumineux pour être téléchargé. La taille maximale est de 500 Mo.",
       "urlYoutubeBlocked": "YouTube bloque temporairement les téléchargements depuis votre réseau. Réessayez dans un moment.",
-      "customEndpointInvalid": "Le point de terminaison de transcription personnalisé n'est pas configuré ou est invalide. Mettez-le à jour dans les réglages."
+      "customEndpointInvalid": "Le point de terminaison de transcription personnalisé n'est pas configuré ou est invalide. Mettez-le à jour dans les réglages.",
+      "leaveWhileProcessing": {
+        "title": "Transcription en cours",
+        "description": "Quitter cet onglet annulera le téléversement en cours et sa transcription, et le résultat sera perdu. Quitter quand même ?"
+      }
     },
     "meeting": {
       "title": "Notes de réunion",

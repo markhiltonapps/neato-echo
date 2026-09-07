@@ -70,6 +70,7 @@ import {
   initializeNotes,
 } from "../stores/noteStore";
 import { fetchProviders as fetchStreamingProviders } from "../stores/streamingProvidersStore";
+import { useUploadProcessingStore } from "../stores/uploadProcessingStore";
 import {
   executeTranslationChain,
   hasTextContent,
@@ -236,6 +237,26 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     hideConfirmDialog,
     hideAlertDialog,
   } = useDialogs();
+
+  // Leaving the Upload tab mid-download/transcription unmounts it and discards
+  // the job, so warn first. Confirming still proceeds (and cancels the job);
+  // this just stops it happening by accident.
+  const uploadProcessing = useUploadProcessingStore((s) => s.isProcessing);
+  const handleViewChange = useCallback(
+    (view: ControlPanelView) => {
+      if (view !== activeView && activeView === "upload" && uploadProcessing) {
+        showConfirmDialog({
+          title: t("notes.upload.leaveWhileProcessing.title"),
+          description: t("notes.upload.leaveWhileProcessing.description"),
+          onConfirm: () => setActiveView(view),
+          variant: "destructive",
+        });
+        return;
+      }
+      setActiveView(view);
+    },
+    [activeView, uploadProcessing, showConfirmDialog, t]
+  );
 
   const loadTranscriptions = useCallback(
     async (includeDiscarded?: boolean) => {
@@ -987,7 +1008,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
         >
           <ControlPanelSidebar
             activeView={activeView}
-            onViewChange={setActiveView}
+            onViewChange={handleViewChange}
             onOpenSearch={() => setShowSearch(true)}
             onOpenSettings={() => {
               setSettingsSection(undefined);

@@ -51,6 +51,7 @@ import {
 } from "../../stores/settingsStore";
 import { useBatchQueue } from "../../stores/batchQueueStore";
 import type { TranscribeOptions } from "../../stores/batchQueueStore";
+import { useUploadProcessingStore } from "../../stores/uploadProcessingStore";
 import {
   transcribeFileWithSpeakers,
   resolveDiarizationSettings,
@@ -361,6 +362,14 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
       if (progressRef.current) clearInterval(progressRef.current);
     };
   }, []);
+
+  // Publish whether a download/transcription is in flight so ControlPanel can
+  // warn before a tab switch unmounts this view and discards the job.
+  const setUploadProcessing = useUploadProcessingStore((s) => s.setUploadProcessing);
+  useEffect(() => {
+    setUploadProcessing(state === "downloading" || state === "transcribing");
+  }, [state, setUploadProcessing]);
+  useEffect(() => () => setUploadProcessing(false), [setUploadProcessing]);
 
   useEffect(() => {
     mountedRef.current = true;

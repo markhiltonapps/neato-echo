@@ -3004,7 +3004,11 @@
       "queueFailed": "{{n}}件失敗",
       "urlFileTooLarge": "ファイルが大きすぎてダウンロードできません。最大サイズは500 MBです。",
       "urlYoutubeBlocked": "YouTubeがお使いのネットワークからのダウンロードを一時的にブロックしています。しばらくしてからもう一度お試しください。",
-      "customEndpointInvalid": "カスタム文字起こしエンドポイントが未設定か無効です。設定から更新してください。"
+      "customEndpointInvalid": "カスタム文字起こしエンドポイントが未設定か無効です。設定から更新してください。",
+      "leaveWhileProcessing": {
+        "title": "文字起こしを実行中",
+        "description": "このタブを離れると、現在のアップロードと文字起こしがキャンセルされ、結果は失われます。それでも移動しますか？"
+      }
     },
     "meeting": {
       "title": "議事録",
