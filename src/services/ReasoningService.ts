@@ -816,11 +816,16 @@ class ReasoningService extends BaseReasoningService {
     // OpenRouter ids are never in the local registry, so the supportsThinking
     // exemption below can't apply — honor the toggle directly.
     const openrouterDisableThinking = provider === "openrouter" && config.disableThinking === true;
+    // The bundled llama-server must be told not to *generate* thinking, not
+    // just have its tags stripped afterward — that hidden generation is the
+    // bulk of local chat latency. LAN endpoints keep tag-stripping only, since
+    // an arbitrary OpenAI-compat server may reject these fields.
+    const localDisableThinking = isLocalProvider && config.disableThinking !== false;
     // Resolving a Tinfoil model refreshes the registry, so read model config after it.
     const aiModel = isEnterprise
       ? createEnterpriseChatModel(provider as EnterpriseProvider, model, config.inferenceScope)
       : await getAIModel(aiProvider, model, apiKey, baseURL, {
-          disableThinking: openrouterDisableThinking,
+          disableThinking: openrouterDisableThinking || localDisableThinking,
         });
 
     if (abortController.signal.aborted) {

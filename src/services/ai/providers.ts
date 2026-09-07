@@ -5,6 +5,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
 import { getTinfoilLanguageModel } from "./tinfoilClient";
 import { API_ENDPOINTS } from "../../config/constants";
+import { injectLocalThinkingDisabled } from "./localThinkingBody";
 
 // Renderer-side AI SDK factory. Cloud + local only — enterprise providers
 // (bedrock/azure/vertex) run in the main process via the
@@ -21,6 +22,20 @@ const withDisabledReasoning: typeof fetch = (input, init) => {
       body.reasoning = { enabled: false };
       init = { ...init, body: JSON.stringify(body) };
     } catch {}
+  }
+  return fetch(input, init);
+};
+
+// llama-server + Qwen: without this the model generates its full <think>
+// chain-of-thought on every turn (twice per tool question) and the app only
+// strips the tags afterward — so the user waits through hidden reasoning they
+// never see. Suppress generation at the request boundary, the same way the
+// non-streaming inference() path does (llamaServer.js). The AI SDK can't emit
+// these fields, so inject them at fetch. think:false and chat_template_kwargs
+// mirror suppressThinking()'s "local" dialect.
+const withLocalThinkingDisabled: typeof fetch = (input, init) => {
+  if (typeof init?.body === "string") {
+    init = { ...init, body: injectLocalThinkingDisabled(init.body) };
   }
   return fetch(input, init);
 };
@@ -64,7 +79,11 @@ export async function getAIModel(
         ...(opts?.disableThinking ? { fetch: withDisabledReasoning } : {}),
       }).chat(model);
     case "local":
-      return createOpenAI({ apiKey: apiKey || "no-key", baseURL }).chat(model);
+      return createOpenAI({
+        apiKey: apiKey || "no-key",
+        baseURL,
+        ...(opts?.disableThinking ? { fetch: withLocalThinkingDisabled } : {}),
+      }).chat(model);
     default:
       throw new Error(`Unsupported AI SDK provider for renderer: ${provider}`);
   }
