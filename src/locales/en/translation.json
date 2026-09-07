@@ -3668,7 +3668,6 @@
     },
     "tools": {
       "search_notesName": "Search notes",
-      "list_meetingsName": "List meetings",
       "get_noteName": "Get note",
       "create_noteName": "Create note",
       "update_noteName": "Update note",
@@ -3678,7 +3677,6 @@
       "get_calendar_eventsName": "Get calendar events",
       "get_calendar_availabilityName": "Check calendar availability",
       "search_notesStatus": "Searching notes...",
-      "list_meetingsStatus": "Finding meetings...",
       "web_searchStatus": "Searching the web...",
       "copy_to_clipboardStatus": "Copying to clipboard...",
       "get_calendar_eventsStatus": "Checking calendar...",
@@ -3689,7 +3687,9 @@
       "copiedToClipboard": "Copied to your clipboard",
       "openNote": "Open note",
       "unknownTool": "Unknown tool: {{name}}",
-      "invalidArgs": "Invalid tool arguments for {{name}}"
+      "invalidArgs": "Invalid tool arguments for {{name}}",
+      "list_recorded_meetingsName": "List meetings",
+      "list_recorded_meetingsStatus": "Finding meetings..."
     }
   },
   "assistant": {

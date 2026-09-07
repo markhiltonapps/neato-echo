@@ -3503,7 +3503,6 @@
     },
     "tools": {
       "search_notesName": "搜索笔记",
-      "list_meetingsName": "列出会议",
       "get_noteName": "获取笔记",
       "create_noteName": "创建笔记",
       "update_noteName": "更新笔记",
@@ -3513,7 +3512,6 @@
       "get_calendar_eventsName": "获取日历事件",
       "get_calendar_availabilityName": "查看空闲时间",
       "search_notesStatus": "正在搜索笔记...",
-      "list_meetingsStatus": "正在查找会议...",
       "web_searchStatus": "正在搜索网页...",
       "copy_to_clipboardStatus": "正在复制到剪贴板...",
       "get_calendar_eventsStatus": "正在查看日历...",
@@ -3524,7 +3522,9 @@
       "copiedToClipboard": "已复制到剪贴板",
       "openNote": "打开笔记",
       "unknownTool": "未知工具：{{name}}",
-      "invalidArgs": "{{name}} 的工具参数无效"
+      "invalidArgs": "{{name}} 的工具参数无效",
+      "list_recorded_meetingsName": "列出会议",
+      "list_recorded_meetingsStatus": "正在查找会议..."
     }
   },
   "assistant": {

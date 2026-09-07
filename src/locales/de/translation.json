@@ -3668,7 +3668,6 @@
     },
     "tools": {
       "search_notesName": "Notizen durchsuchen",
-      "list_meetingsName": "Meetings auflisten",
       "get_noteName": "Notiz abrufen",
       "create_noteName": "Notiz erstellen",
       "update_noteName": "Notiz aktualisieren",
@@ -3678,7 +3677,6 @@
       "get_calendar_eventsName": "Kalendertermine abrufen",
       "get_calendar_availabilityName": "Verfügbarkeit prüfen",
       "search_notesStatus": "Notizen werden durchsucht...",
-      "list_meetingsStatus": "Meetings werden gesucht...",
       "web_searchStatus": "Websuche...",
       "copy_to_clipboardStatus": "In Zwischenablage kopieren...",
       "get_calendar_eventsStatus": "Kalender wird geprüft...",
@@ -3689,7 +3687,9 @@
       "copiedToClipboard": "In die Zwischenablage kopiert",
       "openNote": "Notiz öffnen",
       "unknownTool": "Unbekanntes Werkzeug: {{name}}",
-      "invalidArgs": "Ungültige Tool-Argumente für {{name}}"
+      "invalidArgs": "Ungültige Tool-Argumente für {{name}}",
+      "list_recorded_meetingsName": "Meetings auflisten",
+      "list_recorded_meetingsStatus": "Meetings werden gesucht..."
     }
   },
   "assistant": {

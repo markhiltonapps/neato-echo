@@ -3503,7 +3503,6 @@
     },
     "tools": {
       "search_notesName": "ノートを検索",
-      "list_meetingsName": "会議を一覧表示",
       "get_noteName": "ノートを取得",
       "create_noteName": "ノートを作成",
       "update_noteName": "ノートを更新",
@@ -3513,7 +3512,6 @@
       "get_calendar_eventsName": "カレンダーの予定を取得",
       "get_calendar_availabilityName": "空き時間を確認",
       "search_notesStatus": "ノートを検索中...",
-      "list_meetingsStatus": "会議を検索中...",
       "web_searchStatus": "ウェブを検索中...",
       "copy_to_clipboardStatus": "クリップボードにコピー中...",
       "get_calendar_eventsStatus": "カレンダーを確認中...",
@@ -3524,7 +3522,9 @@
       "copiedToClipboard": "クリップボードにコピーしました",
       "openNote": "ノートを開く",
       "unknownTool": "不明なツール: {{name}}",
-      "invalidArgs": "{{name}} のツール引数が無効です"
+      "invalidArgs": "{{name}} のツール引数が無効です",
+      "list_recorded_meetingsName": "会議を一覧表示",
+      "list_recorded_meetingsStatus": "会議を検索中..."
     }
   },
   "assistant": {

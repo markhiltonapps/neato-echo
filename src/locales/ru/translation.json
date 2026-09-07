@@ -3541,7 +3541,6 @@
     },
     "tools": {
       "search_notesName": "Поиск заметок",
-      "list_meetingsName": "Список встреч",
       "get_noteName": "Получить заметку",
       "create_noteName": "Создать заметку",
       "update_noteName": "Обновить заметку",
@@ -3551,7 +3550,6 @@
       "get_calendar_eventsName": "Получить события календаря",
       "get_calendar_availabilityName": "Проверить доступность",
       "search_notesStatus": "Поиск в заметках...",
-      "list_meetingsStatus": "Поиск встреч...",
       "web_searchStatus": "Поиск в интернете...",
       "copy_to_clipboardStatus": "Копирование в буфер обмена...",
       "get_calendar_eventsStatus": "Проверка календаря...",
@@ -3562,7 +3560,9 @@
       "copiedToClipboard": "Скопировано в буфер обмена",
       "openNote": "Открыть заметку",
       "unknownTool": "Неизвестный инструмент: {{name}}",
-      "invalidArgs": "Недопустимые аргументы инструмента для {{name}}"
+      "invalidArgs": "Недопустимые аргументы инструмента для {{name}}",
+      "list_recorded_meetingsName": "Список встреч",
+      "list_recorded_meetingsStatus": "Поиск встреч..."
     }
   },
   "assistant": {

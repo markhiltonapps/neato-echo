@@ -13,9 +13,9 @@ const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
  * there is one, otherwise a transcript excerpt to summarize from.
  */
 export const listMeetingsTool: ToolDefinition = {
-  name: "list_meetings",
+  name: "list_recorded_meetings",
   description:
-    "List recorded meetings in a date range (YYYY-MM-DD local, newest first; omit both for the most recent). For questions spanning multiple meetings. Returns title, date, duration, saved summary, and a transcript excerpt.",
+    "Search meetings the user RECORDED and transcribed inside this app (captured audio). This is NOT the user's calendar or schedule — for upcoming or scheduled meetings, or any 'what meetings do I have today/tomorrow/this week' question, use get_calendar_events instead. Date range in YYYY-MM-DD local, newest first; omit both for the most recent. Returns title, date, duration, saved summary, and a transcript excerpt.",
   parameters: {
     type: "object",
     properties: {

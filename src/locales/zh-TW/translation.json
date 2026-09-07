@@ -3503,7 +3503,6 @@
     },
     "tools": {
       "search_notesName": "搜尋筆記",
-      "list_meetingsName": "列出會議",
       "get_noteName": "取得筆記",
       "create_noteName": "建立筆記",
       "update_noteName": "更新筆記",
@@ -3513,7 +3512,6 @@
       "get_calendar_eventsName": "取得行事曆事件",
       "get_calendar_availabilityName": "查看可用時段",
       "search_notesStatus": "正在搜尋筆記...",
-      "list_meetingsStatus": "正在尋找會議...",
       "web_searchStatus": "正在搜尋網頁...",
       "copy_to_clipboardStatus": "正在複製到剪貼簿...",
       "get_calendar_eventsStatus": "正在查看行事曆...",
@@ -3524,7 +3522,9 @@
       "copiedToClipboard": "已複製到剪貼簿",
       "openNote": "開啟筆記",
       "unknownTool": "未知工具：{{name}}",
-      "invalidArgs": "{{name}} 的工具參數無效"
+      "invalidArgs": "{{name}} 的工具參數無效",
+      "list_recorded_meetingsName": "列出會議",
+      "list_recorded_meetingsStatus": "正在尋找會議..."
     }
   },
   "assistant": {

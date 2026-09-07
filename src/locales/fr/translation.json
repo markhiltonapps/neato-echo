@@ -3668,7 +3668,6 @@
     },
     "tools": {
       "search_notesName": "Rechercher des notes",
-      "list_meetingsName": "Lister les réunions",
       "get_noteName": "Obtenir une note",
       "create_noteName": "Créer une note",
       "update_noteName": "Mettre à jour une note",
@@ -3678,7 +3677,6 @@
       "get_calendar_eventsName": "Obtenir les événements du calendrier",
       "get_calendar_availabilityName": "Vérifier les disponibilités",
       "search_notesStatus": "Recherche de notes...",
-      "list_meetingsStatus": "Recherche des réunions...",
       "web_searchStatus": "Recherche sur le web...",
       "copy_to_clipboardStatus": "Copie dans le presse-papiers...",
       "get_calendar_eventsStatus": "Vérification du calendrier...",
@@ -3689,7 +3687,9 @@
       "copiedToClipboard": "Copié dans le presse-papiers",
       "openNote": "Ouvrir la note",
       "unknownTool": "Outil inconnu : {{name}}",
-      "invalidArgs": "Arguments d'outil invalides pour {{name}}"
+      "invalidArgs": "Arguments d'outil invalides pour {{name}}",
+      "list_recorded_meetingsName": "Lister les réunions",
+      "list_recorded_meetingsStatus": "Recherche des réunions..."
     }
   },
   "assistant": {
