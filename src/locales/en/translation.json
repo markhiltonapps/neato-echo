@@ -637,7 +637,7 @@
       "problemTitle": "Update ran into a problem",
       "problemDescription": "We couldn't complete the update. Please try again later.",
       "installTitle": "Install Update",
-      "installDescription": "Neato Echo will restart to apply the update. Any in-progress work will be saved.",
+      "installDescription": "Neato Echo will close, show a short installer window, and reopen automatically when the update is done. Any in-progress work is saved.",
       "couldNotInstallTitle": "Couldn't install update",
       "couldNotInstallDescription": "Something went wrong. Please try again.",
       "couldNotDownloadTitle": "Couldn't download update",

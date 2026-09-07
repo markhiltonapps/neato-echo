@@ -616,7 +616,7 @@
       "problemTitle": "Houve um problema na atualização",
       "problemDescription": "Não foi possível concluir a atualização. Tente novamente mais tarde.",
       "installTitle": "Instalar atualização",
-      "installDescription": "O Neato Echo será reiniciado para aplicar a atualização. O trabalho em andamento será salvo.",
+      "installDescription": "O Neato Echo será fechado, mostrará brevemente uma janela de instalação e reabrirá automaticamente quando a atualização terminar. O trabalho em andamento é salvo.",
       "couldNotInstallTitle": "Não foi possível instalar a atualização",
       "couldNotInstallDescription": "Algo deu errado. Tente novamente.",
       "couldNotDownloadTitle": "Não foi possível baixar a atualização",

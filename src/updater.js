@@ -260,8 +260,12 @@ class UpdateManager {
       this.isInstalling = true;
       console.log("🔄 Installing update and restarting...");
 
-      const isSilent = process.platform === "win32";
-      autoUpdater.quitAndInstall(isSilent, true);
+      // isSilent=false: show the installer's own progress window and, crucially,
+      // let NSIS relaunch the app afterward. A silent install (isSilent=true)
+      // routinely fails to reopen the app on Windows, leaving the user staring
+      // at a closed app with no idea the update finished. isForceRunAfter=true
+      // asks the installer to relaunch us when it completes.
+      autoUpdater.quitAndInstall(false, true);
 
       return { success: true, message: "Update installation started" };
     } catch (error) {

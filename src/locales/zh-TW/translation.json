@@ -637,7 +637,7 @@
       "problemTitle": "更新遇到問題",
       "problemDescription": "無法完成更新。請稍後再試。",
       "installTitle": "安裝更新",
-      "installDescription": "Neato Echo 將重新啟動以套用更新。進行中的工作會自動儲存。",
+      "installDescription": "Neato Echo 將關閉，短暫顯示安裝程式視窗，更新完成後會自動重新開啟。進行中的工作會被儲存。",
       "couldNotInstallTitle": "無法安裝更新",
       "couldNotInstallDescription": "發生錯誤，請再試一次。",
       "couldNotDownloadTitle": "無法下載更新",

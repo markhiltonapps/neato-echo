@@ -637,7 +637,7 @@
       "problemTitle": "Beim Update ist ein Problem aufgetreten",
       "problemDescription": "Das Update konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.",
       "installTitle": "Update installieren",
-      "installDescription": "Neato Echo startet neu, um das Update anzuwenden. Laufende Arbeit wird gespeichert.",
+      "installDescription": "Neato Echo wird geschlossen, zeigt kurz ein Installationsfenster und öffnet sich nach der Aktualisierung automatisch wieder. Laufende Arbeit wird gespeichert.",
       "couldNotInstallTitle": "Update konnte nicht installiert werden",
       "couldNotInstallDescription": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
       "couldNotDownloadTitle": "Update konnte nicht heruntergeladen werden",

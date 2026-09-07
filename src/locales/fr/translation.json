@@ -637,7 +637,7 @@
       "problemTitle": "Problème pendant la mise à jour",
       "problemDescription": "Nous n'avons pas pu terminer la mise à jour. Réessayez plus tard.",
       "installTitle": "Installer la mise à jour",
-      "installDescription": "Neato Echo va redémarrer pour appliquer la mise à jour. Le travail en cours sera sauvegardé.",
+      "installDescription": "Neato Echo va se fermer, afficher brièvement une fenêtre d'installation, puis se rouvrir automatiquement une fois la mise à jour terminée. Le travail en cours est enregistré.",
       "couldNotInstallTitle": "Impossible d'installer la mise à jour",
       "couldNotInstallDescription": "Une erreur est survenue. Veuillez réessayer.",
       "couldNotDownloadTitle": "Impossible de télécharger la mise à jour",

@@ -637,7 +637,7 @@
       "problemTitle": "アップデートで問題が発生しました",
       "problemDescription": "アップデートを完了できませんでした。後でもう一度お試しください。",
       "installTitle": "アップデートをインストール",
-      "installDescription": "Neato Echo はアップデートを適用するために再起動します。作業中のデータは保存されます。",
+      "installDescription": "Neato Echo が終了し、短いインストーラー画面が表示された後、更新が完了すると自動的に再起動します。作業中の内容は保存されます。",
       "couldNotInstallTitle": "アップデートをインストールできませんでした",
       "couldNotInstallDescription": "問題が発生しました。もう一度お試しください。",
       "couldNotDownloadTitle": "アップデートをダウンロードできませんでした",
