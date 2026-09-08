@@ -1,4 +1,12 @@
 {
+  "home": {
+    "briefing": {
+      "title": "Preparati per la giornata",
+      "meetingCount": "{{count}} oggi",
+      "next": "Successiva",
+      "join": "Partecipa"
+    }
+  },
   "settings": {
     "language": {
       "sectionTitle": "Lingua",

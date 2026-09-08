@@ -1,4 +1,12 @@
 {
+  "home": {
+    "briefing": {
+      "title": "为你的一天做准备",
+      "meetingCount": "今天 {{count}} 场",
+      "next": "下一个",
+      "join": "加入"
+    }
+  },
   "settings": {
     "language": {
       "sectionTitle": "语言",

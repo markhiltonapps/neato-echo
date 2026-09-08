@@ -1,4 +1,12 @@
 {
+  "home": {
+    "briefing": {
+      "title": "Подготовьтесь к дню",
+      "meetingCount": "{{count}} сегодня",
+      "next": "Далее",
+      "join": "Присоединиться"
+    }
+  },
   "settings": {
     "language": {
       "sectionTitle": "Язык",
