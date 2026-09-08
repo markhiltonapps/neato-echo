@@ -17,6 +17,17 @@
   --color-accent-foreground: #ffffff;
   /* Agent Mode identity, sourced from the supplied sparkle/leaf mark. */
   --color-agent-brand: #8787ff;
+  /* Neato brand signals — teal (calm/navigation) + burnt-orange (AI/action).
+     Light-mode values; .dark redefines them below. Deepened for contrast on
+     the cream/white ground. */
+  --color-brand-teal: #17958a;
+  --color-brand-teal-dim: #0f7a70;
+  --color-brand-teal-soft: #17958a1f;
+  --color-brand-warm: #e0551d;
+  --color-brand-warm-2: #f0713f;
+  --color-brand-warm-soft: #e0551d1a;
+  /* Brand display/label face as a Tailwind utility (font-brand). */
+  --font-brand: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   --color-border: #e5e5e5;
@@ -63,6 +74,9 @@
   --font-family-sans:
     "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
+  /* Neato brand display/label voice — labels, times, date numerals, wordmark. */
+  --font-family-brand:
+    "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 
   /* Opacities */
   --opacity-subtle: 0.1;
@@ -115,6 +129,13 @@
   --color-muted-foreground: oklch(0.65 0 0);
   --color-accent: oklch(0.68 0.18 285);
   --color-accent-foreground: oklch(0.99 0 0);
+  /* Neato brand signals on charcoal — brighter teal + burnt-orange. */
+  --color-brand-teal: #45bcb0;
+  --color-brand-teal-dim: #2f8981;
+  --color-brand-teal-soft: #45bcb029;
+  --color-brand-warm: #f2683c;
+  --color-brand-warm-2: #f47a4f;
+  --color-brand-warm-soft: #f2683c26;
   --color-destructive: oklch(0.62 0.22 25);
   --color-destructive-foreground: oklch(0.99 0 0);
   --color-border: oklch(0.35 0.007 260);

@@ -43,20 +43,24 @@ export default function TodayBriefing({ events, isConnected }: TodayBriefingProp
   const isLoadingPreps = status === "loading";
 
   return (
-    <div className="max-w-3xl mx-auto w-full mb-3">
-      <div className="rounded-xl border border-border bg-gradient-to-b from-primary/[0.04] to-transparent p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles size={15} className="text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">{t("home.briefing.title")}</h2>
-          <span className="text-xs text-muted-foreground">
+    <div className="max-w-3xl mx-auto w-full mb-4">
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 dark:border-white/8 p-5 pb-1.5 bg-gradient-to-b from-brand-teal-soft to-transparent shadow-[0_22px_55px_-34px_rgba(0,0,0,0.55)]">
+        <div className="relative mb-3.5 flex items-center gap-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-brand-warm-2 to-brand-warm text-white shadow-[0_8px_18px_-8px_var(--color-brand-warm)]">
+            <Sparkles size={15} />
+          </span>
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+            {t("home.briefing.title")}
+          </h2>
+          <span className="font-brand rounded-md border border-brand-teal/25 bg-brand-teal-soft px-2 py-[3px] text-[10px] font-bold uppercase tracking-[0.14em] text-brand-teal">
             {t("home.briefing.meetingCount", { count: today.length })}
           </span>
           {isLoadingPreps && (
-            <Loader2 size={12} className="ml-auto animate-spin text-muted-foreground/50" />
+            <Loader2 size={13} className="ml-auto animate-spin text-muted-foreground/50" />
           )}
         </div>
 
-        <ul className="space-y-2.5">
+        <ul>
           {today.map((event, i) => {
             const joinUrl = getMeetingJoinUrl(event);
             const prep = preps[event.id];
@@ -64,21 +68,38 @@ export default function TodayBriefing({ events, isConnected }: TodayBriefingProp
             return (
               <li
                 key={event.id}
-                className={cn(
-                  "flex items-start gap-3 rounded-lg border-l-2 py-1 pl-3",
-                  isNext ? "border-primary/60" : "border-border"
-                )}
+                className="relative grid grid-cols-[62px_1fr_auto] items-center gap-4 rounded-xl py-3 pl-4 pr-1.5 transition-colors hover:bg-foreground/[0.035] dark:hover:bg-white/[0.03]"
               >
-                <span className="w-14 shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground">
+                {i > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-3 top-0 h-px bg-border/60 dark:bg-white/[0.06]"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute left-1 top-3.5 bottom-3.5 w-[2px] rounded-full",
+                    isNext
+                      ? "bg-brand-teal shadow-[0_0_10px_var(--color-brand-teal)]"
+                      : "bg-border dark:bg-white/15"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "font-brand text-[13px] font-bold tabular-nums tracking-tight",
+                    isNext ? "text-brand-teal" : "text-foreground/70"
+                  )}
+                >
                   {formatTime(i18n.language, event.start_time)}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+                    <p className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-tight text-foreground">
                       {event.summary || t("upcoming.untitledEvent")}
                     </p>
                     {isNext && (
-                      <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                      <span className="font-brand shrink-0 rounded-full border border-brand-teal/40 px-2 py-[3px] text-[9px] font-bold uppercase tracking-[0.14em] text-brand-teal">
                         {t("home.briefing.next")}
                       </span>
                     )}
@@ -89,17 +110,17 @@ export default function TodayBriefing({ events, isConnected }: TodayBriefingProp
                           openJoinUrl(joinUrl);
                           window.electronAPI?.joinCalendarMeeting?.(event.id);
                         }}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/20"
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-gradient-to-b from-brand-warm-2 to-brand-warm px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_8px_18px_-10px_var(--color-brand-warm)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-warm/40"
                       >
-                        <Video size={11} />
+                        <Video size={12} />
                         {t("home.briefing.join")}
                       </button>
                     )}
                   </div>
                   {prep ? (
-                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{prep}</p>
+                    <p className="mt-1 text-[11.5px] leading-snug text-muted-foreground">{prep}</p>
                   ) : isLoadingPreps ? (
-                    <div className="mt-1.5 h-2 w-2/3 animate-pulse rounded bg-foreground/10" />
+                    <div className="mt-1.5 h-2 w-2/3 animate-pulse rounded bg-brand-teal/15" />
                   ) : null}
                 </div>
               </li>

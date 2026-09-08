@@ -108,6 +108,13 @@ export default function ControlPanelSidebar({
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       />
 
+      <div className="flex items-center gap-2 px-3 pt-0.5 pb-2">
+        <img src={logoIcon} alt="" className="w-[22px] h-[22px] rounded-[6px] shrink-0" />
+        <span className="font-brand text-[13px] font-bold tracking-[0.01em] text-foreground select-none">
+          neato<span className="text-brand-teal">echo</span>
+        </span>
+      </div>
+
       {onOpenSearch && (
         <div className="px-2 pt-2 pb-1">
           <button
@@ -141,18 +148,24 @@ export default function ControlPanelSidebar({
               onClick={() => onViewChange(item.id)}
               className={cn(
                 "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-md outline-none transition-colors duration-150 text-left",
-                "focus-visible:ring-1 focus-visible:ring-primary/30",
+                "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
                 isActive
-                  ? "bg-primary/8 dark:bg-primary/10"
-                  : "hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
+                  ? "bg-brand-teal-soft border border-brand-teal/25"
+                  : "border border-transparent hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
               )}
             >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand-teal shadow-[0_0_10px_var(--color-brand-teal)]"
+                />
+              )}
               <Icon
                 size={15}
                 className={cn(
                   "shrink-0 transition-colors duration-150",
                   isActive
-                    ? "text-primary"
+                    ? "text-brand-teal"
                     : "text-foreground/60 group-hover:text-foreground/75 dark:text-foreground/55 dark:group-hover:text-foreground/70"
                 )}
               />

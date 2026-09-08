@@ -178,8 +178,8 @@ export default function HistoryView({
         <div className="flex gap-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 pb-2.5">
-              <Mic size={12} className="text-muted-foreground" />
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <Mic size={12} className="text-muted-foreground/70" />
+              <span className="font-brand text-[10.5px] font-bold text-muted-foreground uppercase tracking-[0.18em]">
                 {t("upcoming.transcriptions")}
               </span>
             </div>
@@ -307,7 +307,7 @@ export default function HistoryView({
                 {groupedHistory.map((group, index) => (
                   <div key={group.label} className={index > 0 ? "mt-4" : ""}>
                     <div className="sticky -top-1 z-10 -mx-4 px-5 pt-2 pb-2 bg-background flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">
+                      <span className="font-brand text-[10px] font-bold text-muted-foreground/80 uppercase tracking-[0.16em]">
                         {group.label}
                       </span>
                       {index === 0 && (
