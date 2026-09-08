@@ -71,6 +71,7 @@ import {
 } from "../stores/noteStore";
 import { fetchProviders as fetchStreamingProviders } from "../stores/streamingProvidersStore";
 import { useUploadProcessingStore } from "../stores/uploadProcessingStore";
+import { useLocalSummaryModelMigration } from "../hooks/useLocalSummaryModelMigration";
 import {
   executeTranslationChain,
   hasTextContent,
@@ -243,6 +244,8 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
   // the job, so warn first. Confirming still proceeds (and cancels the job);
   // this just stops it happening by accident.
   const uploadProcessing = useUploadProcessingStore((s) => s.isProcessing);
+  // One-time: move upgraders off the old local 4B default onto the faster 2B.
+  useLocalSummaryModelMigration();
   const handleViewChange = useCallback(
     (view: ControlPanelView) => {
       if (view !== activeView && activeView === "upload" && uploadProcessing) {
