@@ -57,6 +57,7 @@ import {
 import ControlPanelSidebar, { type ControlPanelView } from "./ControlPanelSidebar";
 import MeetingRecordingMount from "./MeetingRecordingMount";
 import MeetingRecordingPill from "./notes/MeetingRecordingPill";
+import MeetingSystemAudioWarningBanner from "./notes/MeetingSystemAudioWarningBanner";
 import WindowControls from "./WindowControls";
 
 import { getCachedPlatform } from "../utils/platform";
@@ -901,6 +902,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
           setActiveNoteId(recordingNoteId);
         }}
       />
+      <MeetingSystemAudioWarningBanner />
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={hideConfirmDialog}

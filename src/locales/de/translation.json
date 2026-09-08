@@ -3302,7 +3302,8 @@
       "restartFailed": "Die Meeting-Aufnahme konnte nicht neu gestartet werden.",
       "systemAudioSilent": {
         "title": "Noch kein Meeting-Ton erkannt",
-        "description": "Bisher hat nur Ihr Mikrofon Ton aufgenommen. Sie sind in einem Videoanruf? Prüfen Sie, ob der Meeting-Ton auf diesem Computer wiedergegeben wird und nicht stummgeschaltet ist. Sie nehmen vor Ort auf? Dann können Sie diesen Hinweis ignorieren – Ihr Mikrofon nimmt den Raum auf."
+        "description": "Bisher hat nur Ihr Mikrofon Ton aufgenommen. Sie sind in einem Videoanruf? Prüfen Sie, ob der Meeting-Ton auf diesem Computer wiedergegeben wird und nicht stummgeschaltet ist. Sie nehmen vor Ort auf? Dann können Sie diesen Hinweis ignorieren – Ihr Mikrofon nimmt den Raum auf.",
+        "openSettings": "Sound-Einstellungen öffnen"
       }
     },
     "meetingPill": {

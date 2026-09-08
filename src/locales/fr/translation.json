@@ -3302,7 +3302,8 @@
       "restartFailed": "Impossible de redémarrer l'enregistrement de la réunion.",
       "systemAudioSilent": {
         "title": "Aucun son de réunion détecté pour le moment",
-        "description": "Seul votre microphone a capté du son jusqu'à présent. Vous êtes en visioconférence ? Vérifiez que le son de la réunion est diffusé sur cet ordinateur et qu'il n'est pas coupé. Vous enregistrez en présentiel ? Vous pouvez ignorer ce message : votre microphone capte la salle."
+        "description": "Seul votre microphone a capté du son jusqu'à présent. Vous êtes en visioconférence ? Vérifiez que le son de la réunion est diffusé sur cet ordinateur et qu'il n'est pas coupé. Vous enregistrez en présentiel ? Vous pouvez ignorer ce message : votre microphone capte la salle.",
+        "openSettings": "Ouvrir les réglages du son"
       }
     },
     "meetingPill": {
