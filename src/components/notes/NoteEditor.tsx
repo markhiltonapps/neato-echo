@@ -1288,10 +1288,29 @@ export default function NoteEditor({
                 onAttachSpeakerEmail={handleAttachSpeakerEmail}
               />
             ) : viewMode === "transcript" && hasMeetingTranscript ? (
-              // Revisiting a finished meeting: show a read-only, speaker-labeled
-              // paragraphed transcript (readableTranscript) that reads like a
-              // document instead of one-clause rows or a single blob.
-              <RichTextEditor value={readableTranscript} disabled />
+              hasChatSegments ? (
+                // Revisiting a finished meeting: the interactive, speaker-labeled
+                // transcript so speakers can be renamed after the fact (a rename
+                // maps the speaker and updates all of that speaker's lines) and
+                // lines selected for bulk assignment — the same view used live.
+                <MeetingTranscriptChat
+                  segments={displaySegments}
+                  speakerMappings={speakerMappings}
+                  speakerProfiles={speakerProfiles}
+                  participants={parsedParticipants}
+                  selectedSegmentIds={selectedSegmentIds}
+                  isRecording={false}
+                  onMapSpeaker={handleMapSpeaker}
+                  onConfirmSuggestion={handleConfirmSuggestion}
+                  onDismissSuggestion={handleDismissSuggestion}
+                  onAttachSpeakerEmail={handleAttachSpeakerEmail}
+                  onToggleSelect={handleToggleSelect}
+                />
+              ) : (
+                // No parseable segments (older/plain-text transcript): keep the
+                // read-only readable document.
+                <RichTextEditor value={readableTranscript} disabled />
+              )
             ) : viewMode === "enhanced" && enhancement ? (
               <RichTextEditor
                 value={enhancement.content}
