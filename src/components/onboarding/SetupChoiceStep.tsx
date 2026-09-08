@@ -41,7 +41,7 @@ type WarningSetupMode = Exclude<AdvancedSetupMode, "byok">;
 // The two downloads the local setup recommends by default; their sizes drive the
 // disk-space copy on this step so it matches what the model picker will offer.
 const REFERENCE_SPEECH_MODEL_ID = "parakeet-tdt-0.6b-v3";
-const REFERENCE_SUMMARY_MODEL_ID = "qwen3.5-4b-q4_k_m";
+const REFERENCE_SUMMARY_MODEL_ID = "qwen3.5-2b-q4_k_m";
 
 interface SetupChoiceStepProps {
   isSignedIn: boolean;

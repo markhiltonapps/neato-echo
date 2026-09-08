@@ -8,11 +8,14 @@
  *
  * Pure and Electron-free so it can be unit-tested; the onboarding step and the
  * background tray consume it.
+ *
+ * Qwen 3.5 2B writes the summaries for everyone: it's the fast default that
+ * keeps replies snappy on a typical PC. Larger Qwen builds (4B, 9B) stay
+ * available in Settings for people who want more quality on a strong machine.
  */
 export const AUTO_SPEECH_MODEL = "parakeet-tdt-0.6b-v3";
 export const STREAMING_SPEECH_MODEL_EN = "nemotron-speech-streaming-en-0.6b";
-export const AUTO_SUMMARY_MODEL = "qwen3.5-4b-q4_k_m";
-export const AUTO_SUMMARY_MODEL_SMALL = "qwen3.5-2b-q4_k_m";
+export const AUTO_SUMMARY_MODEL = "qwen3.5-2b-q4_k_m";
 export const AUTO_SUMMARY_PROVIDER = "qwen";
 export const SMALL_MEMORY_GB = 8;
 
@@ -23,8 +26,8 @@ export interface AutoLocalModelPicks {
   smallMemory: boolean;
 }
 
-/** One speech model for all; memory → summary model. `englishOnly` is kept
- * for callers that tailor copy to the language. */
+/** One speech model and one summary model (2B) for everyone. `englishOnly` and
+ * `smallMemory` are kept for callers that tailor copy. */
 export function pickAutoLocalModels({
   language,
   memoryGb,
@@ -36,7 +39,7 @@ export function pickAutoLocalModels({
   const smallMemory = memoryGb !== null && memoryGb > 0 && memoryGb < SMALL_MEMORY_GB;
   return {
     speechModelId: AUTO_SPEECH_MODEL,
-    summaryModelId: smallMemory ? AUTO_SUMMARY_MODEL_SMALL : AUTO_SUMMARY_MODEL,
+    summaryModelId: AUTO_SUMMARY_MODEL,
     englishOnly,
     smallMemory,
   };

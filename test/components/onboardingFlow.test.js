@@ -386,9 +386,10 @@ test("pickAutoLocalModels: language picks the speech model, memory the summary m
     pickAutoLocalModels({ language: "es", memoryGb: 16 }).speechModelId,
     "parakeet-tdt-0.6b-v3"
   );
-  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 16 }).summaryModelId, "qwen3.5-4b-q4_k_m");
+  // 2B is the fast default for everyone, regardless of memory.
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 16 }).summaryModelId, "qwen3.5-2b-q4_k_m");
   assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 7.8 }).summaryModelId, "qwen3.5-2b-q4_k_m");
-  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: null }).summaryModelId, "qwen3.5-4b-q4_k_m");
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: null }).summaryModelId, "qwen3.5-2b-q4_k_m");
 });
 
 test("meetingHotkeyStep follows activation-mode on both routes", async () => {
