@@ -3398,7 +3398,10 @@
       "upgrade": "Passer à Pro"
     },
     "enhance": {
-      "title": "Erreur d'amélioration"
+      "title": "Erreur d'amélioration",
+      "working": "Amélioration de la note",
+      "inProgress": "En cours en arrière-plan…",
+      "viewNote": "Voir la note"
     },
     "speaker": {
       "you": "Vous",

@@ -3398,7 +3398,10 @@
       "upgrade": "Upgrade"
     },
     "enhance": {
-      "title": "Enhancement error"
+      "title": "Enhancement error",
+      "working": "Enhancing note",
+      "inProgress": "Working in the background…",
+      "viewNote": "View note"
     },
     "speaker": {
       "you": "You",

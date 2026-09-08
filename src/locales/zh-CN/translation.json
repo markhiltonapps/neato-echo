@@ -3141,7 +3141,10 @@
       "upgrade": "升级"
     },
     "enhance": {
-      "title": "增强错误"
+      "title": "增强错误",
+      "working": "正在优化笔记",
+      "inProgress": "正在后台处理…",
+      "viewNote": "查看笔记"
     },
     "speaker": {
       "you": "你",

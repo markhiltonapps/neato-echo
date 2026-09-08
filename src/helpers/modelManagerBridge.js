@@ -15,6 +15,21 @@ const debugLogger = require("./debugLogger");
 
 const MIN_FILE_SIZE = 1_000_000; // 1MB minimum for valid model files
 
+// A dropped/refused socket to the local llama-server — almost always a crash
+// mid-generation rather than a bad request. These are worth one restart+retry;
+// anything else (truncation, HTTP status, parse error) surfaces immediately.
+function isTransientServerError(error) {
+  const msg = (error && error.message ? error.message : String(error)).toLowerCase();
+  return (
+    msg.includes("econnreset") ||
+    msg.includes("econnrefused") ||
+    msg.includes("epipe") ||
+    msg.includes("socket hang up") ||
+    msg.includes("timed out") ||
+    msg.includes("is not running")
+  );
+}
+
 // Bounds the KV cache — registry contextLength is the full trained context
 // (128K+), which can exceed total RAM (#1203). Uniform for all start paths:
 // start() won't restart a ready server when only options change.
@@ -511,13 +526,34 @@ class ModelManager {
       userPromptLength: prompt.length,
     });
 
+    const inferenceOptions = {
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 512,
+      disableThinking: options.disableThinking,
+      requireCompleteOutput: options.requireCompleteOutput,
+    };
+
     try {
-      const result = await this.serverManager.inference(messages, {
-        temperature: options.temperature ?? 0.7,
-        max_tokens: options.maxTokens ?? 512,
-        disableThinking: options.disableThinking,
-        requireCompleteOutput: options.requireCompleteOutput,
-      });
+      let result;
+      try {
+        result = await this.serverManager.inference(messages, inferenceOptions);
+      } catch (error) {
+        // llama-server can drop the socket mid-generation (ECONNRESET / socket
+        // hang up), usually because the process crashed — its "close" handler
+        // has already marked the manager not-ready. Bring the server back and
+        // retry once before surfacing the failure, so a transient crash on a
+        // long enhancement doesn't lose the user's work.
+        if (!isTransientServerError(error)) throw error;
+        debugLogger.logReasoning("INFERENCE_CONNECTION_RESET_RETRY", { error: error.message });
+        try {
+          await this.serverManager.stop();
+        } catch {
+          /* already down */
+        }
+        await this.serverManager.start(modelPath, await this.serverStartOptions(modelInfo));
+        this.currentServerModelId = modelId;
+        result = await this.serverManager.inference(messages, inferenceOptions);
+      }
 
       const totalTime = Date.now() - startTime;
       debugLogger.logReasoning("INFERENCE_SUCCESS", {

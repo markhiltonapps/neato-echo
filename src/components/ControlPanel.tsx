@@ -80,7 +80,7 @@ import { applyChineseScript, resolveChineseScriptTarget } from "../utils/chinese
 import HistoryView from "./HistoryView";
 import BackgroundActionToastListener from "./notes/BackgroundActionToastListener";
 import SpaceSyncToastListener from "./notes/SpaceSyncToastListener";
-import TranscriptionJobIndicator from "./notes/TranscriptionJobIndicator";
+import ActivityIndicatorStack from "./notes/ActivityIndicatorStack";
 import { syncService } from "../services/SyncService.js";
 import logger from "../utils/logger";
 import AcceptInvitationModal from "./AcceptInvitationModal";
@@ -1323,8 +1323,9 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
       </div>
       <BackgroundActionToastListener />
       <SpaceSyncToastListener />
-      <TranscriptionJobIndicator
-        suppressed={activeView === "upload"}
+      <ActivityIndicatorStack
+        suppressTranscription={activeView === "upload"}
+        viewingNoteId={activeView === "personal-notes" ? activeNoteId : null}
         onOpenNote={(noteId, folderId) => {
           setActiveNoteId(noteId);
           if (folderId) setActiveFolderId(folderId);

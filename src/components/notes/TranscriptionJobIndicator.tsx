@@ -34,7 +34,7 @@ export default function TranscriptionJobIndicator({
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 w-72 max-w-[calc(100vw-2rem)]"
+      className="w-72 max-w-[calc(100vw-2rem)]"
       style={{ animation: "float-up 0.25s ease-out" }}
       role="status"
       aria-live="polite"

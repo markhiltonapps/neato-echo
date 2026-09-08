@@ -3398,7 +3398,10 @@
       "upgrade": "Upgraden"
     },
     "enhance": {
-      "title": "Verbesserungsfehler"
+      "title": "Verbesserungsfehler",
+      "working": "Notiz wird verbessert",
+      "inProgress": "Läuft im Hintergrund…",
+      "viewNote": "Notiz anzeigen"
     },
     "speaker": {
       "you": "Du",

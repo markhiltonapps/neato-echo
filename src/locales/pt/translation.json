@@ -3141,7 +3141,10 @@
       "upgrade": "Fazer upgrade"
     },
     "enhance": {
-      "title": "Erro de aprimoramento"
+      "title": "Erro de aprimoramento",
+      "working": "Aprimorando a nota",
+      "inProgress": "Trabalhando em segundo plano…",
+      "viewNote": "Ver nota"
     },
     "speaker": {
       "you": "Você",

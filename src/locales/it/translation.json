@@ -3141,7 +3141,10 @@
       "upgrade": "Passa a Pro"
     },
     "enhance": {
-      "title": "Errore di miglioramento"
+      "title": "Errore di miglioramento",
+      "working": "Miglioramento della nota",
+      "inProgress": "In corso in background…",
+      "viewNote": "Vedi nota"
     },
     "speaker": {
       "you": "Tu",

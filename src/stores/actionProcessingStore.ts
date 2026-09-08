@@ -217,3 +217,13 @@ export function selectNoteActionState(
   if (noteId == null) return IDLE_STATE;
   return state.noteStates[noteId] ?? IDLE_STATE;
 }
+
+/** The first note currently being enhanced, for a global in-progress indicator. */
+export function selectActiveAction(
+  state: ActionProcessingStoreState
+): { noteId: number; actionName: string | null } | null {
+  for (const [id, s] of Object.entries(state.noteStates)) {
+    if (s.status === "processing") return { noteId: Number(id), actionName: s.actionName };
+  }
+  return null;
+}

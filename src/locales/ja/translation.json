@@ -3069,7 +3069,10 @@
       "upgrade": "アップグレード"
     },
     "enhance": {
-      "title": "強化エラー"
+      "title": "強化エラー",
+      "working": "メモを整形中",
+      "inProgress": "バックグラウンドで処理中…",
+      "viewNote": "メモを表示"
     },
     "speaker": {
       "you": "あなた",
