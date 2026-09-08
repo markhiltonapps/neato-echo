@@ -897,7 +897,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
 
               <div className="flex items-center gap-3 my-3">
                 <div className="h-px flex-1 bg-foreground/5 dark:bg-white/5" />
-                <span className="text-[10px] text-foreground/20 uppercase tracking-wider">
+                <span className="font-brand text-[10px] text-foreground/25 uppercase tracking-[0.14em]">
                   {t("notes.upload.orDivider")}
                 </span>
                 <div className="h-px flex-1 bg-foreground/5 dark:bg-white/5" />
@@ -1781,7 +1781,7 @@ function FolderSelect({
                 <span className="flex items-center gap-1.5">
                   {f.name}
                   {isMeetings && (
-                    <span className="text-[8px] uppercase tracking-wider text-foreground/25 font-medium">
+                    <span className="font-brand text-[8px] uppercase tracking-[0.14em] text-foreground/30 font-bold">
                       {t("notes.folders.soon")}
                     </span>
                   )}

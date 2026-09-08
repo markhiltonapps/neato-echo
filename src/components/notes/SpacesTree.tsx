@@ -193,7 +193,7 @@ function SectionHeader({
   isDropSuccess?: boolean;
 }) {
   const labelClassName =
-    "text-[10px] font-semibold uppercase tracking-wide text-foreground/50 select-none";
+    "font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/50 select-none";
 
   return (
     <div

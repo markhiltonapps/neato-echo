@@ -2461,7 +2461,7 @@ export default function SettingsPage({
                           feature.startsWith("## ") ? (
                             <li
                               key={i}
-                              className={`text-[8px] font-semibold uppercase tracking-wide text-muted-foreground/60 ${i > 0 ? "pt-1.5" : ""}`}
+                              className={`font-brand text-[8px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60 ${i > 0 ? "pt-1.5" : ""}`}
                             >
                               {feature.slice(3)}
                             </li>
@@ -4546,7 +4546,7 @@ EOF`,
 
                   {updateInfo?.releaseNotes && (
                     <div className="mt-4 pt-4 border-t border-border/30">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      <p className="font-brand text-[11px] font-bold text-muted-foreground uppercase tracking-[0.14em] mb-2">
                         {t("settingsPage.general.updates.whatsNew", {
                           version: updateInfo.version,
                         })}
