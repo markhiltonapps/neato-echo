@@ -3144,7 +3144,9 @@
       "title": "增強錯誤",
       "working": "正在優化筆記",
       "inProgress": "正在背景處理…",
-      "viewNote": "查看筆記"
+      "viewNote": "查看筆記",
+      "almostDone": "即將完成…",
+      "safeToLeave": "可以切換分頁，處理會繼續。"
     },
     "speaker": {
       "you": "你",

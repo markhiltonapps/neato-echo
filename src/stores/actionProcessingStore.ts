@@ -12,6 +12,19 @@ export type ActionProcessingStatus = "idle" | "processing" | "success";
 export interface NoteActionState {
   status: ActionProcessingStatus;
   actionName: string | null;
+  // Epoch ms when processing began, for a live elapsed counter.
+  startedAt?: number;
+  // A rough expected duration (seconds) from the input size, for a soft ETA.
+  estimatedSeconds?: number;
+}
+
+// Local note enhancement has no streamed progress, so estimate from input size:
+// generation time tracks how much text the model has to read and rewrite. This
+// is deliberately rough (hardware varies) — it drives a soft ETA, not a promise.
+// Tuned so a short note is ~15s and a long meeting transcript a few minutes.
+export function estimateEnhanceSeconds(inputChars: number): number {
+  const seconds = 12 + inputChars / 180;
+  return Math.min(600, Math.max(10, Math.round(seconds)));
 }
 
 export interface ActionErrorEvent {
@@ -133,7 +146,12 @@ export function runBackgroundAction(
 
   cancelledFlags.set(noteId, false);
   processingFlags.set(noteId, true);
-  setNoteState(noteId, { status: "processing", actionName: action.name });
+  setNoteState(noteId, {
+    status: "processing",
+    actionName: action.name,
+    startedAt: Date.now(),
+    estimatedSeconds: estimateEnhanceSeconds(noteContent.length),
+  });
 
   (async () => {
     try {
@@ -219,11 +237,20 @@ export function selectNoteActionState(
 }
 
 /** The first note currently being enhanced, for a global in-progress indicator. */
-export function selectActiveAction(
-  state: ActionProcessingStoreState
-): { noteId: number; actionName: string | null } | null {
+export function selectActiveAction(state: ActionProcessingStoreState): {
+  noteId: number;
+  actionName: string | null;
+  startedAt?: number;
+  estimatedSeconds?: number;
+} | null {
   for (const [id, s] of Object.entries(state.noteStates)) {
-    if (s.status === "processing") return { noteId: Number(id), actionName: s.actionName };
+    if (s.status === "processing")
+      return {
+        noteId: Number(id),
+        actionName: s.actionName,
+        startedAt: s.startedAt,
+        estimatedSeconds: s.estimatedSeconds,
+      };
   }
   return null;
 }

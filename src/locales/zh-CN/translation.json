@@ -3144,7 +3144,9 @@
       "title": "增强错误",
       "working": "正在优化笔记",
       "inProgress": "正在后台处理…",
-      "viewNote": "查看笔记"
+      "viewNote": "查看笔记",
+      "almostDone": "即将完成…",
+      "safeToLeave": "可以切换标签页，处理会继续。"
     },
     "speaker": {
       "you": "你",

@@ -3072,7 +3072,9 @@
       "title": "強化エラー",
       "working": "メモを整形中",
       "inProgress": "バックグラウンドで処理中…",
-      "viewNote": "メモを表示"
+      "viewNote": "メモを表示",
+      "almostDone": "仕上げ中…",
+      "safeToLeave": "タブを切り替えても処理は続きます。"
     },
     "speaker": {
       "you": "あなた",

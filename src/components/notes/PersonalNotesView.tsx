@@ -627,6 +627,8 @@ export default function PersonalNotesView({
   const {
     state: actionProcessingState,
     actionName,
+    startedAt: actionStartedAt,
+    estimatedSeconds: actionEstimatedSeconds,
     runAction,
   } = useActionProcessing(activeNoteId ?? null);
 
@@ -855,6 +857,8 @@ export default function PersonalNotesView({
               onCancelPendingSaves={cancelPendingSaves}
               actionProcessingState={actionProcessingState}
               actionName={actionName}
+              actionStartedAt={actionStartedAt}
+              actionEstimatedSeconds={actionEstimatedSeconds}
               actionPicker={
                 <ActionPicker
                   onRunAction={(action) => void handleRunAction(action)}

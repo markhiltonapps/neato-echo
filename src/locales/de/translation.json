@@ -3401,7 +3401,9 @@
       "title": "Verbesserungsfehler",
       "working": "Notiz wird verbessert",
       "inProgress": "Läuft im Hintergrund…",
-      "viewNote": "Notiz anzeigen"
+      "viewNote": "Notiz anzeigen",
+      "almostDone": "Wird abgeschlossen…",
+      "safeToLeave": "Du kannst den Tab wechseln – läuft weiter."
     },
     "speaker": {
       "you": "Du",

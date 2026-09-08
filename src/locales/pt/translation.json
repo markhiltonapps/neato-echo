@@ -3144,7 +3144,9 @@
       "title": "Erro de aprimoramento",
       "working": "Aprimorando a nota",
       "inProgress": "Trabalhando em segundo plano…",
-      "viewNote": "Ver nota"
+      "viewNote": "Ver nota",
+      "almostDone": "Finalizando…",
+      "safeToLeave": "Você pode trocar de aba — isto continua."
     },
     "speaker": {
       "you": "Você",

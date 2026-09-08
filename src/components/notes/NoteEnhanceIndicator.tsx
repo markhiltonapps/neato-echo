@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { Loader2, FileText } from "lucide-react";
 import { useActionProcessingStore, selectActiveAction } from "../../stores/actionProcessingStore";
+import { useElapsedSeconds } from "../../hooks/useElapsedSeconds";
+import { formatElapsedClock, formatEnhanceRemaining } from "../../utils/formatEta";
 
 interface NoteEnhanceIndicatorProps {
   onOpenNote: (noteId: number) => void;
@@ -25,6 +27,7 @@ export default function NoteEnhanceIndicator({
   // selectActiveAction returns a fresh object; without a shallow-equal wrapper
   // that reads as a new snapshot every render and loops (React #185).
   const active = useActionProcessingStore(useShallow(selectActiveAction));
+  const elapsed = useElapsedSeconds(active?.startedAt ?? null);
 
   if (!active) return null;
   if (viewingNoteId != null && viewingNoteId === active.noteId) return null;
@@ -45,8 +48,9 @@ export default function NoteEnhanceIndicator({
             <p className="text-xs font-semibold text-foreground/80">
               {active.actionName || t("notes.enhance.working")}
             </p>
-            <p className="mt-0.5 text-[11px] text-foreground/45">
-              {t("notes.enhance.inProgress")}
+            <p className="mt-0.5 text-[11px] text-foreground/45 tabular-nums">
+              {formatEnhanceRemaining(t, elapsed, active.estimatedSeconds)} ·{" "}
+              {formatElapsedClock(elapsed)}
             </p>
           </div>
           <button

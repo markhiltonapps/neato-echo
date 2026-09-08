@@ -3401,7 +3401,9 @@
       "title": "Enhancement error",
       "working": "Enhancing note",
       "inProgress": "Working in the background…",
-      "viewNote": "View note"
+      "viewNote": "View note",
+      "almostDone": "Wrapping up…",
+      "safeToLeave": "You can switch tabs — this keeps going."
     },
     "speaker": {
       "you": "You",

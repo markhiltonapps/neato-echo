@@ -3192,7 +3192,9 @@
       "title": "Error de mejora",
       "working": "Mejorando la nota",
       "inProgress": "Trabajando en segundo plano…",
-      "viewNote": "Ver nota"
+      "viewNote": "Ver nota",
+      "almostDone": "Finalizando…",
+      "safeToLeave": "Puedes cambiar de pestaña: esto continúa."
     },
     "speaker": {
       "you": "Tú",

@@ -3144,7 +3144,9 @@
       "title": "Errore di miglioramento",
       "working": "Miglioramento della nota",
       "inProgress": "In corso in background…",
-      "viewNote": "Vedi nota"
+      "viewNote": "Vedi nota",
+      "almostDone": "Completamento…",
+      "safeToLeave": "Puoi cambiare scheda: continua da solo."
     },
     "speaker": {
       "you": "Tu",
