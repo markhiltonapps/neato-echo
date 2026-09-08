@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { Loader2, FileText } from "lucide-react";
 import { useActionProcessingStore, selectActiveAction } from "../../stores/actionProcessingStore";
 
@@ -21,7 +22,9 @@ export default function NoteEnhanceIndicator({
   viewingNoteId,
 }: NoteEnhanceIndicatorProps) {
   const { t } = useTranslation();
-  const active = useActionProcessingStore(selectActiveAction);
+  // selectActiveAction returns a fresh object; without a shallow-equal wrapper
+  // that reads as a new snapshot every render and loops (React #185).
+  const active = useActionProcessingStore(useShallow(selectActiveAction));
 
   if (!active) return null;
   if (viewingNoteId != null && viewingNoteId === active.noteId) return null;
