@@ -1,5 +1,19 @@
 # Neato Echo — Developer Handoff
 
+## 📦 Repository
+
+**GitHub (public):** **<https://github.com/markhiltonapps/neato-echo>**
+
+```bash
+git clone https://github.com/markhiltonapps/neato-echo.git
+```
+
+The repo is public — clone it directly, no access grant needed. Its most important file is
+[`CLAUDE.md`](./CLAUDE.md) (the deep technical reference); this `HANDOFF.md` is the
+orientation on top of it.
+
+---
+
 > **Audience:** an experienced developer taking over / co-maintaining this codebase.
 > **This engagement has two thrusts:** (1) **harden the existing desktop app** — go through
 > it and make sure it's solid from a **security** standpoint; and (2) **bring the product to
@@ -337,6 +351,8 @@ native helpers (most native binaries are downloaded prebuilt, so you rarely comp
 Budget a few GB for sidecars and first-run model downloads.
 
 ```bash
+git clone https://github.com/markhiltonapps/neato-echo.git
+cd neato-echo
 nvm use 24
 npm ci                 # lockfile-faithful install
 npm run dev            # Vite renderer + Electron main
