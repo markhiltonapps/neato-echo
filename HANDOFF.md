@@ -84,6 +84,50 @@ promise actually holds. Scope in **§4**.
 record on the go, transcribe **on-device**, and **sync** back to the desktop hub; and,
 later, a wearable capture device. Overview in **§5**, full detail in **§14**.
 
+### The work, in order
+
+A sequenced plan — get access and a security baseline first, ship the operational
+must-haves that make it a sellable product (signing, licensing, macOS), then build mobile.
+Each item is detailed in the section noted.
+
+**Phase 0 — Onboard**
+1. **Get access & set up:** the repo, the **DigitalOcean** account (hosting + DNS), **Nylas**,
+   the **neatoventures.com** domain/DNS, and Lemon Squeezy once created. Install the app
+   (§2), read `CLAUDE.md`, run it locally (§7).
+
+**Phase 1 — Secure the current app (Mandate A)**
+2. **Security audit + fixes** (§4). Deliver a findings report; fix material issues; verify no
+   secrets are committed to the public repo and rotate anything exposed.
+
+**Phase 2 — Operational must-haves (turn it into a sellable product)**
+3. **Code signing** — obtain a **Windows code-signing certificate** (and an **Apple Developer**
+   account for macOS); wire signing into the build so installs are trusted and updates are
+   verified (§11). *Not set up today.*
+4. **Licensing / activation (anti-sharing)** — integrate **Lemon Squeezy** (or similar): sell a
+   license and **add an in-app activation gate** — on first run the app asks for a key,
+   validates/activates it against the vendor's license API, and **caches activation so it
+   keeps working offline**. Only ever transmit the key, never user content, so the privacy
+   promise holds (§14.4). *New feature to build.*
+5. **macOS build to release parity** (and possibly Linux) — build/sign/notarize, package the
+   sidecars + native helpers per target, wire the update channel, test (§2, §11).
+6. **Stand up the not-yet-configured vendors:** reconcile **Nylas** with the desktop's current
+   *direct* Google/Microsoft OAuth (pick one, make it consistent); wire **Resend** for
+   transactional email; add **error tracking + product analytics** (e.g. Sentry / PostHog —
+   none exist yet); confirm and harden what the DigitalOcean backend (`echo.neatoventures.com`)
+   does (§6-H, §4).
+7. **Accounts / auth** — decide whether it's even needed (key-based licensing + user-owned
+   sync may avoid it). If needed, pick a provider. *Not set up today.*
+
+**Phase 3 — Mobile (Mandate B — the bulk)**
+8. Decide the **mobile framework** + **on-device STT model** (§15).
+9. Build **iOS + Android**: record → transcribe **on-device** → store → sync, reusing the
+   desktop's segment/note model (§14.1).
+10. Decide and build **sync** — Option A (user-owned cloud) vs B (managed backend) (§14.2).
+11. Gate **mobile + sync** behind the paid tier / license (§14.4).
+
+**Phase 4 — Wearable (later)**
+12. Confirm the Sona **hardware / BLE protocol**; abstract the capture source; integrate (§14.3).
+
 ---
 
 ## 4. Security review — what to audit
@@ -234,14 +278,21 @@ key**; it's stored encrypted (see above). None are required for the local-first 
 | **Google Vertex AI** | `VERTEX_API_KEY` | managed LLMs |
 | **Neato / OpenWhispr Cloud** | (hosted) | optional first-party hosted transcription/LLM |
 
-**E. Integrations & OAuth (app-level credentials — the owner's; needed to build/run these
-features).**
+**E. Calendar connectivity.** The product uses **Nylas** to let users connect their **Google
+and Microsoft** calendars.
 
-| Integration | What it needs | Notes |
-|---|---|---|
-| **Google Calendar** | a **Google Cloud project** with the Calendar API + an **OAuth client (ID + secret)**; PKCE loopback flow | ⚠️ **Security review:** confirm the client secret is **not** committed to the public repo; rotate if it is. |
-| **Microsoft Calendar** | an **Azure AD app registration** (Microsoft Graph, Calendars) + client ID | same review note |
-| **Apple Calendar** | **EventKit** on macOS | local; no cloud credential |
+> ⚠️ **Important discrepancy to reconcile (§4, work-item #6):** the **shipping desktop code in
+> this repo does *direct* PKCE OAuth** to Google (`accounts.google.com`) and Microsoft
+> (`login.microsoftonline.com`) — **it does not use Nylas.** So Nylas currently fronts calendar
+> connectivity elsewhere (the hosted backend and/or a newer/planned path), while the desktop
+> still has a direct-OAuth implementation. Pick one approach and make it consistent, and
+> confirm no OAuth client secret is committed to the public repo (rotate if it is).
+
+| Integration | What it needs |
+|---|---|
+| **Nylas** | a Nylas account/app + API credentials; brokers the Google/Microsoft calendar connections |
+| **Google / Microsoft** (direct path in the desktop) | a Google Cloud project (Calendar API, OAuth client) / an Azure AD app registration — *only if the direct path is kept instead of Nylas* |
+| **Apple Calendar** | **EventKit** on macOS — local, no cloud credential |
 
 **F. Distribution, signing & infrastructure (the owner's accounts).**
 
@@ -260,6 +311,21 @@ features).**
   `@tanstack/react-virtual` (virtualized transcript), `@qdrant/js-client-rest` (vector DB),
   `@homebridge/dbus-native` (Linux D-Bus for Wayland hotkeys), `ps-list` (process detection).
 - Full dependency list: `package.json`; run `npm audit` as part of the security pass.
+
+**H. Operational & infrastructure vendors (the owner's accounts — the services that run the
+product day-to-day).** Several are **not yet set up** and are part of the work (§3).
+
+| Service | Status | Used for | Notes |
+|---|---|---|---|
+| **DigitalOcean** | **live** | hosts the **backend** and DNS | App Platform app `coral-app-aex7i.ondigitalocean.app`, served as **`https://echo.neatoventures.com`** — this is the `OPENWHISPR_API_URL` / `VITE_OPENWHISPR_API_URL` the desktop app calls for hosted/cloud features (e.g. large-file transcription, token minting). Confirm exactly what it runs and harden it (§4). |
+| **Nylas** | **in use** | lets users connect Google + Microsoft calendars | ⚠️ reconcile with the desktop's current *direct* OAuth (§6-E, §4). |
+| **neatoventures.com** (domain/DNS) | **live** | `echo.` subdomain → the DigitalOcean backend | registrar/DNS per the owner. |
+| **Lemon Squeezy** | **planned** | selling licenses + **key/activation** (anti-sharing) | needs an **in-app activation gate** built — first-run key prompt, validate/activate via its license API, cache for offline use (§14.4, work-item #4). |
+| **Resend** | **planned** | transactional email | not set up yet. |
+| **Error tracking + analytics** | **to add** | crash/error reporting + product analytics | none configured; `analytics_*` tables exist locally only. Choose e.g. Sentry + PostHog. |
+| **Code signing** (Windows cert + Apple Developer) | **to set up** | trusted installs + verified updates | not configured yet (work-item #3). |
+| **Accounts / auth** | **not set up** | user accounts, if needed | may be avoidable with key-based licensing + user-owned sync (work-item #7). |
+| **Object storage / CDN** | **none today** | — | everything is local; models download from source (Hugging Face, etc.). |
 
 ---
 
@@ -473,15 +539,27 @@ transcribes and syncs.
 Design the mobile app so the **capture source is abstracted** (phone mic *or* a paired
 wearable) and everything downstream (transcribe → store → sync) is identical.
 
-### 14.4 Monetization
+### 14.4 Monetization &amp; licensing (a required build, not just a decision)
+
 - **Desktop: lifetime purchase** (one-time) — fits the local-first, no-recurring-cost story.
 - **Paid tier: mobile app + cross-device sync** (small fee) — gates mobile + sync, not the
   core desktop app.
-- **To design:** entitlement checks that preserve privacy (a signed license key validated
-  **offline** — avoid a mandatory phone-home), the purchase/fulfilment channel (App Store /
-  Play Store IAP for mobile; a seller + key issuance for the desktop lifetime license), and
-  how desktop and mobile learn a user is entitled without a central account (e.g. the
-  license key travels in the same user-owned storage).
+- **License key / activation gate (build this).** Today anyone can download and run the app;
+  we need a **key/activation system to stop people downloading it and sharing it**. The plan
+  is **Lemon Squeezy** (or a similar license vendor):
+  - Lemon Squeezy sells the license and **issues a license key** on purchase; it has a
+    **License API** (activate / validate / deactivate with a per-key activation limit).
+  - **Add an in-app activation gate:** on first run (after download), the app **asks for a
+    key**, calls the vendor's **activate** endpoint once, and **caches the activation locally**
+    so the app keeps working **offline** thereafter (re-validate occasionally, with a grace
+    period so a network blip never locks a paying user out).
+  - **Privacy-preserving:** the activation call transmits **only the license key** (and maybe a
+    device fingerprint) — **never audio, transcripts, or user content.** That keeps the
+    "nothing leaves your device" promise intact for the actual data.
+- **Fulfilment channels:** Lemon Squeezy for the desktop lifetime license; App Store / Play
+  Store IAP for the mobile paid tier. Decide how the desktop and mobile share entitlement
+  without a central account (e.g. the key travels in the user-owned sync storage, or a light
+  entitlement check).
 
 ---
 
