@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatShortDate } from "../../utils/dateFormatting";
 import {
   Check,
   ChevronRight,
@@ -910,6 +911,7 @@ function NoteLeaf({
   );
 
   const title = note.title || t("notes.list.untitled");
+  const noteDate = formatShortDate(note.created_at);
 
   return (
     <div
@@ -952,6 +954,11 @@ function NoteLeaf({
       >
         {title}
       </span>
+      {noteDate && (
+        <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0 transition-opacity group-hover:opacity-0">
+          {noteDate}
+        </span>
+      )}
       {Boolean(note.is_shared) && (
         <Share2
           size={11}
