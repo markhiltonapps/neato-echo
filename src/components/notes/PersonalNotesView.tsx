@@ -839,6 +839,19 @@ export default function PersonalNotesView({
               <Sparkles size={14} className="shrink-0" />
               {t("notes.sidebar.actions")}
             </button>
+            {meetingRecordingAllowed && (
+              <button
+                onClick={handleNewRecording}
+                className={cn(
+                  "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs font-medium",
+                  "text-brand-warm bg-brand-warm/10 border border-brand-warm/20 hover:bg-brand-warm/18",
+                  "transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-warm/40"
+                )}
+              >
+                <Mic size={14} className="shrink-0" />
+                {t("notes.list.newRecording")}
+              </button>
+            )}
           </div>
 
           <SpacesTree
