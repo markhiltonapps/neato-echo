@@ -1,4 +1,10 @@
 {
+  "filter": {
+    "all": "全部",
+    "today": "今天",
+    "week": "本周",
+    "month": "本月"
+  },
   "home": {
     "briefing": {
       "title": "为你的一天做准备",
@@ -2899,6 +2905,8 @@
     "list": {
       "title": "笔记",
       "newNote": "新建笔记",
+      "searchPlaceholder": "搜索笔记",
+      "noResults": "没有匹配的笔记",
       "newRecording": "新建录音",
       "untitled": "无标题",
       "untitledNote": "无标题笔记",

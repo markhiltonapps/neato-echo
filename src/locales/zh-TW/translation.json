@@ -1,4 +1,10 @@
 {
+  "filter": {
+    "all": "全部",
+    "today": "今天",
+    "week": "本週",
+    "month": "本月"
+  },
   "home": {
     "briefing": {
       "title": "為你的一天做準備",
@@ -2899,6 +2905,8 @@
     "list": {
       "title": "筆記",
       "newNote": "新增筆記",
+      "searchPlaceholder": "搜尋筆記",
+      "noResults": "沒有相符的筆記",
       "newRecording": "新增錄音",
       "untitled": "未命名",
       "untitledNote": "未命名筆記",

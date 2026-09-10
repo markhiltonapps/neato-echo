@@ -1,4 +1,10 @@
 {
+  "filter": {
+    "all": "すべて",
+    "today": "今日",
+    "week": "今週",
+    "month": "今月"
+  },
   "home": {
     "briefing": {
       "title": "今日の準備",
@@ -2924,6 +2930,8 @@
     "list": {
       "title": "ノート",
       "newNote": "新規ノート",
+      "searchPlaceholder": "メモを検索",
+      "noResults": "一致するメモはありません",
       "newRecording": "新しい録音",
       "untitled": "無題",
       "untitledNote": "無題のノート",

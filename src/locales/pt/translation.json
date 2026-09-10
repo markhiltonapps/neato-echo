@@ -1,4 +1,10 @@
 {
+  "filter": {
+    "all": "Todas",
+    "today": "Hoje",
+    "week": "Esta semana",
+    "month": "Este mês"
+  },
   "home": {
     "briefing": {
       "title": "Prepare-se para o seu dia",
@@ -2899,6 +2905,8 @@
     "list": {
       "title": "Notas",
       "newNote": "Nova nota",
+      "searchPlaceholder": "Buscar notas",
+      "noResults": "Nenhuma nota correspondente",
       "newRecording": "Nova gravação",
       "untitled": "Sem título",
       "untitledNote": "Nota sem título",

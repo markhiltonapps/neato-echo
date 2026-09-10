@@ -1,4 +1,10 @@
 {
+  "filter": {
+    "all": "All",
+    "today": "Today",
+    "week": "This week",
+    "month": "This month"
+  },
   "home": {
     "briefing": {
       "title": "Prepare for your day",
@@ -3156,6 +3162,8 @@
     "list": {
       "title": "Notes",
       "newNote": "New note",
+      "searchPlaceholder": "Search notes",
+      "noResults": "No matching notes",
       "newRecording": "New recording",
       "untitled": "Untitled",
       "untitledNote": "Untitled Note",

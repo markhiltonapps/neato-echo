@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatShortDate } from "../../utils/dateFormatting";
 import {
@@ -17,6 +17,7 @@ import {
   Search,
   Share2,
   Smile,
+  X,
   Trash2,
   Users,
 } from "lucide-react";
@@ -1155,10 +1156,92 @@ export default function SpacesTree({
   const folders = useFolders();
   const folderCounts = useFolderCounts();
   const spaceRootCounts = useSpaceRootCounts();
-  const notesByContainer = useNotesByContainer();
+  const notesByContainerRaw = useNotesByContainer();
+  // Newest first: order every container's notes by recording/creation date so
+  // the most recent meeting is at the top.
+  const notesByContainer = useMemo(() => {
+    const ts = (n: NoteItem) => new Date(n.created_at || n.updated_at || 0).getTime();
+    const out: Record<string, NoteItem[]> = {};
+    for (const [key, arr] of Object.entries(notesByContainerRaw)) {
+      out[key] = [...arr].sort((a, b) => ts(b) - ts(a));
+    }
+    return out;
+  }, [notesByContainerRaw]);
   const expanded = useExpandedContainers();
   const activeContext = useActiveContext();
   const activeNoteId = useActiveNoteId();
+
+  // Persistent search (content + semantic, via searchNotes) and a date-range
+  // filter over the notes list. When either is active, the tree is replaced by
+  // a flat, newest-first results list.
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<NoteItem[] | null>(null);
+  const [rangePreset, setRangePreset] = useState<"all" | "today" | "week" | "month">("all");
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    const id = setTimeout(async () => {
+      try {
+        const res = await window.electronAPI.searchNotes(q, 50);
+        if (!cancelled) setSearchResults(res ?? []);
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [query]);
+
+  const inRange = useCallback(
+    (n: NoteItem) => {
+      if (rangePreset === "all") return true;
+      const time = new Date(n.created_at || n.updated_at || 0).getTime();
+      if (Number.isNaN(time)) return false;
+      const now = new Date();
+      const start = new Date(now);
+      if (rangePreset === "today") start.setHours(0, 0, 0, 0);
+      else if (rangePreset === "week") {
+        start.setDate(now.getDate() - now.getDay());
+        start.setHours(0, 0, 0, 0);
+      } else {
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+      }
+      return time >= start.getTime();
+    },
+    [rangePreset]
+  );
+
+  const filterActive = query.trim().length > 0 || rangePreset !== "all";
+
+  const filteredResults = useMemo(() => {
+    if (!filterActive) return [];
+    let base: NoteItem[];
+    if (searchResults != null) {
+      base = searchResults;
+    } else {
+      // Range-only: gather the loaded notes across every container, de-duped.
+      const seen = new Set<number>();
+      base = [];
+      for (const arr of Object.values(notesByContainer)) {
+        for (const n of arr) {
+          if (!seen.has(n.id)) {
+            seen.add(n.id);
+            base.push(n);
+          }
+        }
+      }
+    }
+    const ts = (n: NoteItem) => new Date(n.created_at || n.updated_at || 0).getTime();
+    return base.filter(inRange).sort((a, b) => ts(b) - ts(a));
+  }, [filterActive, searchResults, notesByContainer, inRange]);
   const isTreeLoading = useIsTreeLoading();
   const { isSignedIn, user } = useAuth();
   const teamCapability = useTeamSpacesCapability(isSignedIn);
@@ -2054,9 +2137,89 @@ export default function SpacesTree({
 
   return (
     <>
+      <div className="px-2 pt-1 pb-1.5 space-y-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 h-7 px-2 rounded-md border border-border/50 dark:border-white/10">
+          <Search size={12} className="text-muted-foreground/50 shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("notes.list.searchPlaceholder")}
+            className="flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              aria-label={t("common.dismiss")}
+              className="shrink-0 text-muted-foreground/40 hover:text-foreground/70"
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {(["all", "today", "week", "month"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setRangePreset(p)}
+              className={cn(
+                "font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors",
+                rangePreset === p
+                  ? "bg-brand-teal-soft text-brand-teal border border-brand-teal/25"
+                  : "text-muted-foreground/50 hover:text-foreground/70 border border-transparent"
+              )}
+            >
+              {t(`filter.${p}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filterActive && (
+        <div role="list" className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px">
+          {filteredResults.length === 0 ? (
+            <div className="px-3 py-8 text-center text-xs text-muted-foreground/50">
+              {t("notes.list.noResults")}
+            </div>
+          ) : (
+            filteredResults.map((note) => (
+              <button
+                key={note.id}
+                onClick={() => setActiveNoteId(note.id)}
+                className={cn(
+                  "flex items-center gap-2 w-full h-7 pl-[14px] pr-2 rounded-md text-left transition-colors",
+                  activeNoteId === note.id
+                    ? "bg-primary/8 dark:bg-primary/10"
+                    : "hover:bg-foreground/4 dark:hover:bg-white/4"
+                )}
+              >
+                <FileText
+                  size={13}
+                  className={cn(
+                    "shrink-0",
+                    activeNoteId === note.id ? "text-primary" : "text-foreground/30"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-xs truncate flex-1",
+                    activeNoteId === note.id ? "text-foreground font-medium" : "text-foreground/60"
+                  )}
+                >
+                  {note.title || t("notes.list.untitled")}
+                </span>
+                <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0">
+                  {formatShortDate(note.created_at)}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
       <div
         role="tree"
         aria-label={t("notes.list.title")}
+        hidden={filterActive}
         className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px"
       >
         <div role="none" className="group/section">
