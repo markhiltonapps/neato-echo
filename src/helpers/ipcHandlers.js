@@ -3518,7 +3518,12 @@ class IPCHandlers {
 
         const { convertToWav } = require("./ffmpegUtils");
         const { getSafeTempDir } = require("./safeTempDir");
-        const { resolveClusterThreshold, dropNegligibleClusters } = require("./diarizationPolicy");
+        const {
+          resolveClusterThreshold,
+          shouldRetryForOversplit,
+          OVERSPLIT_CLUSTER_THRESHOLD,
+          dropNegligibleClusters,
+        } = require("./diarizationPolicy");
         const { PCM16_MONO_16K_BYTES_PER_SECOND } = require("./transcriptionTimeout");
         const wavPath = path.join(getSafeTempDir(), `ow-diarize-${Date.now()}.wav`);
 
@@ -3527,10 +3532,10 @@ class IPCHandlers {
           if (signal?.aborted) {
             return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
           }
-          // Auto-clustering over-splits long single-mic audio at the 0.55
-          // default, so the threshold ramps with duration unless pinned.
+          // Cluster low so distinct voices split readily (merges are
+          // unrecoverable); over-splitting is cleaned up below.
           const durationSeconds = fs.statSync(wavPath).size / PCM16_MONO_16K_BYTES_PER_SECOND;
-          const threshold = resolveClusterThreshold(durationSeconds, options.threshold);
+          const threshold = resolveClusterThreshold(options.threshold);
 
           let segments = await this.diarizationManager.diarize(wavPath, {
             numSpeakers,
@@ -3539,6 +3544,25 @@ class IPCHandlers {
           });
           if (signal?.aborted) {
             return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
+          }
+          // Only one speaker drifting across a long recording over-splits; when
+          // that is actually observed (long audio, no pinned count/threshold,
+          // implausibly many clusters) re-cluster once at the higher threshold.
+          // Real multi-speaker meetings stay at the low base and are not merged.
+          if (
+            numSpeakers <= 0 &&
+            (options.threshold == null || options.threshold === "") &&
+            shouldRetryForOversplit({ segments, durationSeconds, hasExplicitCount: false })
+          ) {
+            const retry = await this.diarizationManager.diarize(wavPath, {
+              numSpeakers,
+              threshold: OVERSPLIT_CLUSTER_THRESHOLD,
+              signal,
+            });
+            if (signal?.aborted) {
+              return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
+            }
+            if (retry.length) segments = retry;
           }
           // The meeting path caps clusters via its expectation resolver; this
           // path fed raw sherpa output to the merge, which is how a 2-person
@@ -11646,10 +11670,43 @@ class IPCHandlers {
           observedSpeakerIds,
           diarizedSource,
         });
+        const {
+          resolveClusterThreshold,
+          shouldRetryForOversplit,
+          OVERSPLIT_CLUSTER_THRESHOLD,
+          dropNegligibleClusters,
+        } = require("./diarizationPolicy");
+        const { PCM16_MONO_16K_BYTES_PER_SECOND } = require("./transcriptionTimeout");
+        let meetingDurationSeconds = NaN;
+        try {
+          meetingDurationSeconds = fs.statSync(tmpWav).size / PCM16_MONO_16K_BYTES_PER_SECOND;
+        } catch {
+          // Unreadable WAV: the over-split retry simply won't trigger.
+        }
+        // Cluster low so distinct meeting voices split readily instead of being
+        // merged into one — a pinned count (numSpeakers > 0) still forces the
+        // exact number of clusters and ignores the threshold.
         let diarizationSegments = await this.diarizationManager.diarize(
           tmpWav,
-          numSpeakers > 0 ? { numSpeakers } : {}
+          numSpeakers > 0 ? { numSpeakers } : { threshold: resolveClusterThreshold(null) }
         );
+        // Only re-cluster higher when a long recording with no pinned count
+        // actually over-split (one speaker drifting), never for a normal meeting.
+        if (
+          numSpeakers <= 0 &&
+          shouldRetryForOversplit({
+            segments: diarizationSegments,
+            durationSeconds: meetingDurationSeconds,
+            hasExplicitCount: false,
+          })
+        ) {
+          const retry = await this.diarizationManager.diarize(tmpWav, {
+            threshold: OVERSPLIT_CLUSTER_THRESHOLD,
+          });
+          if (retry.length) diarizationSegments = retry;
+        }
+        // Drop sub-second phantom clusters before capping, matching the upload path.
+        diarizationSegments = dropNegligibleClusters(diarizationSegments);
         if (cap != null) {
           diarizationSegments = this.diarizationManager.capSpeakerClusters(
             diarizationSegments,
