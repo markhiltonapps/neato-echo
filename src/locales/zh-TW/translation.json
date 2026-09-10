@@ -1,4 +1,13 @@
 {
+  "notesCalendar": {
+    "viewList": "清單",
+    "viewCalendar": "日曆",
+    "today": "今天",
+    "prevMonth": "上個月",
+    "nextMonth": "下個月",
+    "empty": "當天沒有錄音",
+    "count": "{{count}} 筆錄音"
+  },
   "filter": {
     "all": "全部",
     "today": "今天",

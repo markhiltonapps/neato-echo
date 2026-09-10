@@ -1,4 +1,13 @@
 {
+  "notesCalendar": {
+    "viewList": "Lista",
+    "viewCalendar": "Calendário",
+    "today": "Hoje",
+    "prevMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "empty": "Sem gravações neste dia",
+    "count": "{{count}} gravações"
+  },
   "filter": {
     "all": "Todas",
     "today": "Hoje",

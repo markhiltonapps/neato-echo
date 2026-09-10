@@ -1,4 +1,13 @@
 {
+  "notesCalendar": {
+    "viewList": "列表",
+    "viewCalendar": "日历",
+    "today": "今天",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月",
+    "empty": "当天没有录音",
+    "count": "{{count}} 条录音"
+  },
   "filter": {
     "all": "全部",
     "today": "今天",

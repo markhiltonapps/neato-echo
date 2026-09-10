@@ -1,4 +1,13 @@
 {
+  "notesCalendar": {
+    "viewList": "リスト",
+    "viewCalendar": "カレンダー",
+    "today": "今日",
+    "prevMonth": "前の月",
+    "nextMonth": "次の月",
+    "empty": "この日の録音はありません",
+    "count": "録音 {{count}} 件"
+  },
   "filter": {
     "all": "すべて",
     "today": "今日",

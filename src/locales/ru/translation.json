@@ -1,4 +1,13 @@
 {
+  "notesCalendar": {
+    "viewList": "Список",
+    "viewCalendar": "Календарь",
+    "today": "Сегодня",
+    "prevMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "empty": "Нет записей за этот день",
+    "count": "Записей: {{count}}"
+  },
   "filter": {
     "all": "Все",
     "today": "Сегодня",

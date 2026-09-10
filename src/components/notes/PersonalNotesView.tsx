@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import { Plus, Sparkles, Mic } from "lucide-react";
+import { Plus, Sparkles, Mic, List, CalendarDays } from "lucide-react";
+import NotesCalendarView from "./NotesCalendarView";
 import { useToast } from "../ui/useToast";
 import NoteEditor from "./NoteEditor";
 import SpacesTree from "./SpacesTree";
@@ -146,6 +147,7 @@ export default function PersonalNotesView({
   const draftRef = useRef<NoteEditorDraft | null>(null);
   const [showActionManager, setShowActionManager] = useState(false);
   const [showAddNotesDialog, setShowAddNotesDialog] = useState(false);
+  const [notesLayout, setNotesLayout] = useState<"list" | "calendar">("list");
   // Neato Echo: offer a summary preset once a meeting recording ends.
   const [pendingSummary, setPendingSummary] = useState<{
     noteId: number;
@@ -852,6 +854,28 @@ export default function PersonalNotesView({
                 {t("notes.list.newRecording")}
               </button>
             )}
+            <div className="flex items-center gap-0.5 rounded-md bg-foreground/4 dark:bg-white/5 p-0.5 mt-0.5">
+              {(
+                [
+                  ["list", List, t("notesCalendar.viewList")],
+                  ["calendar", CalendarDays, t("notesCalendar.viewCalendar")],
+                ] as const
+              ).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setNotesLayout(mode)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 h-6 rounded text-[11px] font-medium transition-colors",
+                    notesLayout === mode
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground/60 hover:text-foreground"
+                  )}
+                >
+                  <Icon size={12} />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <SpacesTree
@@ -865,7 +889,14 @@ export default function PersonalNotesView({
       </div>
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        {editorNote ? (
+        {notesLayout === "calendar" ? (
+          <NotesCalendarView
+            onOpenNote={(id) => {
+              setActiveNoteId(id);
+              setNotesLayout("list");
+            }}
+          />
+        ) : editorNote ? (
           <>
             <NoteEditor
               key={editorNote.id}
