@@ -3156,6 +3156,7 @@
     "list": {
       "title": "Notes",
       "newNote": "Nouvelle note",
+      "newRecording": "Nouvel enregistrement",
       "untitled": "Sans titre",
       "untitledNote": "Note sans titre",
       "shared": "Partagée",

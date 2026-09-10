@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Mic } from "lucide-react";
 import { useToast } from "../ui/useToast";
 import NoteEditor from "./NoteEditor";
 import SpacesTree from "./SpacesTree";
@@ -566,6 +566,40 @@ export default function PersonalNotesView({
     else handleNewNoteInPrivate();
   }, [activeContext, handleNewNoteIn, handleNewNoteInPrivate]);
 
+  // One-click "new recording": create a fresh note in the current context and
+  // immediately start recording into it (a recording needs a note to save its
+  // transcript). Mirrors the in-note record path, just without requiring the
+  // user to make/open a note first.
+  const handleNewRecording = useCallback(async () => {
+    const spaceId = activeContext?.spaceId ?? privateSpaceId;
+    const folderId = activeContext?.folderId ?? null;
+    if (spaceId == null) return;
+    const result = await window.electronAPI.saveNote(
+      t("notes.list.untitledNote"),
+      "",
+      "personal",
+      null,
+      null,
+      folderId,
+      spaceId
+    );
+    if (!result.success || !result.note) return;
+    const note = result.note;
+    setActiveContext(note.space_id, note.folder_id);
+    revealContainer(note.space_id, note.folder_id);
+    setActiveNoteId(note.id);
+    await storeStartRecording({
+      noteId: note.id,
+      noteTitle: note.title ?? null,
+      folderId: note.folder_id ?? null,
+      seedSegments: [],
+      diarizationEnabled: note.diarization_enabled == null ? null : note.diarization_enabled === 1,
+      expectedCount: resolveExpectedSpeakerCount(note),
+      expectedCountIsExplicit: isExplicitSpeakerCount(note.expected_speaker_count),
+      autoEndEligible: isMeetingAutoEndEligible(note),
+    });
+  }, [activeContext, privateSpaceId, t, setActiveContext, revealContainer, setActiveNoteId]);
+
   const handleNotesAdded = useCallback(async () => {
     if (activeFolderId) {
       await initializeNotes(null, 50, activeFolderId);
@@ -900,6 +934,7 @@ export default function PersonalNotesView({
             folder={overviewFolder}
             onOpenNote={setActiveNoteId}
             onNewNote={handleNewNote}
+            onNewRecording={handleNewRecording}
             onAddExisting={activeFolderId != null ? () => setShowAddNotesDialog(true) : undefined}
           />
         ) : (
@@ -1015,6 +1050,13 @@ export default function PersonalNotesView({
                   >
                     <Plus size={11} />
                     {t("notes.empty.createNote")}
+                  </button>
+                  <button
+                    onClick={handleNewRecording}
+                    className="flex items-center gap-1.5 px-4 h-7 rounded-md bg-brand-warm/10 border border-brand-warm/25 text-xs font-medium text-brand-warm hover:bg-brand-warm/18 transition-colors"
+                  >
+                    <Mic size={11} />
+                    {t("notes.list.newRecording")}
                   </button>
                   {/* AddNotesToFolderDialog only mounts for folder contexts —
                       space-root empty states offer just "Create note". */}

@@ -2899,6 +2899,7 @@
     "list": {
       "title": "Notas",
       "newNote": "Nova nota",
+      "newRecording": "Nova gravação",
       "untitled": "Sem título",
       "untitledNote": "Nota sem título",
       "shared": "Compartilhada",

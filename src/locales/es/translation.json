@@ -2947,6 +2947,7 @@
     "list": {
       "title": "Notas",
       "newNote": "Nueva nota",
+      "newRecording": "Nueva grabación",
       "untitled": "Sin título",
       "untitledNote": "Nota sin título",
       "shared": "Compartida",
