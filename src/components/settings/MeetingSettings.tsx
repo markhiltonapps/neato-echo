@@ -30,21 +30,6 @@ export function MeetingSpeakerDetectionRow() {
   );
 }
 
-export function MeetingAutoRecordRow() {
-  const { t } = useTranslation();
-  const autoRecordMeetings = useSettingsStore((s) => s.autoRecordMeetings);
-  const setAutoRecordMeetings = useSettingsStore((s) => s.setAutoRecordMeetings);
-
-  return (
-    <SettingsRow
-      label={t("settings.meeting.autoRecord.title")}
-      description={t("settings.meeting.autoRecord.description")}
-    >
-      <Toggle checked={autoRecordMeetings} onChange={setAutoRecordMeetings} />
-    </SettingsRow>
-  );
-}
-
 export function MeetingLiveTranscriptRow() {
   const { t } = useTranslation();
   const enabled = useSettingsStore((s) => s.meetingLiveTranscription);
@@ -195,7 +180,6 @@ export function MeetingTranscriptionPanel() {
 
       {effectiveTranscriptionMode === "providers" && renderTranscriptionPicker("cloud")}
       {effectiveTranscriptionMode === "local" && renderTranscriptionPicker("local")}
-      <MeetingAutoRecordRow />
       <MeetingLiveTranscriptRow />
       <MeetingSpeakerDetectionRow />
     </div>

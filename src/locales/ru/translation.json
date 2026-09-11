@@ -78,6 +78,7 @@
         "title": "Live transcript while recording",
         "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
       },
+      "sectionTitle": "Встречи",
       "autoRecord": {
         "title": "Автоматически записывать встречи",
         "description": "Начинает и останавливает запись звонков Zoom, Teams, Webex и запланированных Google Meet — без ручного запуска и остановки."

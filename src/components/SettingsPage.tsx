@@ -1535,6 +1535,9 @@ export default function SettingsPage({
     });
   }, [notificationsEnabled, notifyMeetingDetection, notifyCalendarReminders, notifyUpdates]);
 
+  const autoRecordMeetings = useSettingsStore((s) => s.autoRecordMeetings);
+  const setAutoRecordMeetings = useSettingsStore((s) => s.setAutoRecordMeetings);
+
   const handleAutoStartChange = async (enabled: boolean) => {
     if (!window.electronAPI?.setAutoStartEnabled) return;
     // Optimistic: the switch moves on click; the read-back below corrects it if
@@ -3050,6 +3053,21 @@ export default function SettingsPage({
                       onChange={setNotifyUpdates}
                       disabled={!notificationsEnabled}
                     />
+                  </SettingsRow>
+                </SettingsPanelRow>
+              </SettingsPanel>
+            </div>
+
+            {/* Meetings */}
+            <div>
+              <SectionHeader title={t("settings.meeting.sectionTitle")} />
+              <SettingsPanel>
+                <SettingsPanelRow>
+                  <SettingsRow
+                    label={t("settings.meeting.autoRecord.title")}
+                    description={t("settings.meeting.autoRecord.description")}
+                  >
+                    <Toggle checked={autoRecordMeetings} onChange={setAutoRecordMeetings} />
                   </SettingsRow>
                 </SettingsPanelRow>
               </SettingsPanel>
