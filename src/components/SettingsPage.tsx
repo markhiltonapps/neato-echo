@@ -4123,38 +4123,38 @@ EOF`,
                     edition has no accounts, so the row can never be enabled —
                     hide it rather than show a permanently greyed toggle. */}
                 {ACCOUNTS_ENABLED && (
-                <SettingsPanelRow>
-                  <SettingsRow
-                    label={t("settingsPage.privacy.insightsSync")}
-                    description={
-                      !isSignedIn
-                        ? t("settingsPage.privacy.insightsSyncRequiresAccount")
-                        : !insightsSyncAllowedByPolicy
-                          ? t("common.managedByOrg")
-                          : effectiveDataRetentionEnabled
-                            ? t("settingsPage.privacy.insightsSyncDescription")
-                            : t("settingsPage.privacy.insightsSyncRequiresHistory")
-                    }
-                  >
-                    {/* With history off nothing is counted anywhere: this
+                  <SettingsPanelRow>
+                    <SettingsRow
+                      label={t("settingsPage.privacy.insightsSync")}
+                      description={
+                        !isSignedIn
+                          ? t("settingsPage.privacy.insightsSyncRequiresAccount")
+                          : !insightsSyncAllowedByPolicy
+                            ? t("common.managedByOrg")
+                            : effectiveDataRetentionEnabled
+                              ? t("settingsPage.privacy.insightsSyncDescription")
+                              : t("settingsPage.privacy.insightsSyncRequiresHistory")
+                      }
+                    >
+                      {/* With history off nothing is counted anywhere: this
                         device records no counter, and the cloud writes none
                         either, because analyticsSyncEnabled withholds the
                         localDate its analytics write requires. Turning this on
                         could therefore only promise a sync that never happens —
                         but an already-on toggle must stay switchable off. */}
-                    <Toggle
-                      checked={insightsSyncEnabled}
-                      disabled={
-                        !isSignedIn ||
-                        !canToggleInsightsSync ||
-                        (!effectiveDataRetentionEnabled && !insightsSyncEnabled)
-                      }
-                      onChange={(enabled) =>
-                        enabled ? enableInsightsSync() : setInsightsSyncEnabled(false)
-                      }
-                    />
-                  </SettingsRow>
-                </SettingsPanelRow>
+                      <Toggle
+                        checked={insightsSyncEnabled}
+                        disabled={
+                          !isSignedIn ||
+                          !canToggleInsightsSync ||
+                          (!effectiveDataRetentionEnabled && !insightsSyncEnabled)
+                        }
+                        onChange={(enabled) =>
+                          enabled ? enableInsightsSync() : setInsightsSyncEnabled(false)
+                        }
+                      />
+                    </SettingsRow>
+                  </SettingsPanelRow>
                 )}
                 <SettingsPanelRow>
                   <SettingsRow

@@ -78,6 +78,10 @@
         "title": "Live transcript while recording",
         "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
       },
+      "autoRecord": {
+        "title": "Автоматически записывать встречи",
+        "description": "Начинает и останавливает запись звонков Zoom, Teams, Webex и запланированных Google Meet — без ручного запуска и остановки."
+      },
       "speakerDetection": {
         "title": "Распознавать и подписывать участников",
         "description": "Если выключено, в транскриптах отображаются «Вы» и «Другие»"
@@ -305,6 +309,10 @@
           "chat": "Общайтесь с заметками встречи",
           "transcript": "Просматривайте полную расшифровку",
           "speakers": "Смотрите, кто что сказал"
+        },
+        "autoRecord": {
+          "title": "Автоматически записывать встречи",
+          "description": "Автоматически записывает звонки Zoom, Teams, Webex и запланированные Google Meet. Это можно изменить в настройках в любое время."
         },
         "connectors": {
           "connect": "Подключить",

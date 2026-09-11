@@ -78,6 +78,10 @@
         "title": "Live transcript while recording",
         "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
       },
+      "autoRecord": {
+        "title": "会議を自動的に録音",
+        "description": "Zoom、Teams、Webex、予定されている Google Meet の通話を自動で録音・停止します。手動操作は不要です。"
+      },
       "speakerDetection": {
         "title": "話者を識別してラベル付け",
         "description": "オフにすると、文字起こしには「あなた」と「他の人」と表示されます"
@@ -305,6 +309,10 @@
           "chat": "ミーティングノートとチャット",
           "transcript": "全文の文字起こしを確認",
           "speakers": "誰が何を話したかを確認"
+        },
+        "autoRecord": {
+          "title": "会議を自動録音",
+          "description": "Zoom、Teams、Webex、予定されている Google Meet の通話を自動で録音します。設定でいつでも変更できます。"
         },
         "connectors": {
           "connect": "接続",

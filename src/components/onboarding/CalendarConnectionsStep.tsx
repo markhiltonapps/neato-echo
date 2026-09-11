@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useSystemAudioPermission } from "../../hooks/useSystemAudioPermission";
 import { canManageSystemAudioInApp } from "../../utils/systemAudioAccess";
+import { Toggle } from "../ui/toggle";
 import googleCalendarIcon from "../../assets/icons/google-calendar.svg";
 import microsoftCalendarIcon from "../../assets/icons/microsoft-calendar.webp";
 import appleCalendarIcon from "../../assets/icons/apple-calendar.webp";
@@ -239,6 +240,21 @@ export default function CalendarConnectionsStep() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Auto-record opt-in — surfaced during setup so users know it exists.
+          Off by default; starts/stops recording for Zoom, Teams, Webex, and
+          scheduled Google Meet without a prompt. */}
+      <div className="flex w-full max-w-[26rem] items-center gap-3 rounded-2xl border border-[var(--onboarding-control-border)] bg-[var(--onboarding-surface-secondary)] px-3.5 py-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-[3px] text-left">
+          <p className="text-sm font-medium leading-[1.4] text-[var(--onboarding-text-primary)]">
+            {t("onboarding.rehaul.notes.autoRecord.title")}
+          </p>
+          <p className="text-xs leading-[1.4] text-[var(--onboarding-text-secondary)]">
+            {t("onboarding.rehaul.notes.autoRecord.description")}
+          </p>
+        </div>
+        <Toggle checked={store.autoRecordMeetings} onChange={store.setAutoRecordMeetings} />
       </div>
 
       {error && (

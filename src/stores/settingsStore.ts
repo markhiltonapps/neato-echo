@@ -303,6 +303,7 @@ const BOOLEAN_SETTINGS = new Set([
   "floatingIconAutoHide",
   "startMinimized",
   "meetingProcessDetection",
+  "autoRecordMeetings",
   "speakerDiarizationEnabled",
   "meetingLiveTranscription",
   "dictationSileroEnabled",
@@ -674,6 +675,7 @@ export interface SettingsState
   mcalPrimaryOnly: boolean;
   appleCalendarConnected: boolean;
   meetingProcessDetection: boolean;
+  autoRecordMeetings: boolean;
   speakerDiarizationEnabled: boolean;
   meetingLiveTranscription: boolean;
   dictationSileroEnabled: boolean;
@@ -982,6 +984,7 @@ export interface SettingsState
   setMcalPrimaryOnly: (value: boolean) => void;
   setAppleCalendarConnected: (value: boolean) => void;
   setMeetingProcessDetection: (value: boolean) => void;
+  setAutoRecordMeetings: (value: boolean) => void;
   setSpeakerDiarizationEnabled: (value: boolean) => void;
   setMeetingLiveTranscription: (value: boolean) => void;
   setDictationSileroEnabled: (value: boolean) => void;
@@ -1418,6 +1421,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   mcalPrimaryOnly: readBoolean("mcalPrimaryOnly", true),
   appleCalendarConnected: readBoolean("appleCalendarConnected", false),
   meetingProcessDetection: readBoolean("meetingProcessDetection", true),
+  autoRecordMeetings: readBoolean("autoRecordMeetings", false),
   speakerDiarizationEnabled: readBoolean("speakerDiarizationEnabled", true),
   // Words appear while people speak (streaming local model). Off saves CPU on
   // older PCs: transcription then runs in 5 s chunks instead.
@@ -2211,6 +2215,15 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   },
   setAppleCalendarConnected: createBooleanSetter("appleCalendarConnected"),
   setMeetingProcessDetection: createBooleanSetter("meetingProcessDetection"),
+  // Custom setter (not createBooleanSetter) so the preference reaches the main
+  // process immediately from wherever it is toggled — Settings or onboarding.
+  setAutoRecordMeetings: (value: boolean) => {
+    if (isBrowser) localStorage.setItem("autoRecordMeetings", String(value));
+    useSettingsStore.setState({ autoRecordMeetings: value });
+    if (isBrowser) {
+      window.electronAPI?.meetingDetectionSetPreferences?.({ autoRecordMeetings: value });
+    }
+  },
   setMeetingLiveTranscription: (value: boolean) => {
     if (isBrowser) localStorage.setItem("meetingLiveTranscription", String(value));
     useSettingsStore.setState({ meetingLiveTranscription: value });
@@ -3301,6 +3314,7 @@ export async function initializeSettings(): Promise<void> {
       const currentState = useSettingsStore.getState();
       await window.electronAPI.meetingDetectionSetPreferences?.({
         processDetection: currentState.meetingProcessDetection,
+        autoRecordMeetings: currentState.autoRecordMeetings,
       });
     } catch (err) {
       logger.warn(

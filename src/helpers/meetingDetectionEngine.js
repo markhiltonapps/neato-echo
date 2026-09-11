@@ -1,6 +1,13 @@
 const debugLogger = require("./debugLogger");
 const { openExternalUrl } = require("./externalUrlOpener");
 const { getMeetingJoinUrl } = require("./meetingJoinUrl");
+
+// Auto-record only engages for real video-meeting apps, never for bare mic use
+// (YouTube, Siri, voice memos, a browser mic test). The mic signal says "a call
+// is happening"; a running app from this set says "it's one of these" — the two
+// together are the high-precision trigger. FaceTime is deliberately excluded:
+// it is rarely a recordable work meeting and the user named only these four.
+const AUTO_RECORD_PROCESS_KEYS = new Set(["zoom", "teams", "webex"]);
 const createMeetingAutoEndController = require("./meetingAutoEndController");
 const { createMeetingAudioActivityMonitor } = require("./meetingAudioActivityMonitor");
 const { broadcastToWindows } = require("./windowBroadcast");
@@ -59,7 +66,11 @@ class MeetingDetectionEngine {
     this.windowManager = windowManager;
     this.databaseManager = databaseManager;
     this.activeDetections = new Map();
-    this.preferences = { processDetection: true, audioDetection: true };
+    this.preferences = {
+      processDetection: true,
+      audioDetection: true,
+      autoRecordMeetings: false,
+    };
     this._userRecording = false;
     this._meetingModeActive = false;
     this._meetingModeWatchdog = null;
@@ -309,7 +320,13 @@ class MeetingDetectionEngine {
   }
 
   _syncAudioActivityDetector() {
-    if (this.preferences.audioDetection || this._isAutoEndWanted()) {
+    // Auto-record needs the mic signal to know a call is happening, even when
+    // the user turned meeting-detection notifications off.
+    if (
+      this.preferences.audioDetection ||
+      this.preferences.autoRecordMeetings ||
+      this._isAutoEndWanted()
+    ) {
       return this.audioActivityDetector.start();
     }
 
@@ -318,9 +335,14 @@ class MeetingDetectionEngine {
   }
 
   // The process-exit fast path needs the detector even when the user has turned
-  // process detection off for meeting prompts.
+  // process detection off for meeting prompts. Auto-record also needs it, to
+  // confirm which app the mic activity belongs to.
   _syncMeetingProcessDetector() {
-    if (this.preferences.processDetection || this._isAutoEndWanted()) {
+    if (
+      this.preferences.processDetection ||
+      this.preferences.autoRecordMeetings ||
+      this._isAutoEndWanted()
+    ) {
       this.meetingProcessDetector.start();
       return;
     }
@@ -498,13 +520,20 @@ class MeetingDetectionEngine {
   _handleDetection(source, key, data) {
     const detectionId = `${source}:${key}`;
 
-    if (source === "audio" && !this.preferences.audioDetection) {
+    // Auto-record is its own opt-in: it can start a recording even when the
+    // meeting-detection notifications are turned off, but ONLY for a qualifying
+    // signal (a known meeting app on mic, or a calendar event with a meeting
+    // link). A non-qualifying detection falls through to the normal prompt path.
+    const autoStart =
+      this.preferences.autoRecordMeetings && this._autoRecordQualifies(source, data);
+
+    if (source === "audio" && !this.preferences.audioDetection && !autoStart) {
       debugLogger.debug("Audio detection disabled, ignoring", { detectionId }, "meeting");
       this.audioActivityDetector.resetPrompt();
       return;
     }
 
-    if (!this._notificationsEnabledFor(source)) {
+    if (!autoStart && !this._notificationsEnabledFor(source)) {
       debugLogger.info(
         "Notification disabled by preference, ignoring",
         { detectionId, source },
@@ -543,9 +572,60 @@ class MeetingDetectionEngine {
       return;
     }
 
-    debugLogger.info("Meeting detection triggered", { detectionId, source }, "meeting");
+    debugLogger.info("Meeting detection triggered", { detectionId, source, autoStart }, "meeting");
     this.activeDetections.set(detectionId, { source, key, data });
+
+    if (autoStart) {
+      void this._autoStartFromDetection(detectionId, source, key, data);
+      return;
+    }
+
     this._showPrompt(detectionId, source, key, data);
+  }
+
+  // Whether a detection is trustworthy enough to start recording with no prompt.
+  // Audio: a known meeting app (Zoom/Teams/Webex) must be running, so bare mic
+  // use (YouTube, Siri, a mic test) never qualifies. Calendar: the event must
+  // carry a recognized meeting link (covers Google Meet, Zoom, Teams, Webex).
+  _autoRecordQualifies(source, data) {
+    if (source === "audio") {
+      const running = this.meetingProcessDetector.getDetectedProcesses?.() || [];
+      return running.some((proc) => AUTO_RECORD_PROCESS_KEYS.has(proc.processKey));
+    }
+    if (source === "calendar") {
+      return !!getMeetingJoinUrl(data?.event);
+    }
+    return false;
+  }
+
+  // Auto-start reuses the exact note-create + navigate path the notification's
+  // "start" action runs, so the resulting note is a normal meeting note (already
+  // auto-end eligible). Failures fall back to a prompt so a detection is never
+  // silently lost.
+  async _autoStartFromDetection(detectionId, source, key, data) {
+    debugLogger.info("Auto-recording meeting", { detectionId, source }, "meeting");
+    try {
+      const started = await this._startMeetingForDetection(
+        { event: data?.event ?? this._findCalendarEvent() ?? placeholderEvent("__detected__") },
+        { trigger: "auto-record" }
+      );
+      if (started) {
+        this.activeDetections.clear();
+        this.windowManager.dismissMeetingNotification?.();
+      } else {
+        // Note/folder creation failed: fall back to the prompt so the detection
+        // is not silently lost.
+        this._showPrompt(detectionId, source, key, data);
+      }
+    } catch (error) {
+      this._meetingModeActive = false;
+      debugLogger.error(
+        "Auto-record failed; falling back to prompt",
+        { error: error?.message, detectionId },
+        "meeting"
+      );
+      this._showPrompt(detectionId, source, key, data);
+    }
   }
 
   _notificationsEnabledFor(source) {
@@ -619,7 +699,11 @@ class MeetingDetectionEngine {
         if (source === "audio") this.audioActivityDetector.resetPrompt();
       })
       .catch((error) => {
-        debugLogger.error("Failed to show meeting notification", { error: error?.message }, "meeting");
+        debugLogger.error(
+          "Failed to show meeting notification",
+          { error: error?.message },
+          "meeting"
+        );
         this.activeDetections.delete(detectionId);
         if (source === "audio") this.audioActivityDetector.resetPrompt();
       });
@@ -644,58 +728,7 @@ class MeetingDetectionEngine {
           }
         }
 
-        const eventSummary = detection.event?.summary || "New note";
-
-        const isRealEvent =
-          detection.event?.calendar_id &&
-          detection.event.calendar_id !== "__detected__" &&
-          detection.event.calendar_id !== "__manual__";
-
-        if (
-          isRealEvent &&
-          (await this._resumeExistingEventNote(detection.event, "calendar-join"))
-        ) {
-          this._meetingModeActive = true;
-          this.audioActivityDetector.resetPrompt();
-          return;
-        }
-
-        const noteResult = this.databaseManager.saveNote(eventSummary, "", "meeting");
-        const meetingsFolder = this.databaseManager.getMeetingsFolder();
-
-        if (!noteResult?.note?.id || !meetingsFolder?.id) {
-          debugLogger.error(
-            "Meeting note creation failed",
-            { noteId: noteResult?.note?.id, folderId: meetingsFolder?.id },
-            "meeting"
-          );
-          return;
-        }
-
-        this._meetingModeActive = true;
-
-        broadcastToWindows("note-added", noteResult.note);
-
-        if (isRealEvent) {
-          const calEvent = this.databaseManager.getCalendarEventById(detection.event.id);
-          const updates = { calendar_event_id: detection.event.id };
-          if (calEvent?.attendees) {
-            updates.participants = calEvent.attendees;
-          }
-          const updateResult = this.databaseManager.updateNote(noteResult.note.id, updates);
-          if (updateResult?.success && updateResult?.note) {
-            broadcastToWindows("note-updated", updateResult.note);
-          }
-        }
-
-        await this.windowManager.queueMeetingNoteNavigation({
-          noteId: noteResult.note.id,
-          folderId: meetingsFolder.id,
-          event: detection.event,
-          trigger: "calendar-join",
-        });
-
-        this.audioActivityDetector.resetPrompt();
+        await this._startMeetingForDetection(detection, { trigger: "calendar-join" });
       } else if (action === "dismiss") {
         if (detection) {
           this._dismiss();
@@ -714,6 +747,63 @@ class MeetingDetectionEngine {
       this.activeDetections.clear();
       this.windowManager.dismissMeetingNotification();
     }
+  }
+
+  // Creates (or resumes) the meeting note for a detection and navigates the
+  // control panel to start recording. Shared by the notification "start"/"join"
+  // action and by auto-record so both produce an identical meeting note (which
+  // is auto-end eligible). Returns true when a recording was started or resumed.
+  async _startMeetingForDetection(detection, { trigger = "calendar-join" } = {}) {
+    const eventSummary = detection.event?.summary || "New note";
+
+    const isRealEvent =
+      detection.event?.calendar_id &&
+      detection.event.calendar_id !== "__detected__" &&
+      detection.event.calendar_id !== "__manual__";
+
+    if (isRealEvent && (await this._resumeExistingEventNote(detection.event, trigger))) {
+      this._meetingModeActive = true;
+      this.audioActivityDetector.resetPrompt();
+      return true;
+    }
+
+    const noteResult = this.databaseManager.saveNote(eventSummary, "", "meeting");
+    const meetingsFolder = this.databaseManager.getMeetingsFolder();
+
+    if (!noteResult?.note?.id || !meetingsFolder?.id) {
+      debugLogger.error(
+        "Meeting note creation failed",
+        { noteId: noteResult?.note?.id, folderId: meetingsFolder?.id },
+        "meeting"
+      );
+      return false;
+    }
+
+    this._meetingModeActive = true;
+
+    broadcastToWindows("note-added", noteResult.note);
+
+    if (isRealEvent) {
+      const calEvent = this.databaseManager.getCalendarEventById(detection.event.id);
+      const updates = { calendar_event_id: detection.event.id };
+      if (calEvent?.attendees) {
+        updates.participants = calEvent.attendees;
+      }
+      const updateResult = this.databaseManager.updateNote(noteResult.note.id, updates);
+      if (updateResult?.success && updateResult?.note) {
+        broadcastToWindows("note-updated", updateResult.note);
+      }
+    }
+
+    await this.windowManager.queueMeetingNoteNavigation({
+      noteId: noteResult.note.id,
+      folderId: meetingsFolder.id,
+      event: detection.event,
+      trigger,
+    });
+
+    this.audioActivityDetector.resetPrompt();
+    return true;
   }
 
   async startManualMeeting() {
@@ -935,6 +1025,9 @@ class MeetingDetectionEngine {
     }
     if (typeof prefs?.audioDetection === "boolean") {
       this.preferences.audioDetection = prefs.audioDetection;
+    }
+    if (typeof prefs?.autoRecordMeetings === "boolean") {
+      this.preferences.autoRecordMeetings = prefs.autoRecordMeetings;
     }
 
     this._syncMeetingProcessDetector();

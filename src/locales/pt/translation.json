@@ -78,6 +78,10 @@
         "title": "Live transcript while recording",
         "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
       },
+      "autoRecord": {
+        "title": "Gravar reuniões automaticamente",
+        "description": "Inicia e encerra a gravação de chamadas do Zoom, Teams, Webex e Google Meet agendadas, sem começar ou parar manualmente."
+      },
       "speakerDetection": {
         "title": "Identificar e rotular participantes",
         "description": "Quando desativado, as transcrições mostram \"Você\" e \"Outros\""
@@ -284,6 +288,10 @@
           "chat": "Converse com as notas da reunião",
           "transcript": "Revise a transcrição completa",
           "speakers": "Veja quem disse o quê"
+        },
+        "autoRecord": {
+          "title": "Gravar reuniões automaticamente",
+          "description": "Grava automaticamente chamadas do Zoom, Teams, Webex e Google Meet agendadas. Você pode alterar isso quando quiser nas Configurações."
         },
         "connectors": {
           "connect": "Conectar",
