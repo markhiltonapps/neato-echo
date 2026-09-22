@@ -9,6 +9,7 @@ import {
   Folder,
   FolderOpen,
   Info,
+  ListChecks,
   Loader2,
   Lock,
   MoreHorizontal,
@@ -2292,15 +2293,18 @@ export default function SpacesTree({
               {t(`filter.${p}`)}
             </button>
           ))}
+        </div>
+        <div className="flex items-center">
           <button
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
             className={cn(
-              "ml-auto font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors",
+              "ml-auto inline-flex items-center gap-1 font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors",
               selectMode
                 ? "bg-brand-teal-soft text-brand-teal border-brand-teal/25"
-                : "text-muted-foreground/50 hover:text-foreground/70 border-transparent"
+                : "text-muted-foreground/60 hover:text-foreground/80 border-border/50 dark:border-white/10"
             )}
           >
+            <ListChecks size={11} />
             {selectMode ? t("common.cancel") : t("notes.bulk.select")}
           </button>
         </div>
