@@ -12,7 +12,8 @@
     "prevMonth": "Mes anterior",
     "nextMonth": "Mes siguiente",
     "empty": "Sin grabaciones este día",
-    "count": "{{count}} grabaciones"
+    "count_one": "{{count}} grabación",
+    "count_other": "{{count}} grabaciones"
   },
   "filter": {
     "all": "Todas",
@@ -2878,7 +2879,7 @@
       "deleted": "{{space}} eliminado",
       "moveTo": "Mover a",
       "moveToSpace": "Mover a espacio…",
-      "searchSpaces": "Buscar espacios...",
+      "searchSpaces": "Buscar espacios…",
       "noSpacesFound": "No se encontraron espacios",
       "spaceRoot": "Raíz del espacio",
       "moveConfirm": "Mover",
@@ -2980,9 +2981,10 @@
       "couldNotRename": "No se pudo renombrar la carpeta",
       "couldNotDelete": "No se pudo eliminar la carpeta",
       "deleteTitle": "¿Eliminar carpeta?",
-      "deleteDescription": "Esto eliminará permanentemente \"{{name}}\" y sus {{count}} nota(s). Esta acción no se puede deshacer.",
       "deleteDescriptionEmpty": "Esto eliminará permanentemente \"{{name}}\". Esta acción no se puede deshacer.",
-      "deleteConfirm": "Eliminar carpeta y notas"
+      "deleteConfirm": "Eliminar carpeta y notas",
+      "deleteDescription_one": "Se eliminará \"{{name}}\" y su {{count}} nota de forma permanente. No se puede deshacer.",
+      "deleteDescription_other": "Se eliminará \"{{name}}\" y sus {{count}} notas de forma permanente. No se puede deshacer."
     },
     "list": {
       "title": "Notas",
@@ -3004,7 +3006,7 @@
       "noteTitle": "Título de la nota",
       "stop": "Detener",
       "transcribe": "Transcribir",
-      "processing": "Procesando...",
+      "processing": "Procesando…",
       "export": "Exportar",
       "copy": "Copy",
       "asMarkdown": "Como Markdown",
@@ -3031,9 +3033,11 @@
       "attendee": "asistente",
       "attendees": "asistentes",
       "addAttendees": "Agregar asistentes",
-      "addPlaceholder": "Agregar asistentes...",
+      "addPlaceholder": "Agregar asistentes…",
       "typeEmail": "Escribe un correo para agregar...",
-      "me": "(yo)"
+      "me": "(yo)",
+      "count_one": "{{count}} asistente",
+      "count_other": "{{count}} asistentes"
     },
     "upload": {
       "title": "Subir audio",
@@ -3150,7 +3154,7 @@
       "moveToFolder": "Mover a carpeta",
       "delete": "Eliminar",
       "rename": "Renombrar",
-      "searchFolders": "Buscar carpetas...",
+      "searchFolders": "Buscar carpetas…",
       "noResults": "No se encontraron carpetas",
       "newFolder": "Nueva carpeta",
       "showInFileManager": "Mostrar en {{manager}}"
@@ -3204,9 +3208,10 @@
       "title": "Añadir notas",
       "searchPlaceholder": "Buscar notas para añadir...",
       "addExisting": "Añadir existentes",
-      "addCount": "Añadir {{count}} notas",
       "noResults": "No hay notas coincidentes",
-      "noNotesAvailable": "No hay otras notas disponibles"
+      "noNotesAvailable": "No hay otras notas disponibles",
+      "addCount_one": "Añadir {{count}} nota",
+      "addCount_other": "Añadir {{count}} notas"
     },
     "onboarding": {
       "llm": {
@@ -3309,7 +3314,7 @@
         "dismiss": "Descartar"
       },
       "ask": {
-        "placeholder": "Pregunta lo que quieras",
+        "placeholder": "Pregunta algo…",
         "chips": {
           "catchUp": "Ponme al día",
           "keyDecisions": "Lista las decisiones clave",
@@ -3923,7 +3928,7 @@
     "continue": "Continuar"
   },
   "embeddedChat": {
-    "askPlaceholder": "Pregunta algo...",
+    "askPlaceholder": "Pregunta algo…",
     "send": "Enviar",
     "title": "Chat",
     "emptyState": "Haz una pregunta sobre esta nota",

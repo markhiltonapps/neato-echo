@@ -12,7 +12,10 @@
     "prevMonth": "Предыдущий месяц",
     "nextMonth": "Следующий месяц",
     "empty": "Нет записей за этот день",
-    "count": "Записей: {{count}}"
+    "count_one": "{{count}} запись",
+    "count_few": "{{count}} записи",
+    "count_many": "{{count}} записей",
+    "count_other": "{{count}} записей"
   },
   "filter": {
     "all": "Все",
@@ -2848,7 +2851,7 @@
       "deleted": "{{space}} удалено",
       "moveTo": "Переместить в",
       "moveToSpace": "Переместить в пространство…",
-      "searchSpaces": "Поиск пространств...",
+      "searchSpaces": "Поиск пространств…",
       "noSpacesFound": "Пространства не найдены",
       "spaceRoot": "Корень пространства",
       "moveConfirm": "Переместить",
@@ -2956,9 +2959,12 @@
       "couldNotRename": "Не удалось переименовать папку",
       "couldNotDelete": "Не удалось удалить папку",
       "deleteTitle": "Удалить папку?",
-      "deleteDescription": "Это навсегда удалит «{{name}}» и {{count}} заметок в ней. Это действие нельзя отменить.",
       "deleteDescriptionEmpty": "Это навсегда удалит «{{name}}». Это действие нельзя отменить.",
-      "deleteConfirm": "Удалить папку и заметки"
+      "deleteConfirm": "Удалить папку и заметки",
+      "deleteDescription_one": "«{{name}}» и её {{count}} заметка будут удалены безвозвратно. Это нельзя отменить.",
+      "deleteDescription_few": "«{{name}}» и её {{count}} заметки будут удалены безвозвратно. Это нельзя отменить.",
+      "deleteDescription_many": "«{{name}}» и её {{count}} заметок будут удалены безвозвратно. Это нельзя отменить.",
+      "deleteDescription_other": "«{{name}}» и её {{count}} заметок будут удалены безвозвратно. Это нельзя отменить."
     },
     "list": {
       "title": "Заметки",
@@ -2980,7 +2986,7 @@
       "noteTitle": "Название заметки",
       "stop": "Стоп",
       "transcribe": "Транскрибировать",
-      "processing": "Обработка...",
+      "processing": "Обработка…",
       "export": "Экспорт",
       "copy": "Copy",
       "asMarkdown": "Как Markdown",
@@ -3007,9 +3013,13 @@
       "attendee": "участник",
       "attendees": "участников",
       "addAttendees": "Добавить участников",
-      "addPlaceholder": "Добавить участников...",
+      "addPlaceholder": "Добавить участников…",
       "typeEmail": "Введите email для добавления...",
-      "me": "(я)"
+      "me": "(я)",
+      "count_one": "{{count}} участник",
+      "count_few": "{{count}} участника",
+      "count_many": "{{count}} участников",
+      "count_other": "{{count}} участников"
     },
     "upload": {
       "title": "Загрузить аудио",
@@ -3126,7 +3136,7 @@
       "moveToFolder": "Переместить в папку",
       "delete": "Удалить",
       "rename": "Переименовать",
-      "searchFolders": "Поиск папок...",
+      "searchFolders": "Поиск папок…",
       "noResults": "Папки не найдены",
       "newFolder": "Новая папка",
       "showInFileManager": "Показать в {{manager}}"
@@ -3180,9 +3190,12 @@
       "title": "Добавить заметки",
       "searchPlaceholder": "Поиск заметок...",
       "addExisting": "Добавить существующие",
-      "addCount": "Добавить: {{count}}",
       "noResults": "Не найдено",
-      "noNotesAvailable": "Нет доступных заметок"
+      "noNotesAvailable": "Нет доступных заметок",
+      "addCount_one": "Добавить {{count}} заметку",
+      "addCount_few": "Добавить {{count}} заметки",
+      "addCount_many": "Добавить {{count}} заметок",
+      "addCount_other": "Добавить {{count}} заметок"
     },
     "onboarding": {
       "llm": {
@@ -3289,7 +3302,7 @@
         "dismiss": "Скрыть"
       },
       "ask": {
-        "placeholder": "Спросите что угодно",
+        "placeholder": "Спросите что-нибудь…",
         "chips": {
           "catchUp": "Введи меня в курс дела",
           "keyDecisions": "Перечисли ключевые решения",
@@ -3963,7 +3976,7 @@
     }
   },
   "embeddedChat": {
-    "askPlaceholder": "Спросите что-нибудь...",
+    "askPlaceholder": "Спросите что-нибудь…",
     "send": "Отправить",
     "title": "Чат",
     "emptyState": "Задайте вопрос об этой заметке",

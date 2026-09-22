@@ -12,7 +12,8 @@
     "prevMonth": "Mês anterior",
     "nextMonth": "Próximo mês",
     "empty": "Sem gravações neste dia",
-    "count": "{{count}} gravações"
+    "count_one": "{{count}} gravação",
+    "count_other": "{{count}} gravações"
   },
   "filter": {
     "all": "Todas",
@@ -2830,7 +2831,7 @@
       "deleted": "{{space}} excluído",
       "moveTo": "Mover para",
       "moveToSpace": "Mover para espaço…",
-      "searchSpaces": "Pesquisar espaços...",
+      "searchSpaces": "Pesquisar espaços…",
       "noSpacesFound": "Nenhum espaço encontrado",
       "spaceRoot": "Raiz do espaço",
       "moveConfirm": "Mover",
@@ -2932,9 +2933,10 @@
       "couldNotRename": "Não foi possível renomear a pasta",
       "couldNotDelete": "Não foi possível excluir a pasta",
       "deleteTitle": "Excluir pasta?",
-      "deleteDescription": "Isso excluirá permanentemente \"{{name}}\" e suas {{count}} nota(s). Esta ação não pode ser desfeita.",
       "deleteDescriptionEmpty": "Isso excluirá permanentemente \"{{name}}\". Esta ação não pode ser desfeita.",
-      "deleteConfirm": "Excluir pasta e notas"
+      "deleteConfirm": "Excluir pasta e notas",
+      "deleteDescription_one": "Isso excluirá permanentemente \"{{name}}\" e sua {{count}} nota. Isso não pode ser desfeito.",
+      "deleteDescription_other": "Isso excluirá permanentemente \"{{name}}\" e suas {{count}} notas. Isso não pode ser desfeito."
     },
     "list": {
       "title": "Notas",
@@ -2956,7 +2958,7 @@
       "noteTitle": "Título da nota",
       "stop": "Parar",
       "transcribe": "Transcrever",
-      "processing": "Processando...",
+      "processing": "Processando…",
       "export": "Exportar",
       "copy": "Copy",
       "asMarkdown": "Como Markdown",
@@ -2983,9 +2985,11 @@
       "attendee": "participante",
       "attendees": "participantes",
       "addAttendees": "Adicionar participantes",
-      "addPlaceholder": "Adicionar participantes...",
+      "addPlaceholder": "Adicionar participantes…",
       "typeEmail": "Digite um e-mail para adicionar...",
-      "me": "(eu)"
+      "me": "(eu)",
+      "count_one": "{{count}} participante",
+      "count_other": "{{count}} participantes"
     },
     "upload": {
       "title": "Enviar áudio",
@@ -3102,7 +3106,7 @@
       "moveToFolder": "Mover para pasta",
       "delete": "Excluir",
       "rename": "Renomear",
-      "searchFolders": "Pesquisar pastas...",
+      "searchFolders": "Pesquisar pastas…",
       "noResults": "Nenhuma pasta encontrada",
       "newFolder": "Nova pasta",
       "showInFileManager": "Mostrar no {{manager}}"
@@ -3156,9 +3160,10 @@
       "title": "Adicionar notas",
       "searchPlaceholder": "Pesquisar notas para adicionar...",
       "addExisting": "Adicionar existentes",
-      "addCount": "Adicionar {{count}} notas",
       "noResults": "Nenhuma nota encontrada",
-      "noNotesAvailable": "Nenhuma outra nota disponível"
+      "noNotesAvailable": "Nenhuma outra nota disponível",
+      "addCount_one": "Adicionar {{count}} nota",
+      "addCount_other": "Adicionar {{count}} notas"
     },
     "onboarding": {
       "llm": {
@@ -3261,7 +3266,7 @@
         "dismiss": "Dispensar"
       },
       "ask": {
-        "placeholder": "Pergunte qualquer coisa",
+        "placeholder": "Pergunte algo…",
         "chips": {
           "catchUp": "Me atualize",
           "keyDecisions": "Liste as decisões principais",
@@ -3923,7 +3928,7 @@
     }
   },
   "embeddedChat": {
-    "askPlaceholder": "Pergunte algo...",
+    "askPlaceholder": "Pergunte algo…",
     "send": "Enviar",
     "title": "Chat",
     "emptyState": "Faça uma pergunta sobre esta nota",

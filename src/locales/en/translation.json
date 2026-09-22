@@ -12,7 +12,8 @@
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
     "empty": "No recordings this day",
-    "count": "{{count}} recordings"
+    "count_one": "{{count}} recording",
+    "count_other": "{{count}} recordings"
   },
   "filter": {
     "all": "All",
@@ -3087,7 +3088,7 @@
       "deleted": "Deleted {{space}}",
       "moveTo": "Move to…",
       "moveToSpace": "Move to space…",
-      "searchSpaces": "Search spaces...",
+      "searchSpaces": "Search spaces…",
       "noSpacesFound": "No spaces found",
       "spaceRoot": "Space root",
       "moveConfirm": "Move",
@@ -3189,9 +3190,10 @@
       "couldNotRename": "Couldn't rename folder",
       "couldNotDelete": "Couldn't delete folder",
       "deleteTitle": "Delete folder?",
-      "deleteDescription": "This will permanently delete \"{{name}}\" and its {{count}} note(s). This cannot be undone.",
       "deleteDescriptionEmpty": "This will permanently delete \"{{name}}\". This cannot be undone.",
-      "deleteConfirm": "Delete folder and notes"
+      "deleteConfirm": "Delete folder and notes",
+      "deleteDescription_one": "This will permanently delete \"{{name}}\" and its {{count}} note. This can't be undone.",
+      "deleteDescription_other": "This will permanently delete \"{{name}}\" and its {{count}} notes. This can't be undone."
     },
     "list": {
       "title": "Notes",
@@ -3213,7 +3215,7 @@
       "noteTitle": "Note title",
       "stop": "Stop",
       "transcribe": "Transcribe",
-      "processing": "Processing...",
+      "processing": "Processing…",
       "export": "Export",
       "copy": "Copy",
       "asMarkdown": "As Markdown",
@@ -3240,9 +3242,11 @@
       "attendee": "attendee",
       "attendees": "attendees",
       "addAttendees": "Add attendees",
-      "addPlaceholder": "Add attendees...",
+      "addPlaceholder": "Add attendees…",
       "typeEmail": "Type an email to add...",
-      "me": "(me)"
+      "me": "(me)",
+      "count_one": "{{count}} attendee",
+      "count_other": "{{count}} attendees"
     },
     "upload": {
       "title": "Upload Audio",
@@ -3367,15 +3371,16 @@
       "title": "Add notes",
       "searchPlaceholder": "Search notes to add...",
       "addExisting": "Add existing",
-      "addCount": "Add {{count}} notes",
       "noResults": "No matching notes",
-      "noNotesAvailable": "No other notes available"
+      "noNotesAvailable": "No other notes available",
+      "addCount_one": "Add {{count}} note",
+      "addCount_other": "Add {{count}} notes"
     },
     "context": {
       "moveToFolder": "Move to folder",
       "delete": "Delete",
       "rename": "Rename",
-      "searchFolders": "Search folders...",
+      "searchFolders": "Search folders…",
       "noResults": "No folders found",
       "newFolder": "New folder",
       "showInFileManager": "Show in {{manager}}"
@@ -3518,7 +3523,7 @@
         "dismiss": "Dismiss"
       },
       "ask": {
-        "placeholder": "Ask anything",
+        "placeholder": "Ask anything…",
         "chips": {
           "catchUp": "Catch me up",
           "keyDecisions": "List key decisions",
@@ -3999,7 +4004,7 @@
     "continue": "Continue"
   },
   "embeddedChat": {
-    "askPlaceholder": "Ask anything...",
+    "askPlaceholder": "Ask anything…",
     "send": "Send",
     "title": "Chat",
     "emptyState": "Ask a question about this note",

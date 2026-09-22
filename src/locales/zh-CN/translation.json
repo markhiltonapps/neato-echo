@@ -12,7 +12,7 @@
     "prevMonth": "上个月",
     "nextMonth": "下个月",
     "empty": "当天没有录音",
-    "count": "{{count}} 条录音"
+    "count_other": "{{count}} 条录音"
   },
   "filter": {
     "all": "全部",
@@ -2829,7 +2829,7 @@
       "deleted": "已删除 {{space}}",
       "moveTo": "移动到",
       "moveToSpace": "移动到空间…",
-      "searchSpaces": "搜索空间...",
+      "searchSpaces": "搜索空间…",
       "noSpacesFound": "未找到空间",
       "spaceRoot": "空间根目录",
       "moveConfirm": "移动",
@@ -2931,9 +2931,9 @@
       "couldNotRename": "无法重命名文件夹",
       "couldNotDelete": "无法删除文件夹",
       "deleteTitle": "删除文件夹？",
-      "deleteDescription": "这将永久删除「{{name}}」及其 {{count}} 条笔记。此操作无法撤销。",
       "deleteDescriptionEmpty": "这将永久删除「{{name}}」。此操作无法撤销。",
-      "deleteConfirm": "删除文件夹和笔记"
+      "deleteConfirm": "删除文件夹和笔记",
+      "deleteDescription_other": "这将永久删除“{{name}}”及其 {{count}} 条笔记。此操作无法撤销。"
     },
     "list": {
       "title": "笔记",
@@ -2955,7 +2955,7 @@
       "noteTitle": "笔记标题",
       "stop": "停止",
       "transcribe": "转录",
-      "processing": "处理中...",
+      "processing": "处理中…",
       "export": "导出",
       "copy": "Copy",
       "asMarkdown": "导出为 Markdown",
@@ -2982,9 +2982,10 @@
       "attendee": "位参会者",
       "attendees": "位参会者",
       "addAttendees": "添加参会者",
-      "addPlaceholder": "添加参会者...",
+      "addPlaceholder": "添加参会者…",
       "typeEmail": "输入邮箱以添加...",
-      "me": "（我）"
+      "me": "（我）",
+      "count_other": "{{count}} 位参会者"
     },
     "upload": {
       "title": "上传音频",
@@ -3101,7 +3102,7 @@
       "moveToFolder": "移动到文件夹",
       "delete": "删除",
       "rename": "重命名",
-      "searchFolders": "搜索文件夹...",
+      "searchFolders": "搜索文件夹…",
       "noResults": "未找到文件夹",
       "newFolder": "新建文件夹",
       "showInFileManager": "在{{manager}}中显示"
@@ -3155,9 +3156,9 @@
       "title": "添加笔记",
       "searchPlaceholder": "搜索要添加的笔记...",
       "addExisting": "添加已有笔记",
-      "addCount": "添加 {{count}} 条笔记",
       "noResults": "没有匹配的笔记",
-      "noNotesAvailable": "没有其他可用笔记"
+      "noNotesAvailable": "没有其他可用笔记",
+      "addCount_other": "添加 {{count}} 条笔记"
     },
     "onboarding": {
       "llm": {
@@ -3260,7 +3261,7 @@
         "dismiss": "关闭"
       },
       "ask": {
-        "placeholder": "随便问点什么",
+        "placeholder": "随便问点什么…",
         "chips": {
           "catchUp": "帮我补上进展",
           "keyDecisions": "列出关键决定",
@@ -3922,7 +3923,7 @@
     }
   },
   "embeddedChat": {
-    "askPlaceholder": "随便问点什么...",
+    "askPlaceholder": "随便问点什么…",
     "send": "发送",
     "title": "聊天",
     "emptyState": "就这条笔记提个问题",

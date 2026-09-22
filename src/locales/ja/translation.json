@@ -12,7 +12,7 @@
     "prevMonth": "前の月",
     "nextMonth": "次の月",
     "empty": "この日の録音はありません",
-    "count": "録音 {{count}} 件"
+    "count_other": "録音 {{count}} 件"
   },
   "filter": {
     "all": "すべて",
@@ -2757,7 +2757,7 @@
       "deleted": "{{space}} を削除しました",
       "moveTo": "移動",
       "moveToSpace": "スペースに移動…",
-      "searchSpaces": "スペースを検索...",
+      "searchSpaces": "スペースを検索…",
       "noSpacesFound": "スペースが見つかりません",
       "spaceRoot": "スペースのルート",
       "moveConfirm": "移動",
@@ -2864,7 +2864,7 @@
       "untitled": "無題",
       "noteTitle": "ノートのタイトル",
       "stop": "停止",
-      "processing": "処理中...",
+      "processing": "処理中…",
       "export": "エクスポート",
       "copy": "Copy",
       "asMarkdown": "Markdown 形式",
@@ -2883,15 +2883,16 @@
       "attendee": "名の参加者",
       "attendees": "名の参加者",
       "addAttendees": "参加者を追加",
-      "addPlaceholder": "参加者を追加...",
+      "addPlaceholder": "参加者を追加…",
       "typeEmail": "メールアドレスを入力して追加...",
-      "me": "（自分）"
+      "me": "（自分）",
+      "count_other": "参加者 {{count}} 人"
     },
     "context": {
       "moveToFolder": "フォルダに移動",
       "delete": "削除",
       "rename": "名前を変更",
-      "searchFolders": "フォルダを検索...",
+      "searchFolders": "フォルダを検索…",
       "noResults": "フォルダが見つかりません",
       "newFolder": "新しいフォルダ",
       "showInFileManager": "{{manager}}で表示"
@@ -2945,9 +2946,9 @@
       "title": "ノートを追加",
       "searchPlaceholder": "追加するノートを検索...",
       "addExisting": "既存を追加",
-      "addCount": "{{count}}件のノートを追加",
       "noResults": "一致するノートがありません",
-      "noNotesAvailable": "他のノートはありません"
+      "noNotesAvailable": "他のノートはありません",
+      "addCount_other": "{{count}} 件のノートを追加"
     },
     "folders": {
       "title": "フォルダ",
@@ -2957,9 +2958,9 @@
       "couldNotRename": "フォルダの名前を変更できませんでした",
       "couldNotDelete": "フォルダを削除できませんでした",
       "deleteTitle": "フォルダを削除しますか？",
-      "deleteDescription": "「{{name}}」と {{count}} 件のノートを完全に削除します。この操作は取り消せません。",
       "deleteDescriptionEmpty": "「{{name}}」を完全に削除します。この操作は取り消せません。",
-      "deleteConfirm": "フォルダとノートを削除"
+      "deleteConfirm": "フォルダとノートを削除",
+      "deleteDescription_other": "「{{name}}」とその {{count}} 件のノートを完全に削除します。元に戻せません。"
     },
     "list": {
       "title": "ノート",
@@ -3188,7 +3189,7 @@
         "dismiss": "閉じる"
       },
       "ask": {
-        "placeholder": "何でも質問",
+        "placeholder": "何でも聞いてください…",
         "chips": {
           "catchUp": "最新情報をまとめて",
           "keyDecisions": "重要な決定事項を一覧に",
@@ -3922,7 +3923,7 @@
     }
   },
   "embeddedChat": {
-    "askPlaceholder": "何でも聞いてください...",
+    "askPlaceholder": "何でも聞いてください…",
     "send": "送信",
     "title": "チャット",
     "emptyState": "このノートについて質問してください",

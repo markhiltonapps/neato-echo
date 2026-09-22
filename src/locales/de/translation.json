@@ -12,7 +12,8 @@
     "prevMonth": "Voriger Monat",
     "nextMonth": "Nächster Monat",
     "empty": "Keine Aufnahmen an diesem Tag",
-    "count": "{{count}} Aufnahmen"
+    "count_one": "{{count}} Aufnahme",
+    "count_other": "{{count}} Aufnahmen"
   },
   "filter": {
     "all": "Alle",
@@ -3087,7 +3088,7 @@
       "deleted": "{{space}} gelöscht",
       "moveTo": "Verschieben nach",
       "moveToSpace": "In Bereich verschieben…",
-      "searchSpaces": "Bereiche suchen...",
+      "searchSpaces": "Bereiche suchen…",
       "noSpacesFound": "Keine Bereiche gefunden",
       "spaceRoot": "Oberste Ebene",
       "moveConfirm": "Verschieben",
@@ -3189,9 +3190,10 @@
       "couldNotRename": "Ordner konnte nicht umbenannt werden",
       "couldNotDelete": "Ordner konnte nicht gelöscht werden",
       "deleteTitle": "Ordner löschen?",
-      "deleteDescription": "Dadurch werden \"{{name}}\" und {{count}} enthaltene Notiz(en) dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteDescriptionEmpty": "Dadurch wird \"{{name}}\" dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "deleteConfirm": "Ordner und Notizen löschen"
+      "deleteConfirm": "Ordner und Notizen löschen",
+      "deleteDescription_one": "Dies löscht \"{{name}}\" und seine {{count}} Notiz endgültig. Kann nicht rückgängig gemacht werden.",
+      "deleteDescription_other": "Dies löscht \"{{name}}\" und seine {{count}} Notizen endgültig. Kann nicht rückgängig gemacht werden."
     },
     "list": {
       "title": "Notizen",
@@ -3213,7 +3215,7 @@
       "noteTitle": "Notiztitel",
       "stop": "Stopp",
       "transcribe": "Transkribieren",
-      "processing": "Verarbeitung...",
+      "processing": "Verarbeitung…",
       "export": "Exportieren",
       "copy": "Copy",
       "asMarkdown": "Als Markdown",
@@ -3240,9 +3242,11 @@
       "attendee": "Teilnehmer",
       "attendees": "Teilnehmer",
       "addAttendees": "Teilnehmer hinzufügen",
-      "addPlaceholder": "Teilnehmer hinzufügen...",
+      "addPlaceholder": "Teilnehmer hinzufügen…",
       "typeEmail": "E-Mail eingeben zum Hinzufügen...",
-      "me": "(ich)"
+      "me": "(ich)",
+      "count_one": "{{count}} Teilnehmer",
+      "count_other": "{{count}} Teilnehmer"
     },
     "upload": {
       "title": "Audio hochladen",
@@ -3367,15 +3371,16 @@
       "title": "Notizen hinzufügen",
       "searchPlaceholder": "Notizen zum Hinzufügen suchen...",
       "addExisting": "Vorhandene hinzufügen",
-      "addCount": "{{count}} Notizen hinzufügen",
       "noResults": "Keine passenden Notizen",
-      "noNotesAvailable": "Keine weiteren Notizen verfügbar"
+      "noNotesAvailable": "Keine weiteren Notizen verfügbar",
+      "addCount_one": "{{count}} Notiz hinzufügen",
+      "addCount_other": "{{count}} Notizen hinzufügen"
     },
     "context": {
       "moveToFolder": "In Ordner verschieben",
       "delete": "Löschen",
       "rename": "Umbenennen",
-      "searchFolders": "Ordner suchen...",
+      "searchFolders": "Ordner suchen…",
       "noResults": "Keine Ordner gefunden",
       "newFolder": "Neuer Ordner",
       "showInFileManager": "Im {{manager}} anzeigen"
@@ -3518,7 +3523,7 @@
         "dismiss": "Ausblenden"
       },
       "ask": {
-        "placeholder": "Frag etwas",
+        "placeholder": "Frag etwas…",
         "chips": {
           "catchUp": "Bring mich auf den neuesten Stand",
           "keyDecisions": "Liste die wichtigsten Entscheidungen auf",
@@ -3999,7 +4004,7 @@
     "continue": "Weiter"
   },
   "embeddedChat": {
-    "askPlaceholder": "Frag etwas...",
+    "askPlaceholder": "Frag etwas…",
     "send": "Senden",
     "title": "Chat",
     "emptyState": "Stelle eine Frage zu dieser Notiz",
