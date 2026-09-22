@@ -2831,9 +2831,10 @@
       "selectedCount": "{{count}} seleccionadas",
       "moveTo": "Mover a…",
       "noFolders": "Sin carpetas",
-      "deleteTitle": "¿Eliminar grabaciones?",
-      "deleteConfirm": "¿Eliminar permanentemente {{count}} seleccionadas? No se puede deshacer.",
-      "shortRecording": "Grabación corta (menos de 5 min): comprueba si fue accidental"
+      "deleteTitle": "¿Eliminar notas?",
+      "shortRecording": "Grabación corta (menos de 5 min): comprueba si fue accidental",
+      "deleteConfirm_one": "¿Eliminar esta nota de forma permanente? No se puede deshacer.",
+      "deleteConfirm_other": "¿Eliminar {{count}} notas de forma permanente? No se puede deshacer."
     },
     "mutationErrors": {
       "folderNameRequired": "Introduce un nombre para la carpeta.",
@@ -2995,7 +2996,8 @@
       "timeNow": "Ahora",
       "minutesAgo": "hace {{count}}m",
       "hoursAgo": "hace {{count}}h",
-      "daysAgo": "hace {{count}}d"
+      "daysAgo": "hace {{count}}d",
+      "filterByDate": "Filtrar por fecha"
     },
     "editor": {
       "untitled": "Sin título",
@@ -3022,7 +3024,8 @@
       "conversationWillAppear": "La conversación aparecerá aquí...",
       "linkedEvent": "Evento vinculado",
       "noFolder": "Sin carpeta",
-      "participants": "Participantes"
+      "participants": "Participantes",
+      "record": "Iniciar grabación"
     },
     "participants": {
       "attendee": "asistente",

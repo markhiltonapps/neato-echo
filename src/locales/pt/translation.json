@@ -2783,9 +2783,10 @@
       "selectedCount": "{{count}} selecionadas",
       "moveTo": "Mover para…",
       "noFolders": "Sem pastas",
-      "deleteTitle": "Excluir gravações?",
-      "deleteConfirm": "Excluir permanentemente {{count}} selecionadas? Isso não pode ser desfeito.",
-      "shortRecording": "Gravação curta (menos de 5 min) — verifique se foi acidental"
+      "deleteTitle": "Excluir notas?",
+      "shortRecording": "Gravação curta (menos de 5 min) — verifique se foi acidental",
+      "deleteConfirm_one": "Excluir esta nota permanentemente? Isso não pode ser desfeito.",
+      "deleteConfirm_other": "Excluir {{count}} notas permanentemente? Isso não pode ser desfeito."
     },
     "mutationErrors": {
       "folderNameRequired": "Insira um nome para a pasta.",
@@ -2947,7 +2948,8 @@
       "timeNow": "Agora",
       "minutesAgo": "{{count}}m",
       "hoursAgo": "{{count}}h",
-      "daysAgo": "{{count}}d"
+      "daysAgo": "{{count}}d",
+      "filterByDate": "Filtrar por data"
     },
     "editor": {
       "untitled": "Sem título",
@@ -2974,7 +2976,8 @@
       "conversationWillAppear": "A conversa aparecerá aqui...",
       "linkedEvent": "Evento vinculado",
       "noFolder": "Sem pasta",
-      "participants": "Participantes"
+      "participants": "Participantes",
+      "record": "Iniciar gravação"
     },
     "participants": {
       "attendee": "participante",

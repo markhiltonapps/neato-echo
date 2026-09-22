@@ -2799,9 +2799,12 @@
       "selectedCount": "Выбрано: {{count}}",
       "moveTo": "Переместить в…",
       "noFolders": "Нет папок",
-      "deleteTitle": "Удалить записи?",
-      "deleteConfirm": "Удалить безвозвратно выбранные ({{count}})? Это нельзя отменить.",
-      "shortRecording": "Короткая запись (менее 5 мин) — проверьте, не случайная ли"
+      "deleteTitle": "Удалить заметки?",
+      "shortRecording": "Короткая запись (менее 5 мин) — проверьте, не случайная ли",
+      "deleteConfirm_one": "Удалить эту заметку безвозвратно? Это нельзя отменить.",
+      "deleteConfirm_few": "Удалить {{count}} заметки безвозвратно? Это нельзя отменить.",
+      "deleteConfirm_many": "Удалить {{count}} заметок безвозвратно? Это нельзя отменить.",
+      "deleteConfirm_other": "Удалить {{count}} заметок безвозвратно? Это нельзя отменить."
     },
     "mutationErrors": {
       "folderNameRequired": "Введите название папки.",
@@ -2969,7 +2972,8 @@
       "timeNow": "Только что",
       "minutesAgo": "{{count}} мин. назад",
       "hoursAgo": "{{count}} ч. назад",
-      "daysAgo": "{{count}} дн. назад"
+      "daysAgo": "{{count}} дн. назад",
+      "filterByDate": "Фильтр по дате"
     },
     "editor": {
       "untitled": "Без названия",
@@ -2996,7 +3000,8 @@
       "conversationWillAppear": "Разговор появится здесь...",
       "linkedEvent": "Связанное событие",
       "noFolder": "Без папки",
-      "participants": "Участники"
+      "participants": "Участники",
+      "record": "Начать запись"
     },
     "participants": {
       "attendee": "участник",

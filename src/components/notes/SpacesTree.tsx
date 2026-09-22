@@ -773,7 +773,7 @@ function FolderRow({
                         );
                       })}
                       {spaceSearch && filteredSpaces.length === 0 && (
-                        <p className="text-xs text-foreground/20 text-center py-1.5">
+                        <p className="text-xs text-foreground/55 text-center py-1.5">
                           {t("notes.spaces.noSpacesFound")}
                         </p>
                       )}
@@ -943,9 +943,11 @@ function NoteLeaf({
   // Prefer the stored duration; fall back to deriving it from the transcript for
   // recordings made before durations were persisted (memoized so the transcript
   // is parsed at most once per note).
+  const storedDuration = note.audio_duration_seconds;
+  const noteTranscript = note.transcript;
   const durationSec = useMemo(
-    () => noteDurationSeconds(note),
-    [note.audio_duration_seconds, note.transcript]
+    () => noteDurationSeconds({ audio_duration_seconds: storedDuration, transcript: noteTranscript }),
+    [storedDuration, noteTranscript]
   );
   const short = isShortRecordingDuration(durationSec);
   const RowIcon = isRecordingNote(note) ? Mic : FileText;
@@ -976,6 +978,7 @@ function NoteLeaf({
     >
       {selectMode ? (
         <span
+          aria-hidden="true"
           className={cn(
             "grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
             isSelected ? "bg-primary border-primary" : "border-foreground/20 dark:border-white/20"
@@ -1010,7 +1013,7 @@ function NoteLeaf({
           aria-label={short ? t("notes.bulk.shortRecording") : undefined}
           title={short ? t("notes.bulk.shortRecording") : undefined}
           className={cn(
-            "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px",
+            "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px transition-opacity group-hover:opacity-0",
             short ? "bg-warning/15 text-warning" : "text-foreground/30"
           )}
         >
@@ -1243,6 +1246,9 @@ export default function SpacesTree({
   // Multi-select mode for bulk delete/move (e.g. clearing accidental recordings).
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  // Focus returns here when Select mode ends (via Cancel, Esc, or a bulk delete)
+  // so keyboard users are not dropped to the top of the page.
+  const selectToggleRef = useRef<HTMLButtonElement>(null);
   const toggleSelected = useCallback((id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -1254,6 +1260,7 @@ export default function SpacesTree({
   const exitSelectMode = useCallback(() => {
     setSelectMode(false);
     setSelectedIds(new Set());
+    requestAnimationFrame(() => selectToggleRef.current?.focus());
   }, []);
 
   useEffect(() => {
@@ -1851,6 +1858,35 @@ export default function SpacesTree({
       if (activeContext) onNewNote(activeContext.spaceId, activeContext.folderId);
       return;
     }
+    // Select mode owns Enter/Space (toggle, not open), plus Esc / select-all /
+    // Delete accelerators so bulk cleanup is fully keyboard-operable.
+    if (selectMode) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        exitSelectMode();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setSelectedIds(
+          new Set(visibleRows.filter((r) => r.type === "note").map((r) => r.note.id))
+        );
+        return;
+      }
+      if ((e.key === "Enter" || e.key === " ") && row.type === "note") {
+        e.preventDefault();
+        toggleSelected(row.note.id);
+        return;
+      }
+      if (
+        (e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) &&
+        selectedIds.size > 0
+      ) {
+        e.preventDefault();
+        handleBulkDelete();
+        return;
+      }
+    }
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
@@ -2327,25 +2363,27 @@ export default function SpacesTree({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("notes.list.searchPlaceholder")}
+            aria-label={t("notes.list.searchPlaceholder")}
             className="flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
               aria-label={t("common.dismiss")}
-              className="shrink-0 text-muted-foreground/40 hover:text-foreground/70"
+              className="shrink-0 rounded text-muted-foreground/40 hover:text-foreground/70 outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               <X size={11} />
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" role="group" aria-label={t("notes.list.filterByDate")}>
           {(["all", "today", "week", "month"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setRangePreset(p)}
+              aria-pressed={rangePreset === p}
               className={cn(
-                "font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors",
+                "font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                 rangePreset === p
                   ? "bg-brand-teal-soft text-brand-teal border border-brand-teal/25"
                   : "text-muted-foreground/50 hover:text-foreground/70 border border-transparent"
@@ -2357,9 +2395,11 @@ export default function SpacesTree({
         </div>
         <div className="flex items-center">
           <button
+            ref={selectToggleRef}
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            aria-pressed={selectMode}
             className={cn(
-              "ml-auto inline-flex items-center gap-1 font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors",
+              "ml-auto inline-flex items-center gap-1 font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
               selectMode
                 ? "bg-brand-teal-soft text-brand-teal border-brand-teal/25"
                 : "text-muted-foreground/60 hover:text-foreground/80 border-border/50 dark:border-white/10"
@@ -2374,7 +2414,7 @@ export default function SpacesTree({
       {filterActive && (
         <div role="list" className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px">
           {filteredResults.length === 0 ? (
-            <div className="px-3 py-8 text-center text-xs text-muted-foreground/50">
+            <div className="px-3 py-8 text-center text-xs text-muted-foreground/70">
               {t("notes.list.noResults")}
             </div>
           ) : (
@@ -2387,8 +2427,9 @@ export default function SpacesTree({
                 <button
                   key={note.id}
                   onClick={() => (selectMode ? toggleSelected(note.id) : setActiveNoteId(note.id))}
+                  aria-pressed={selectMode ? resultSelected : undefined}
                   className={cn(
-                    "flex items-center gap-2 w-full h-7 pl-[14px] pr-2 rounded-md text-left transition-colors",
+                    "flex items-center gap-2 w-full h-7 pl-[14px] pr-2 rounded-md text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                     (selectMode ? resultSelected : activeNoteId === note.id)
                       ? "bg-primary/8 dark:bg-primary/10"
                       : "hover:bg-foreground/4 dark:hover:bg-white/4"
@@ -2396,6 +2437,7 @@ export default function SpacesTree({
                 >
                   {selectMode ? (
                     <span
+                      aria-hidden="true"
                       className={cn(
                         "grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
                         resultSelected
@@ -2452,6 +2494,7 @@ export default function SpacesTree({
       <div
         role="tree"
         aria-label={t("notes.list.title")}
+        aria-multiselectable={selectMode}
         hidden={filterActive}
         className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px"
       >
@@ -2607,7 +2650,11 @@ export default function SpacesTree({
 
       {selectMode && (
         <div className="shrink-0 border-t border-border/40 dark:border-white/8 bg-background/95 backdrop-blur px-2.5 py-2 space-y-1.5">
-          <span className="block font-brand text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 tabular-nums">
+          <span
+            role="status"
+            aria-live="polite"
+            className="block font-brand text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 tabular-nums"
+          >
             {t("notes.bulk.selectedCount", { count: selectedIds.size })}
           </span>
           {/* Stacked full-width buttons so neither label clips in the narrow column. */}

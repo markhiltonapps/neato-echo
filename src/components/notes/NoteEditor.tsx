@@ -1118,7 +1118,7 @@ export default function NoteEditor({
                       {t("notes.editor.enhanced")}
                       {enhancement.isStale && (
                         <span
-                          className="w-1 h-1 rounded-full bg-amber-400/60"
+                          className="w-1 h-1 rounded-full bg-warning/60"
                           title={t("notes.editor.staleIndicator")}
                         />
                       )}
@@ -1145,7 +1145,7 @@ export default function NoteEditor({
                     className={cn(
                       "transition-colors",
                       isShared
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-primary"
                         : "text-foreground/50 dark:text-foreground/40"
                     )}
                   />
@@ -1236,12 +1236,12 @@ export default function NoteEditor({
           <div
             className={cn(
               "flex items-center gap-2 px-5 h-8 mt-2 shrink-0",
-              "bg-amber-400/5 dark:bg-amber-400/[0.07]",
-              "border-y border-amber-400/15 dark:border-amber-400/20",
+              "bg-warning/5 dark:bg-warning/[0.07]",
+              "border-y border-warning/15 dark:border-warning/20",
               "animate-in slide-in-from-top-2 duration-300"
             )}
           >
-            <span className="w-1 h-1 rounded-full bg-amber-400/60 shrink-0" />
+            <span className="w-1 h-1 rounded-full bg-warning/60 shrink-0" />
             <p className="text-[11px] text-foreground/50 flex-1 truncate">
               {t("notes.spaces.conflictBanner")}
               {conflictEditorName && (

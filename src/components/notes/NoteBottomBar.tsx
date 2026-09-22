@@ -5,7 +5,7 @@ import { cn } from "../lib/utils";
 import { SendIcon } from "../ui/SendIcon";
 import { LiveWaveform } from "../ui/LiveWaveform";
 import { analyserRms } from "../../utils/audioLevel";
-import { GRADIENT_CIRCLE } from "../ui/gradientCircle";
+import { WARM_GRADIENT_CIRCLE } from "../ui/gradientCircle";
 import { GLASS_SURFACE } from "../ui/glass";
 import { formatMmSs } from "../../utils/formatDuration";
 import { getMicAnalyser, useMeetingRecordingStore } from "../../stores/meetingRecordingStore";
@@ -152,7 +152,7 @@ export default function NoteBottomBar({
                 <span
                   className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
-                    GRADIENT_CIRCLE,
+                    WARM_GRADIENT_CIRCLE,
                     "transition-[filter] duration-150 group-hover:brightness-110"
                   )}
                 >
@@ -170,18 +170,18 @@ export default function NoteBottomBar({
                 tabIndex={micHidden ? -1 : undefined}
                 className={cn(
                   "flex items-center justify-center w-11 h-11 rounded-full",
-                  GRADIENT_CIRCLE,
+                  WARM_GRADIENT_CIRCLE,
                   "transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
                   "hover:brightness-110",
                   "active:scale-95",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-warm/40",
                   recordingDisabled && "opacity-40 saturate-0 pointer-events-none",
                   isProcessing && "pointer-events-none",
                   micHidden
                     ? "translate-x-10 opacity-0 pointer-events-none"
                     : "translate-x-0 opacity-100"
                 )}
-                aria-label={t("notes.editor.transcribe")}
+                aria-label={t("notes.editor.record")}
                 title={recordingDisabled ? t("common.managedByOrg") : undefined}
               >
                 {isProcessing ? (

@@ -3040,9 +3040,10 @@
       "selectedCount": "{{count}} sélectionnées",
       "moveTo": "Déplacer vers…",
       "noFolders": "Aucun dossier",
-      "deleteTitle": "Supprimer les enregistrements ?",
-      "deleteConfirm": "Supprimer définitivement {{count}} sélectionnés ? Action irréversible.",
-      "shortRecording": "Enregistrement court (moins de 5 min) — vérifiez s'il est accidentel"
+      "deleteTitle": "Supprimer les notes ?",
+      "shortRecording": "Enregistrement court (moins de 5 min) — vérifiez s'il est accidentel",
+      "deleteConfirm_one": "Supprimer définitivement cette note ? Action irréversible.",
+      "deleteConfirm_other": "Supprimer définitivement {{count}} notes ? Action irréversible."
     },
     "mutationErrors": {
       "folderNameRequired": "Saisissez un nom de dossier.",
@@ -3204,7 +3205,8 @@
       "timeNow": "maintenant",
       "minutesAgo": "il y a {{count}}m",
       "hoursAgo": "il y a {{count}}h",
-      "daysAgo": "il y a {{count}}j"
+      "daysAgo": "il y a {{count}}j",
+      "filterByDate": "Filtrer par date"
     },
     "editor": {
       "untitled": "Sans titre",
@@ -3231,7 +3233,8 @@
       "conversationWillAppear": "La conversation apparaîtra ici...",
       "linkedEvent": "Événement lié",
       "noFolder": "Aucun dossier",
-      "participants": "Participants"
+      "participants": "Participants",
+      "record": "Démarrer l'enregistrement"
     },
     "participants": {
       "attendee": "participant",

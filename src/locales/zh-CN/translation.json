@@ -2783,9 +2783,9 @@
       "selectedCount": "已选择 {{count}} 项",
       "moveTo": "移动到…",
       "noFolders": "没有文件夹",
-      "deleteTitle": "删除录音？",
-      "deleteConfirm": "永久删除所选的 {{count}} 项？此操作无法撤销。",
-      "shortRecording": "短录音（不足 5 分钟）——请检查是否为误录"
+      "deleteTitle": "删除笔记？",
+      "shortRecording": "短录音（不足 5 分钟）——请检查是否为误录",
+      "deleteConfirm_other": "永久删除 {{count}} 条笔记？此操作无法撤销。"
     },
     "mutationErrors": {
       "folderNameRequired": "请输入文件夹名称。",
@@ -2947,7 +2947,8 @@
       "timeNow": "刚刚",
       "minutesAgo": "{{count}} 分钟前",
       "hoursAgo": "{{count}} 小时前",
-      "daysAgo": "{{count}} 天前"
+      "daysAgo": "{{count}} 天前",
+      "filterByDate": "按日期筛选"
     },
     "editor": {
       "untitled": "无标题",
@@ -2974,7 +2975,8 @@
       "conversationWillAppear": "对话将显示在这里...",
       "linkedEvent": "关联日程",
       "noFolder": "无文件夹",
-      "participants": "参与者"
+      "participants": "参与者",
+      "record": "开始录音"
     },
     "participants": {
       "attendee": "位参会者",

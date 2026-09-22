@@ -2783,9 +2783,9 @@
       "selectedCount": "已選取 {{count}} 項",
       "moveTo": "移動到…",
       "noFolders": "沒有資料夾",
-      "deleteTitle": "刪除錄音？",
-      "deleteConfirm": "永久刪除所選的 {{count}} 項？此操作無法復原。",
-      "shortRecording": "短錄音（不足 5 分鐘）——請檢查是否為誤錄"
+      "deleteTitle": "刪除筆記？",
+      "shortRecording": "短錄音（不足 5 分鐘）——請檢查是否為誤錄",
+      "deleteConfirm_other": "永久刪除 {{count}} 條筆記？此操作無法復原。"
     },
     "mutationErrors": {
       "folderNameRequired": "請輸入資料夾名稱。",
@@ -2947,7 +2947,8 @@
       "timeNow": "剛剛",
       "minutesAgo": "{{count}} 分鐘前",
       "hoursAgo": "{{count}} 小時前",
-      "daysAgo": "{{count}} 天前"
+      "daysAgo": "{{count}} 天前",
+      "filterByDate": "按日期篩選"
     },
     "editor": {
       "untitled": "未命名",
@@ -2974,7 +2975,8 @@
       "conversationWillAppear": "對話將顯示在這裡...",
       "linkedEvent": "關聯行程",
       "noFolder": "無資料夾",
-      "participants": "參與者"
+      "participants": "參與者",
+      "record": "開始錄音"
     },
     "participants": {
       "attendee": "位與會者",

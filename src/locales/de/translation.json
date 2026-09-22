@@ -3040,9 +3040,10 @@
       "selectedCount": "{{count}} ausgewählt",
       "moveTo": "Verschieben nach…",
       "noFolders": "Keine Ordner",
-      "deleteTitle": "Aufnahmen löschen?",
-      "deleteConfirm": "{{count}} ausgewählte endgültig löschen? Kann nicht rückgängig gemacht werden.",
-      "shortRecording": "Kurze Aufnahme (unter 5 Min.) – prüfen, ob versehentlich"
+      "deleteTitle": "Notizen löschen?",
+      "shortRecording": "Kurze Aufnahme (unter 5 Min.) – prüfen, ob versehentlich",
+      "deleteConfirm_one": "Diese Notiz endgültig löschen? Kann nicht rückgängig gemacht werden.",
+      "deleteConfirm_other": "{{count}} Notizen endgültig löschen? Kann nicht rückgängig gemacht werden."
     },
     "mutationErrors": {
       "folderNameRequired": "Gib einen Ordnernamen ein.",
@@ -3204,7 +3205,8 @@
       "timeNow": "Jetzt",
       "minutesAgo": "vor {{count}}m",
       "hoursAgo": "vor {{count}}h",
-      "daysAgo": "vor {{count}}T"
+      "daysAgo": "vor {{count}}T",
+      "filterByDate": "Nach Datum filtern"
     },
     "editor": {
       "untitled": "Unbenannt",
@@ -3231,7 +3233,8 @@
       "conversationWillAppear": "Gespräch wird hier angezeigt...",
       "linkedEvent": "Verknüpftes Ereignis",
       "noFolder": "Kein Ordner",
-      "participants": "Teilnehmer"
+      "participants": "Teilnehmer",
+      "record": "Aufnahme starten"
     },
     "participants": {
       "attendee": "Teilnehmer",

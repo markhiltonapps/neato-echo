@@ -3040,9 +3040,10 @@
       "selectedCount": "{{count}} selected",
       "moveTo": "Move to…",
       "noFolders": "No folders",
-      "deleteTitle": "Delete recordings?",
-      "deleteConfirm": "Permanently delete {{count}} selected? This can't be undone.",
-      "shortRecording": "Short recording (under 5 min) — check if this was accidental"
+      "deleteTitle": "Delete notes?",
+      "shortRecording": "Short recording (under 5 min) — check if this was accidental",
+      "deleteConfirm_one": "Permanently delete this note? This can't be undone.",
+      "deleteConfirm_other": "Permanently delete {{count}} notes? This can't be undone."
     },
     "mutationErrors": {
       "folderNameRequired": "Enter a folder name.",
@@ -3061,7 +3062,7 @@
     },
     "spaces": {
       "privateSpaces": "Private notes",
-      "teamSpaces": "Teamspaces",
+      "teamSpaces": "Team spaces",
       "personal": "Personal",
       "privateTooltip": "Only you can see your Personal space",
       "newSpace": "New team space",
@@ -3084,7 +3085,7 @@
       "deleteTypeName": "Type {{space}} to confirm",
       "couldNotDelete": "Couldn't delete space",
       "deleted": "Deleted {{space}}",
-      "moveTo": "Move to",
+      "moveTo": "Move to…",
       "moveToSpace": "Move to space…",
       "searchSpaces": "Search spaces...",
       "noSpacesFound": "No spaces found",
@@ -3196,7 +3197,7 @@
       "title": "Notes",
       "newNote": "New note",
       "searchPlaceholder": "Search notes",
-      "noResults": "No matching notes",
+      "noResults": "No notes match. Try a wider date range or a different search.",
       "newRecording": "New recording",
       "untitled": "Untitled",
       "untitledNote": "Untitled Note",
@@ -3204,7 +3205,8 @@
       "timeNow": "now",
       "minutesAgo": "{{count}}m",
       "hoursAgo": "{{count}}h",
-      "daysAgo": "{{count}}d"
+      "daysAgo": "{{count}}d",
+      "filterByDate": "Filter by date"
     },
     "editor": {
       "untitled": "Untitled",
@@ -3231,7 +3233,8 @@
       "conversationWillAppear": "Conversation will appear here...",
       "linkedEvent": "Linked event",
       "noFolder": "No folder",
-      "participants": "Participants"
+      "participants": "Participants",
+      "record": "Start recording"
     },
     "participants": {
       "attendee": "attendee",
