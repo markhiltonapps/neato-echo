@@ -2772,6 +2772,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Selecionar",
+      "selectedCount": "{{count}} selecionadas",
+      "moveTo": "Mover para…",
+      "noFolders": "Sem pastas",
+      "deleteTitle": "Excluir gravações?",
+      "deleteConfirm": "Excluir permanentemente {{count}} selecionadas? Isso não pode ser desfeito.",
+      "shortRecording": "Gravação curta (menos de 5 min) — verifique se foi acidental"
+    },
     "mutationErrors": {
       "folderNameRequired": "Insira um nome para a pasta.",
       "folderAlreadyExists": "Já existe uma pasta com esse nome.",

@@ -3029,6 +3029,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Select",
+      "selectedCount": "{{count}} selected",
+      "moveTo": "Move to…",
+      "noFolders": "No folders",
+      "deleteTitle": "Delete recordings?",
+      "deleteConfirm": "Permanently delete {{count}} selected? This can't be undone.",
+      "shortRecording": "Short recording (under 5 min) — check if this was accidental"
+    },
     "mutationErrors": {
       "folderNameRequired": "Enter a folder name.",
       "folderAlreadyExists": "A folder with that name already exists.",

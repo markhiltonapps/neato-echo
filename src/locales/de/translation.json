@@ -3029,6 +3029,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Auswählen",
+      "selectedCount": "{{count}} ausgewählt",
+      "moveTo": "Verschieben nach…",
+      "noFolders": "Keine Ordner",
+      "deleteTitle": "Aufnahmen löschen?",
+      "deleteConfirm": "{{count}} ausgewählte endgültig löschen? Kann nicht rückgängig gemacht werden.",
+      "shortRecording": "Kurze Aufnahme (unter 5 Min.) – prüfen, ob versehentlich"
+    },
     "mutationErrors": {
       "folderNameRequired": "Gib einen Ordnernamen ein.",
       "folderAlreadyExists": "Ein Ordner mit diesem Namen existiert bereits.",

@@ -2772,6 +2772,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "选择",
+      "selectedCount": "已选择 {{count}} 项",
+      "moveTo": "移动到…",
+      "noFolders": "没有文件夹",
+      "deleteTitle": "删除录音？",
+      "deleteConfirm": "永久删除所选的 {{count}} 项？此操作无法撤销。",
+      "shortRecording": "短录音（不足 5 分钟）——请检查是否为误录"
+    },
     "mutationErrors": {
       "folderNameRequired": "请输入文件夹名称。",
       "folderAlreadyExists": "已存在同名文件夹。",

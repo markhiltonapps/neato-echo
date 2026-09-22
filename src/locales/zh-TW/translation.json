@@ -2772,6 +2772,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "選取",
+      "selectedCount": "已選取 {{count}} 項",
+      "moveTo": "移動到…",
+      "noFolders": "沒有資料夾",
+      "deleteTitle": "刪除錄音？",
+      "deleteConfirm": "永久刪除所選的 {{count}} 項？此操作無法復原。",
+      "shortRecording": "短錄音（不足 5 分鐘）——請檢查是否為誤錄"
+    },
     "mutationErrors": {
       "folderNameRequired": "請輸入資料夾名稱。",
       "folderAlreadyExists": "已存在同名資料夾。",

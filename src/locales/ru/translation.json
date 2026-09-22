@@ -2788,6 +2788,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Выбрать",
+      "selectedCount": "Выбрано: {{count}}",
+      "moveTo": "Переместить в…",
+      "noFolders": "Нет папок",
+      "deleteTitle": "Удалить записи?",
+      "deleteConfirm": "Удалить безвозвратно выбранные ({{count}})? Это нельзя отменить.",
+      "shortRecording": "Короткая запись (менее 5 мин) — проверьте, не случайная ли"
+    },
     "mutationErrors": {
       "folderNameRequired": "Введите название папки.",
       "folderAlreadyExists": "Папка с таким названием уже существует.",

@@ -3029,6 +3029,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Sélectionner",
+      "selectedCount": "{{count}} sélectionnées",
+      "moveTo": "Déplacer vers…",
+      "noFolders": "Aucun dossier",
+      "deleteTitle": "Supprimer les enregistrements ?",
+      "deleteConfirm": "Supprimer définitivement {{count}} sélectionnés ? Action irréversible.",
+      "shortRecording": "Enregistrement court (moins de 5 min) — vérifiez s'il est accidentel"
+    },
     "mutationErrors": {
       "folderNameRequired": "Saisissez un nom de dossier.",
       "folderAlreadyExists": "Un dossier portant ce nom existe déjà.",

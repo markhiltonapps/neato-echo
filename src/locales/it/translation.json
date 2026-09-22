@@ -2772,6 +2772,15 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Seleziona",
+      "selectedCount": "{{count}} selezionate",
+      "moveTo": "Sposta in…",
+      "noFolders": "Nessuna cartella",
+      "deleteTitle": "Eliminare le registrazioni?",
+      "deleteConfirm": "Eliminare definitivamente {{count}} selezionate? Operazione irreversibile.",
+      "shortRecording": "Registrazione breve (meno di 5 min) — verifica se accidentale"
+    },
     "mutationErrors": {
       "folderNameRequired": "Inserisci un nome per la cartella.",
       "folderAlreadyExists": "Esiste già una cartella con questo nome.",
