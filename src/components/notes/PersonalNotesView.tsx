@@ -1084,17 +1084,12 @@ export default function PersonalNotesView({
                 <h3 className="text-xs font-semibold text-foreground/60 mb-1">
                   {t(notesEmptyTitleKey(activeFolderId != null))}
                 </h3>
-                <p className="text-xs text-foreground/50 dark:text-foreground/25 text-center max-w-55 mb-4">
+                <p className="text-xs text-foreground/60 dark:text-foreground/55 text-center max-w-55 mb-4">
                   {t("notes.empty.description")}
                 </p>
+                {/* One filled hero (recording — the product's core loop), the
+                    rest demoted to ghost so the primary action is unambiguous. */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleNewNote}
-                    className="flex items-center gap-1.5 px-4 h-7 rounded-md bg-primary/8 dark:bg-primary/10 border border-primary/12 dark:border-primary/15 text-xs font-medium text-primary/70 hover:bg-primary/12 hover:text-primary hover:border-primary/20 transition-colors"
-                  >
-                    <Plus size={11} />
-                    {t("notes.empty.createNote")}
-                  </button>
                   <button
                     onClick={handleNewRecording}
                     className="flex items-center gap-1.5 px-4 h-7 rounded-md bg-brand-warm/10 border border-brand-warm/25 text-xs font-medium text-brand-warm hover:bg-brand-warm/18 transition-colors"
@@ -1102,12 +1097,19 @@ export default function PersonalNotesView({
                     <Mic size={11} />
                     {t("notes.list.newRecording")}
                   </button>
+                  <button
+                    onClick={handleNewNote}
+                    className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/50 hover:text-foreground/70 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
+                  >
+                    <Plus size={11} />
+                    {t("notes.empty.createNote")}
+                  </button>
                   {/* AddNotesToFolderDialog only mounts for folder contexts —
                       space-root empty states offer just "Create note". */}
                   {activeFolderId != null && (
                     <button
                       onClick={() => setShowAddNotesDialog(true)}
-                      className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/40 hover:text-foreground/60 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
+                      className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/50 hover:text-foreground/70 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
                     >
                       {t("notes.addToFolder.addExisting")}
                     </button>
@@ -1119,7 +1121,7 @@ export default function PersonalNotesView({
                 <h3 className="text-xs font-semibold text-foreground/60 mb-1">
                   {t("notes.empty.selectTitle")}
                 </h3>
-                <p className="text-xs text-foreground/50 dark:text-foreground/25 text-center max-w-50">
+                <p className="text-xs text-foreground/60 dark:text-foreground/55 text-center max-w-50">
                   {t("notes.empty.selectDescription")}
                 </p>
               </>

@@ -198,7 +198,7 @@ function SectionHeader({
   isDropSuccess?: boolean;
 }) {
   const labelClassName =
-    "font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/50 select-none";
+    "font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/65 select-none";
 
   return (
     <div
@@ -687,7 +687,7 @@ function FolderRow({
           "text-xs truncate flex-1 transition-colors duration-150",
           isDragOver || isActive
             ? "text-foreground font-medium"
-            : "text-foreground/50 group-hover:text-foreground/70"
+            : "text-foreground/75 font-medium group-hover:text-foreground/90"
         )}
       >
         {folder.name}
@@ -1014,14 +1014,14 @@ function NoteLeaf({
           title={short ? t("notes.bulk.shortRecording") : undefined}
           className={cn(
             "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px transition-opacity group-hover:opacity-0",
-            short ? "bg-warning/15 text-warning" : "text-foreground/30"
+            short ? "bg-warning/15 text-warning" : "text-foreground/50"
           )}
         >
           {formatDuration(durationSec)}
         </span>
       )}
       {noteDate && (
-        <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0 transition-opacity group-hover:opacity-0">
+        <span className="font-brand text-[10px] tabular-nums text-foreground/50 shrink-0 transition-opacity group-hover:opacity-0">
           {noteDate}
         </span>
       )}
@@ -2104,7 +2104,7 @@ export default function SpacesTree({
             key={`date-group-${bucket.key}-${note.id}`}
             role="presentation"
             aria-hidden="true"
-            className="px-3 pt-2 pb-0.5 font-brand text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/40 select-none"
+            className="px-3 pt-2 pb-0.5 font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60 select-none"
           >
             {bucket.label}
           </div>
@@ -2383,10 +2383,10 @@ export default function SpacesTree({
               onClick={() => setRangePreset(p)}
               aria-pressed={rangePreset === p}
               className={cn(
-                "font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                "font-brand text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                 rangePreset === p
-                  ? "bg-brand-teal-soft text-brand-teal border border-brand-teal/25"
-                  : "text-muted-foreground/50 hover:text-foreground/70 border border-transparent"
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground/70 hover:text-foreground/90 border border-transparent"
               )}
             >
               {t(`filter.${p}`)}
@@ -2399,9 +2399,9 @@ export default function SpacesTree({
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
             aria-pressed={selectMode}
             className={cn(
-              "ml-auto inline-flex items-center gap-1 font-brand text-[9px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+              "ml-auto inline-flex items-center gap-1 font-brand text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
               selectMode
-                ? "bg-brand-teal-soft text-brand-teal border-brand-teal/25"
+                ? "bg-primary/10 text-primary border-primary/20"
                 : "text-muted-foreground/60 hover:text-foreground/80 border-border/50 dark:border-white/10"
             )}
           >
@@ -2454,7 +2454,7 @@ export default function SpacesTree({
                       size={13}
                       className={cn(
                         "shrink-0",
-                        activeNoteId === note.id ? "text-primary" : "text-foreground/30"
+                        activeNoteId === note.id ? "text-primary" : "text-foreground/50"
                       )}
                     />
                   )}
@@ -2475,13 +2475,13 @@ export default function SpacesTree({
                       title={resultShort ? t("notes.bulk.shortRecording") : undefined}
                       className={cn(
                         "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px",
-                        resultShort ? "bg-warning/15 text-warning" : "text-foreground/30"
+                        resultShort ? "bg-warning/15 text-warning" : "text-foreground/50"
                       )}
                     >
                       {formatDuration(resultDur)}
                     </span>
                   )}
-                  <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0">
+                  <span className="font-brand text-[10px] tabular-nums text-foreground/50 shrink-0">
                     {formatShortDate(note.created_at)}
                   </span>
                 </button>
@@ -2595,7 +2595,7 @@ export default function SpacesTree({
                         >
                           <span
                             title={workspace.name}
-                            className="min-w-0 text-[10px] font-medium text-foreground/40 truncate"
+                            className="min-w-0 font-brand text-[10px] uppercase tracking-[0.12em] text-foreground/60 truncate"
                           >
                             {workspace.name}
                           </span>

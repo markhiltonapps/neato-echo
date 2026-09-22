@@ -14,17 +14,20 @@ import {
   type TranscriptSpeakerStatus,
 } from "../../utils/transcriptSpeakerState";
 
+// Partial-bubble styles match the settled/final bubble exactly (see final
+// styles below) so a line doesn't flicker its color/border when it finalizes;
+// the italic text + blinking cursor already signal "in progress".
 const BUBBLE_STYLES = {
   mic: {
     align: "justify-start",
     radius: "rounded-bl-sm",
-    bg: "bg-primary/60 text-primary-foreground/80",
+    bg: "bg-primary/90 text-primary-foreground",
     cursor: "bg-primary-foreground/60",
   },
   system: {
     align: "justify-end",
     radius: "rounded-br-sm",
-    bg: "bg-surface-2/70 border border-border/20 text-foreground/80",
+    bg: "bg-surface-2 border border-border/30 text-foreground",
     cursor: "bg-foreground/40",
   },
 } as const;

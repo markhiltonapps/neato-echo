@@ -98,7 +98,7 @@ export default function ConversationItem({
           <div className="flex items-center gap-0.5 shrink-0">
             <span
               className={cn(
-                "text-[10px] text-muted-foreground/40 tabular-nums transition-opacity",
+                "text-[10px] text-muted-foreground/60 tabular-nums transition-opacity",
                 !selectionMode && "group-hover:opacity-0"
               )}
             >
@@ -153,7 +153,7 @@ export default function ConversationItem({
           </div>
         </div>
         {conversation.preview && (
-          <p className="text-[11px] text-muted-foreground/50 line-clamp-1 mt-0.5">
+          <p className="text-[11px] text-muted-foreground/65 line-clamp-1 mt-0.5">
             {conversation.preview}
           </p>
         )}
