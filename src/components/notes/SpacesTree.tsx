@@ -12,6 +12,7 @@ import {
   ListChecks,
   Loader2,
   Lock,
+  Mic,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -817,6 +818,16 @@ interface MoveOption {
 // capture (e.g. a stray dictation the mic picked up) worth reviewing/deleting.
 const SHORT_RECORDING_MAX_SECONDS = 5 * 60;
 
+// A note backed by audio (meeting/upload recording) vs a typed note — drives the
+// row icon so recordings are distinguishable at a glance.
+function isRecordingNote(note: NoteItem): boolean {
+  return (
+    note.note_type === "meeting" ||
+    note.note_type === "upload" ||
+    note.audio_duration_seconds != null
+  );
+}
+
 // Only audio notes carry a duration; typed notes (null) are never flagged.
 function isShortRecording(note: NoteItem): boolean {
   return (
@@ -941,6 +952,7 @@ function NoteLeaf({
   const title = note.title || t("notes.list.untitled");
   const noteDate = formatShortDate(note.created_at);
   const short = isShortRecording(note);
+  const RowIcon = isRecordingNote(note) ? Mic : FileText;
 
   return (
     <div
@@ -976,7 +988,7 @@ function NoteLeaf({
           {isSelected && <Check size={10} className="text-white" strokeWidth={2.5} />}
         </span>
       ) : (
-        <FileText
+        <RowIcon
           size={13}
           className={cn(
             "shrink-0 transition-colors duration-150",
@@ -996,14 +1008,17 @@ function NoteLeaf({
       >
         {title}
       </span>
-      {short && (
+      {note.audio_duration_seconds != null && note.audio_duration_seconds > 0 && (
         <span
-          role="img"
-          aria-label={t("notes.bulk.shortRecording")}
-          title={t("notes.bulk.shortRecording")}
-          className="font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px bg-warning/15 text-warning"
+          role={short ? "img" : undefined}
+          aria-label={short ? t("notes.bulk.shortRecording") : undefined}
+          title={short ? t("notes.bulk.shortRecording") : undefined}
+          className={cn(
+            "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px",
+            short ? "bg-warning/15 text-warning" : "text-foreground/30"
+          )}
         >
-          {formatDuration(note.audio_duration_seconds as number)}
+          {formatDuration(note.audio_duration_seconds)}
         </span>
       )}
       {noteDate && (
@@ -2019,6 +2034,56 @@ export default function SpacesTree({
     />
   );
 
+  // Chunk a long, newest-first note list into date buckets for scanning. Notes
+  // are already sorted newest-first, so a bucket boundary just needs a label.
+  const noteDateBucket = (note: NoteItem): { key: string; label: string } => {
+    const time = new Date(note.created_at || note.updated_at || 0).getTime();
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    const startWeek = new Date(startToday);
+    startWeek.setDate(startToday.getDate() - startToday.getDay());
+    const startMonth = new Date(startToday);
+    startMonth.setDate(1);
+    if (!Number.isFinite(time)) return { key: "earlier", label: t("dateGroup.earlier") };
+    if (time >= startToday.getTime()) return { key: "today", label: t("dateGroup.today") };
+    if (time >= startWeek.getTime()) return { key: "week", label: t("dateGroup.week") };
+    if (time >= startMonth.getTime()) return { key: "month", label: t("dateGroup.month") };
+    return { key: "earlier", label: t("dateGroup.earlier") };
+  };
+
+  // Below this count the headers are noise, so short folders render unchanged.
+  const DATE_GROUP_MIN_NOTES = 8;
+
+  // Renders a container's notes with presentational date-bucket separators. The
+  // separators are aria-hidden and non-interactive: they never enter the tree's
+  // keyboard-nav flat index or act as drag/drop targets.
+  const renderNotesWithDateGroups = (
+    notes: NoteItem[],
+    renderOne: (note: NoteItem) => React.ReactNode
+  ): React.ReactNode => {
+    if (notes.length < DATE_GROUP_MIN_NOTES) return notes.map(renderOne);
+    const out: React.ReactNode[] = [];
+    let lastKey: string | null = null;
+    for (const note of notes) {
+      const bucket = noteDateBucket(note);
+      if (bucket.key !== lastKey) {
+        out.push(
+          <div
+            key={`date-group-${bucket.key}-${note.id}`}
+            role="presentation"
+            aria-hidden="true"
+            className="px-3 pt-2 pb-0.5 font-brand text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/40 select-none"
+          >
+            {bucket.label}
+          </div>
+        );
+        lastKey = bucket.key;
+      }
+      out.push(renderOne(note));
+    }
+    return out;
+  };
+
   const renderFolder = (folder: FolderItem, parentKey?: string, level: 1 | 2 = 2) => {
     const folderKey = folderContainerKey(folder.id);
     const isExpanded = expanded.has(folderKey);
@@ -2083,7 +2148,7 @@ export default function SpacesTree({
         />
         <TreeChildren open={isExpanded}>
           <div className="space-y-px">
-            {(notesByContainer[folderKey] ?? []).map((note) =>
+            {renderNotesWithDateGroups(notesByContainer[folderKey] ?? [], (note) =>
               level === 1 ? renderNote(note, 2, folderKey, "pl-8") : renderNote(note, 3, folderKey)
             )}
           </div>
@@ -2132,7 +2197,7 @@ export default function SpacesTree({
             />
           </div>
         )}
-        {(rootNotes ?? []).map((note) =>
+        {renderNotesWithDateGroups(rootNotes ?? [], (note) =>
           flattened ? renderNote(note, 1, undefined, "pl-[30px]") : renderNote(note, 2, spaceKey)
         )}
         {showSkeletons && <SkeletonRows />}
@@ -2320,6 +2385,7 @@ export default function SpacesTree({
             filteredResults.map((note) => {
               const resultSelected = selectedIds.has(note.id);
               const resultShort = isShortRecording(note);
+              const ResultIcon = isRecordingNote(note) ? Mic : FileText;
               return (
                 <button
                   key={note.id}
@@ -2345,7 +2411,7 @@ export default function SpacesTree({
                       )}
                     </span>
                   ) : (
-                    <FileText
+                    <ResultIcon
                       size={13}
                       className={cn(
                         "shrink-0",
@@ -2363,14 +2429,17 @@ export default function SpacesTree({
                   >
                     {note.title || t("notes.list.untitled")}
                   </span>
-                  {resultShort && (
+                  {note.audio_duration_seconds != null && note.audio_duration_seconds > 0 && (
                     <span
-                      role="img"
-                      aria-label={t("notes.bulk.shortRecording")}
-                      title={t("notes.bulk.shortRecording")}
-                      className="font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px bg-warning/15 text-warning"
+                      role={resultShort ? "img" : undefined}
+                      aria-label={resultShort ? t("notes.bulk.shortRecording") : undefined}
+                      title={resultShort ? t("notes.bulk.shortRecording") : undefined}
+                      className={cn(
+                        "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px",
+                        resultShort ? "bg-warning/15 text-warning" : "text-foreground/30"
+                      )}
                     >
-                      {formatDuration(note.audio_duration_seconds as number)}
+                      {formatDuration(note.audio_duration_seconds)}
                     </span>
                   )}
                   <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0">
@@ -2540,24 +2609,25 @@ export default function SpacesTree({
       </div>
 
       {selectMode && (
-        <div className="shrink-0 border-t border-border/40 dark:border-white/8 bg-background/95 backdrop-blur px-2.5 py-2 flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground/80 tabular-nums">
+        <div className="shrink-0 border-t border-border/40 dark:border-white/8 bg-background/95 backdrop-blur px-2.5 py-2 space-y-1.5">
+          <span className="block font-brand text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 tabular-nums">
             {t("notes.bulk.selectedCount", { count: selectedIds.size })}
           </span>
-          <div className="ml-auto flex items-center gap-1.5">
+          {/* Stacked full-width buttons so neither label clips in the narrow column. */}
+          <div className="flex items-stretch gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={selectedIds.size === 0}
-                  className="h-7 px-2 text-xs gap-1"
+                  className="h-7 flex-1 min-w-0 px-2 text-xs gap-1"
                 >
-                  <Folder size={12} />
-                  {t("notes.bulk.moveTo")}
+                  <Folder size={12} className="shrink-0" />
+                  <span className="truncate">{t("notes.bulk.moveTo")}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
+              <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
                 {bulkMoveOptions.length === 0 ? (
                   <DropdownMenuItem disabled className={MENU_ITEM_CLASS}>
                     {t("notes.bulk.noFolders")}
@@ -2576,14 +2646,14 @@ export default function SpacesTree({
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               disabled={selectedIds.size === 0}
               onClick={handleBulkDelete}
-              className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-7 flex-1 min-w-0 px-2 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              <Trash2 size={12} />
-              {t("common.delete")}
+              <Trash2 size={12} className="shrink-0" />
+              <span className="truncate">{t("common.delete")}</span>
             </Button>
           </div>
         </div>

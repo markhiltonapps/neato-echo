@@ -7,6 +7,7 @@ import { followsSystemDefaultMic } from "../helpers/micSelectionRecovery";
 import { resolvePreferredMicrophone } from "../helpers/microphoneSelection";
 import { ActiveMicRecoveryController } from "../helpers/activeMicRecovery";
 import { getBaseLanguageCode } from "../utils/languageSupport";
+import { autoTitleRecording } from "../utils/recordingAutoTitle";
 import {
   resolveInitialSpeakerCountOverride,
   resolveParticipantSpeakerCountSync,
@@ -404,6 +405,9 @@ let systemStream: MediaStream | null = null;
 let isRecordingFlag = false;
 let isStartingFlag = false;
 let activeRecordingSessionId: string | null = null;
+// Wall-clock start of the active recording, used to persist audio_duration_seconds
+// on stop so short recordings can be flagged in the notes list.
+let recordingStartedAtMs: number | null = null;
 const meetingRecordingStartCoordinator = createMeetingRecordingStartCoordinator();
 const meetingRecordingStopBarrier = createMeetingRecordingStopBarrier();
 let isPrepared = false;
@@ -823,6 +827,7 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
     });
 
     isRecordingFlag = true;
+    recordingStartedAtMs = Date.now();
     let setupMicResult: MediaStream | null = null;
     let setupSystemCaptureResult: { stream: MediaStream | null; error: Error | null } = {
       stream: null,
@@ -1526,10 +1531,20 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
     // that view is unmounted, and any view-scoped saver dies with it. (Delayed
     // diarization results are persisted by the module-level listener below.)
     const { recordingNoteId, segments: finalSegments } = useMeetingRecordingStore.getState();
+    // Duration from wall-clock start→stop, persisted so the notes list can flag
+    // short (likely accidental) recordings. Only the upload path set this before.
+    const durationSeconds =
+      recordingStartedAtMs != null
+        ? Math.max(0, Math.round((Date.now() - recordingStartedAtMs) / 1000))
+        : null;
+    recordingStartedAtMs = null;
     const persistTranscript = async (transcript: string) => {
       if (recordingNoteId == null) return;
       try {
-        await window.electronAPI?.updateNote?.(recordingNoteId, { transcript });
+        await window.electronAPI?.updateNote?.(recordingNoteId, {
+          transcript,
+          ...(durationSeconds != null ? { audio_duration_seconds: durationSeconds } : {}),
+        });
       } catch (err) {
         logger.error(
           "Failed to persist final meeting transcript",
@@ -1583,6 +1598,20 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
     });
+
+    // Name a still-default recording from its transcript so the notes list does
+    // not fill with "Untitled Note". Fire-and-forget; never blocks the stop.
+    if (recordingNoteId != null) {
+      const titleText =
+        buildTranscriptText(finalSegments) ||
+        useMeetingRecordingStore.getState().transcript ||
+        "";
+      void autoTitleRecording(
+        recordingNoteId,
+        titleText,
+        useMeetingRecordingStore.getState().recordingNoteTitle
+      );
+    }
 
     logger.info("Meeting transcription stopped", {}, "meeting");
     // Reaching here means this call ended a live recording and its transcript

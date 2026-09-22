@@ -1,4 +1,10 @@
 {
+  "dateGroup": {
+    "today": "Heute",
+    "week": "Diese Woche",
+    "month": "Dieser Monat",
+    "earlier": "Früher"
+  },
   "notesCalendar": {
     "viewList": "Liste",
     "viewCalendar": "Kalender",

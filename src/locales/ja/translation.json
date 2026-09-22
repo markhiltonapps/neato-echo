@@ -1,4 +1,10 @@
 {
+  "dateGroup": {
+    "today": "今日",
+    "week": "今週",
+    "month": "今月",
+    "earlier": "それ以前"
+  },
   "notesCalendar": {
     "viewList": "リスト",
     "viewCalendar": "カレンダー",

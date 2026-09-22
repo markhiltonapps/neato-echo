@@ -1,4 +1,10 @@
 {
+  "dateGroup": {
+    "today": "Сегодня",
+    "week": "Эта неделя",
+    "month": "Этот месяц",
+    "earlier": "Ранее"
+  },
   "notesCalendar": {
     "viewList": "Список",
     "viewCalendar": "Календарь",
