@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { formatShortDate } from "../../utils/dateFormatting";
+import { noteDurationSeconds, isShortRecordingDuration } from "../../utils/noteDuration";
 import {
   Check,
   ChevronRight,
@@ -814,26 +815,14 @@ interface MoveOption {
   isCurrent: boolean;
 }
 
-// A recording shorter than this is flagged in the list as a likely accidental
-// capture (e.g. a stray dictation the mic picked up) worth reviewing/deleting.
-const SHORT_RECORDING_MAX_SECONDS = 5 * 60;
-
-// A note backed by audio (meeting/upload recording) vs a typed note — drives the
-// row icon so recordings are distinguishable at a glance.
+// A note backed by audio (meeting/upload recording, or one with a derivable
+// duration) vs a typed note — drives the row icon so recordings stand out.
 function isRecordingNote(note: NoteItem): boolean {
   return (
     note.note_type === "meeting" ||
     note.note_type === "upload" ||
-    note.audio_duration_seconds != null
-  );
-}
-
-// Only audio notes carry a duration; typed notes (null) are never flagged.
-function isShortRecording(note: NoteItem): boolean {
-  return (
-    note.audio_duration_seconds != null &&
-    note.audio_duration_seconds > 0 &&
-    note.audio_duration_seconds < SHORT_RECORDING_MAX_SECONDS
+    note.audio_duration_seconds != null ||
+    noteDurationSeconds(note) != null
   );
 }
 
@@ -951,7 +940,14 @@ function NoteLeaf({
 
   const title = note.title || t("notes.list.untitled");
   const noteDate = formatShortDate(note.created_at);
-  const short = isShortRecording(note);
+  // Prefer the stored duration; fall back to deriving it from the transcript for
+  // recordings made before durations were persisted (memoized so the transcript
+  // is parsed at most once per note).
+  const durationSec = useMemo(
+    () => noteDurationSeconds(note),
+    [note.audio_duration_seconds, note.transcript]
+  );
+  const short = isShortRecordingDuration(durationSec);
   const RowIcon = isRecordingNote(note) ? Mic : FileText;
 
   return (
@@ -1008,7 +1004,7 @@ function NoteLeaf({
       >
         {title}
       </span>
-      {note.audio_duration_seconds != null && note.audio_duration_seconds > 0 && (
+      {durationSec != null && durationSec > 0 && (
         <span
           role={short ? "img" : undefined}
           aria-label={short ? t("notes.bulk.shortRecording") : undefined}
@@ -1018,7 +1014,7 @@ function NoteLeaf({
             short ? "bg-warning/15 text-warning" : "text-foreground/30"
           )}
         >
-          {formatDuration(note.audio_duration_seconds)}
+          {formatDuration(durationSec)}
         </span>
       )}
       {noteDate && (
@@ -2384,7 +2380,8 @@ export default function SpacesTree({
           ) : (
             filteredResults.map((note) => {
               const resultSelected = selectedIds.has(note.id);
-              const resultShort = isShortRecording(note);
+              const resultDur = noteDurationSeconds(note);
+              const resultShort = isShortRecordingDuration(resultDur);
               const ResultIcon = isRecordingNote(note) ? Mic : FileText;
               return (
                 <button
@@ -2429,7 +2426,7 @@ export default function SpacesTree({
                   >
                     {note.title || t("notes.list.untitled")}
                   </span>
-                  {note.audio_duration_seconds != null && note.audio_duration_seconds > 0 && (
+                  {resultDur != null && resultDur > 0 && (
                     <span
                       role={resultShort ? "img" : undefined}
                       aria-label={resultShort ? t("notes.bulk.shortRecording") : undefined}
@@ -2439,7 +2436,7 @@ export default function SpacesTree({
                         resultShort ? "bg-warning/15 text-warning" : "text-foreground/30"
                       )}
                     >
-                      {formatDuration(note.audio_duration_seconds)}
+                      {formatDuration(resultDur)}
                     </span>
                   )}
                   <span className="font-brand text-[10px] tabular-nums text-foreground/30 shrink-0">
