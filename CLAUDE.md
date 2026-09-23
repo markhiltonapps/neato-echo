@@ -836,6 +836,10 @@ Raster UI assets live in `src/assets/` (onboarding ones are named `onboarding-*`
    - If Qdrant fails to start, search still works via FTS5 keyword fallback
    - Semantic search is only available through the AI agent's `search_notes` tool, not the manual search UI
 
+8. **Blank screen / "Failed to fetch dynamically imported module" in `npm run dev`** (while the production build is fine):
+   - **Module format**: any helper reached via an ESM `import` from the renderer (the React app) MUST be authored as an ES module (`export`/`import`), never CommonJS (`module.exports`/`require`). The Rolldown production build bundles CJS via interop, so `build:renderer` passes even when a renderer helper is CJS — but the Vite dev server serves source `.js` as native ESM with no CJS transform, so a named import of a `module.exports` file throws at load and blanks the whole app. Convention: renderer-side helpers use `export` and their tests load them with dynamic `import()` (see `test/helpers/dictationRouting.test.js`); main-process helpers (reached via `require`) keep `module.exports` and their tests use `require` (see `test/helpers/meetingMicGate.test.js`). Relative ESM imports also need the explicit `.js` extension, or Node's test runner (`node --test`) fails to resolve them.
+   - **504 Outdated Optimize Dep** (shows up as "Failed to fetch dynamically imported module" on a lazy route): the Vite dep-optimizer cache (`node_modules/.vite`) is desynced — typically from starting a second `vite`/`vite optimize` against an already-running dev server, which rewrites the cache out from under it. Fix: fully restart `npm run dev` (Ctrl+C in that terminal — the in-app "Reload" and Ctrl+R only reload the renderer, not the server). Never start a competing Vite instance while the dev server is running.
+
 ### Platform-Specific Notes
 
 **macOS**:

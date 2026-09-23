@@ -1,6 +1,12 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { createLivePreviewCleaner } = require("../../src/helpers/livePreviewCleaner");
+
+// livePreviewCleaner is an ES module (imported by the renderer), so load it via
+// dynamic import rather than require. See dictationRouting.test.js for the pattern.
+let createLivePreviewCleaner;
+test.before(async () => {
+  ({ createLivePreviewCleaner } = await import("../../src/helpers/livePreviewCleaner.js"));
+});
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
