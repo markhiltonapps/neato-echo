@@ -5,12 +5,18 @@ import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
 import { getPlatform } from "../../utils/platform";
 import { useWindowControls } from "../../hooks/useWindowControls";
-// Imported (not referenced by path) so Vite fingerprints it and it resolves
-// under the packaged app's file:// origin. See .onboarding-compact-hero.
-import heroDither from "@/assets/onboarding-hero-dither.webp";
-import heroDitherDark from "@/assets/onboarding-hero-dither-dark.webp";
-import onboardingBackgroundLight from "@/assets/onboarding-bg-light.svg";
-import onboardingBackgroundDark from "@/assets/onboarding-bg-dark.svg";
+// The onboarding hero washes — the full-canvas background and the compact-screen
+// top strip — are Neddy-teal CSS gradients driven by --onboarding-accent, set
+// inline below. The previous baked indigo art (onboarding-bg-*.svg,
+// onboarding-hero-dither-*.webp) was dropped in the Neddy reskin.
+const ONBOARDING_BG_LIGHT =
+  "radial-gradient(130% 62% at 50% 0%, color-mix(in srgb, var(--onboarding-accent) 12%, transparent) 0%, transparent 60%)";
+const ONBOARDING_BG_DARK =
+  "radial-gradient(130% 62% at 50% 0%, color-mix(in srgb, var(--onboarding-accent) 20%, transparent) 0%, transparent 62%)";
+const ONBOARDING_HERO_LIGHT =
+  "linear-gradient(180deg, color-mix(in srgb, var(--onboarding-accent) 26%, transparent) 0%, transparent 100%)";
+const ONBOARDING_HERO_DARK =
+  "linear-gradient(180deg, color-mix(in srgb, var(--onboarding-accent) 34%, transparent) 0%, transparent 100%)";
 
 interface OnboardingShellProps {
   compact?: boolean;
@@ -221,8 +227,8 @@ export default function OnboardingShell({
       className={`onboarding-canvas relative flex h-screen flex-col overflow-hidden ${compact ? "compact" : ""}`}
       style={
         {
-          "--onboarding-background-light": `url(${onboardingBackgroundLight})`,
-          "--onboarding-background-dark": `url(${onboardingBackgroundDark})`,
+          "--onboarding-background-light": ONBOARDING_BG_LIGHT,
+          "--onboarding-background-dark": ONBOARDING_BG_DARK,
         } as CSSProperties
       }
     >
@@ -361,8 +367,8 @@ export function CompactOnboardingFrame({
         // gets fingerprinted by Vite and resolves under the packaged file:// origin.
         style={
           {
-            "--onboarding-hero-dither-light": `url(${heroDither})`,
-            "--onboarding-hero-dither-dark": `url(${heroDitherDark})`,
+            "--onboarding-hero-dither-light": ONBOARDING_HERO_LIGHT,
+            "--onboarding-hero-dither-dark": ONBOARDING_HERO_DARK,
           } as CSSProperties
         }
       />

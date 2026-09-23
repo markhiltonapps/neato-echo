@@ -315,10 +315,12 @@ body:has(.onboarding-canvas) {
   font-family: var(--font-family-sans);
   font-optical-sizing: auto;
 
-  /* Onboarding design tokens, straight from the Figma library. The accent is
-     #4079ED, which is close to but NOT Tailwind's blue-500 (#3b82f6) — bind
-     these rather than re-typing the literals. */
-  --onboarding-accent: #4079ed;
+  /* Onboarding design tokens. The accent tracks the Neddy brand teal
+     (--color-primary, #3d726c) so onboarding matches the rest of the app; bind
+     to this token rather than re-typing the literal. It can't be
+     var(--color-primary) because .onboarding-canvas remaps --color-primary onto
+     this token (would be circular), so the value is kept in sync by hand. */
+  --onboarding-accent: #3d726c;
   --onboarding-accent-foreground: #ffffff;
   /* Hover on a filled accent means "darker" on light and "lighter" on dark, so the
      mix target is a token rather than a literal `black` in the utility class. */
@@ -375,10 +377,10 @@ body:has(.onboarding-canvas) {
 .dark .onboarding-canvas,
 .dark:has(.onboarding-canvas),
 body.dark:has(.onboarding-canvas) {
-  /* Lifted off #4079ED: the Figma accent is tuned against white and goes muddy on
-     a near-black surface, so dark takes the same hue a few steps brighter to hold
-     the 4.5:1 it has in light. */
-  --onboarding-accent: #6f9bf5;
+  /* Lifted off the deep teal: the light accent is tuned against white and sinks
+     into a near-black surface, so dark takes the same hue brighter to lift the
+     filled CTA off the page. Matches the app's dark --color-primary (#57938c). */
+  --onboarding-accent: #57938c;
   /* White, same as light: a filled brand CTA reads as the brand in both themes,
      and flipping its label to near-black made the dark-mode buttons look like a
      different component. */
@@ -742,28 +744,19 @@ body.dark:has(.onboarding-canvas) {
   background-image: none;
 }
 
-/* The indigo-to-white hero ramp is a baked Bayer 16x16 ordered dither (2px
-   cells, 5 steps along the ramp) rather than a CSS gradient plus a dot grid.
-   The ramp is purely vertical, so one Bayer period — 16 cells at 2px = 32px —
-   tiles horizontally with no seam, and the whole strip costs ~250 bytes.
-   background-size pins it to 1 image px per CSS px so the cells stay square;
-   image-rendering keeps them hard-edged on fractional device pixel ratios
-   instead of resampling the dither into mush. The background-image URL is set
-   inline from an imported asset (see CompactOnboardingFrame) so Vite
-   fingerprints it and it resolves under the packaged file:// origin — which is
-   also why the theme swap reads two inline custom properties instead of naming
-   the files here. The strips are 32px-wide Bayer-dither gradients, one per
-   theme, baked into src/assets/onboarding-hero-dither{,-dark}.webp. */
+/* The compact-screen hero is a Neddy-teal wash: a vertical gradient from a
+   translucent accent tint down to transparent, so it sits over the surface token
+   in either theme. It replaced the baked indigo Bayer-dither strip in the Neddy
+   reskin. The gradient value comes in as an inline custom property (set in
+   OnboardingShell) so light/dark can carry different intensities. */
 .onboarding-compact-hero {
   background-image: var(--onboarding-hero-dither-light);
-  background-repeat: repeat-x;
-  background-size: 32px 100%;
-  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-/* The dark strip resolves into --onboarding-surface rather than white, so it has
-   to be a separate asset — a filter or blend on the light one would take the
-   indigo with it. */
+/* Dark carries a slightly stronger tint so the wash reads over the near-black
+   onboarding surface. */
 .dark .onboarding-compact-hero {
   background-image: var(--onboarding-hero-dither-dark);
 }
