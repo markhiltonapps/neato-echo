@@ -97,8 +97,13 @@ const FOLDER_INPUT_CLASS =
   "w-full h-6 bg-foreground/5 dark:bg-white/5 rounded px-2 text-xs text-foreground outline-none border border-primary/30 focus:border-primary/50";
 
 const ROW_BASE_CLASS =
-  "group relative flex items-center gap-1.5 rounded-md cursor-pointer select-none " +
+  "group relative flex items-center gap-1.5 rounded-lg border border-transparent cursor-pointer select-none " +
   "transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-ring/30";
+
+// Active/selected row — a glossy teal card that lifts off the list with a soft
+// teal bloom (the Neddy shell finish). Bound once so every row type matches.
+const ROW_ACTIVE_CLASS =
+  "gloss-convex bg-brand-teal-soft border-brand-teal/25 shadow-[0_2px_8px_-4px_var(--color-brand-teal)]";
 
 const KEBAB_BUTTON_CLASS =
   "h-5 w-5 rounded-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 " +
@@ -454,7 +459,7 @@ function SpaceRow({
         ROW_BASE_CLASS,
         "h-[30px] px-2",
         isActive
-          ? "bg-primary/8 dark:bg-primary/10"
+          ? ROW_ACTIVE_CLASS
           : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragOver && DROP_TARGET_CLASS,
         isDropSuccess && DROP_SUCCESS_CLASS
@@ -663,7 +668,7 @@ function FolderRow({
         "h-7 pr-2",
         level === 1 ? "pl-2" : "pl-[14px]",
         isActive
-          ? "bg-primary/8 dark:bg-primary/10"
+          ? ROW_ACTIVE_CLASS
           : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragOver && DROP_TARGET_CLASS,
         isDropSuccess && DROP_SUCCESS_CLASS
@@ -969,9 +974,9 @@ function NoteLeaf({
         "h-7 pr-2",
         indentClassName ?? (level === 3 ? "pl-10" : "pl-[14px]"),
         selectMode && isSelected
-          ? "bg-primary/8 dark:bg-primary/10"
+          ? ROW_ACTIVE_CLASS
           : isActive && !selectMode
-            ? "bg-primary/8 dark:bg-primary/10"
+            ? ROW_ACTIVE_CLASS
             : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragging && "opacity-40"
       )}
@@ -2431,7 +2436,7 @@ export default function SpacesTree({
                   className={cn(
                     "flex items-center gap-2 w-full h-7 pl-[14px] pr-2 rounded-md text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                     (selectMode ? resultSelected : activeNoteId === note.id)
-                      ? "bg-primary/8 dark:bg-primary/10"
+                      ? ROW_ACTIVE_CLASS
                       : "hover:bg-foreground/4 dark:hover:bg-white/4"
                   )}
                 >

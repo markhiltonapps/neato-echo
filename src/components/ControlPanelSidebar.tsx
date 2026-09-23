@@ -102,7 +102,7 @@ export default function ControlPanelSidebar({
   ];
 
   return (
-    <div className="w-48 h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-surface-1/60 dark:bg-surface-1">
+    <div className="w-full h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-gradient-to-b from-surface-0 to-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] dark:from-surface-2 dark:to-surface-0 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div
         className="w-full h-10 shrink-0"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
@@ -147,10 +147,10 @@ export default function ControlPanelSidebar({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               className={cn(
-                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-md outline-none transition-colors duration-150 text-left",
+                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-lg outline-none transition-colors duration-150 text-left",
                 "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
                 isActive
-                  ? "bg-brand-teal-soft border border-brand-teal/25"
+                  ? "gloss-convex bg-brand-teal-soft border border-brand-teal/30 shadow-[0_3px_12px_-5px_var(--color-brand-teal)]"
                   : "border border-transparent hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
               )}
             >

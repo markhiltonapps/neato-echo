@@ -151,6 +151,45 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     hidePeek: hideSidebarPeek,
     leaveToggle: leaveSidebarToggle,
   } = useCollapsibleSidebar();
+  // Drag-resizable app rail. Width persists per-user; clamped so the nav labels
+  // never truncate (min) and the rail never eats the workspace (max).
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem("sidebarWidth") || "", 10);
+      return Number.isFinite(v) ? Math.min(360, Math.max(168, v)) : SIDEBAR_WIDTH_PX;
+    } catch {
+      return SIDEBAR_WIDTH_PX;
+    }
+  });
+  const startSidebarResize = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = sidebarWidth;
+      const onMove = (ev: PointerEvent) => {
+        setSidebarWidth(Math.min(360, Math.max(168, startW + (ev.clientX - startX))));
+      };
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        setSidebarWidth((w) => {
+          try {
+            localStorage.setItem("sidebarWidth", String(w));
+          } catch {
+            /* private mode / blocked storage — width stays for this session only */
+          }
+          return w;
+        });
+      };
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [sidebarWidth]
+  );
   const isMeetingMode = useIsMeetingMode();
   const isNarrowWindow = useIsNarrowWindow();
   const activeNoteId = useActiveNoteId();
@@ -995,8 +1034,20 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
       <div className="flex flex-1 overflow-hidden relative">
         <div
           className="shrink-0 transition-[width] duration-300 ease-out"
-          style={{ width: sidebarCollapsed || isSidePanelLayout ? 0 : SIDEBAR_WIDTH_PX }}
+          style={{ width: sidebarCollapsed || isSidePanelLayout ? 0 : sidebarWidth }}
         />
+        {!sidebarCollapsed && !isSidePanelLayout && (
+          <div
+            onPointerDown={startSidebarResize}
+            className="group absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize"
+            style={{ left: sidebarWidth }}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t("sidebar.resize", "Resize sidebar")}
+          >
+            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors duration-150 group-hover:bg-brand-teal/50" />
+          </div>
+        )}
         <div
           className={`absolute inset-y-0 left-0 z-30 transition-transform duration-300 ease-out${
             sidebarCollapsed && sidebarPeek && !isSidePanelLayout
@@ -1004,6 +1055,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               : ""
           }`}
           style={{
+            width: sidebarWidth,
             transform:
               !isSidePanelLayout && (!sidebarCollapsed || sidebarPeek)
                 ? "translateX(0)"
@@ -1079,7 +1131,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               </div>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto pt-1">
+          <div className="canvas-glow flex-1 overflow-y-auto pt-1">
             {updateRequiredByOrg && (
               <div className="max-w-3xl mx-auto w-full mb-3">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-3">

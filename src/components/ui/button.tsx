@@ -16,15 +16,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary CTA — Neddy finish: glossy teal with a wet-plastic top rim and a warm lift.
+        // Primary CTA — Neddy finish: convex glossy teal shell with a teal-tinted
+        // lift (the mascot's glossy teal); rounded-lg for the chunky friendly feel.
         default: [
-          "relative text-primary-foreground font-semibold tracking-[0.005em]",
-          "bg-primary",
+          "gloss-convex relative text-primary-foreground font-semibold tracking-[0.005em]",
+          "bg-primary rounded-lg",
           "border border-primary/50",
-          "shadow-[0_1.5px_3px_rgba(58,40,20,0.16),inset_0_1px_0_rgba(255,255,255,0.30)]",
-          "hover:bg-primary/95 hover:shadow-[0_3px_10px_-2px_rgba(58,40,20,0.26),inset_0_1px_0_rgba(255,255,255,0.34)]",
-          "active:bg-primary/85 active:scale-[0.985]",
-          "transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out",
+          "shadow-[0_2px_6px_-2px_rgba(94,148,145,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
+          "hover:brightness-[1.04] hover:shadow-[0_5px_14px_-3px_rgba(94,148,145,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]",
+          "active:scale-[0.985]",
+          "transition-[filter,transform,box-shadow,background-color] duration-200 ease-out",
         ].join(" "),
 
         // Success — uses design tokens

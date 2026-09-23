@@ -302,10 +302,10 @@ export default function ConversationList({
             <button
               onClick={() => setShowArchived((v) => !v)}
               className={cn(
-                "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs transition-colors duration-150",
+                "flex items-center gap-2 w-full px-2 py-1.5 rounded-lg border border-transparent text-xs transition-colors duration-150",
                 "focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
                 showArchived
-                  ? "bg-primary/8 text-primary"
+                  ? "gloss-convex bg-brand-teal-soft border-brand-teal/25 text-primary shadow-[0_2px_8px_-4px_var(--color-brand-teal)]"
                   : "text-muted-foreground/80 hover:text-foreground hover:bg-foreground/5"
               )}
             >

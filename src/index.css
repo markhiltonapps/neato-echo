@@ -120,6 +120,16 @@
     0 3px 6px rgba(58, 40, 20, 0.09), 0 16px 34px -22px rgba(58, 40, 20, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
+  /* Emissive glow for the hero controls — a soft warm/teal bloom (the Neddy
+     mascot's glowing amber eyes), a crisp warm lift, and a bright inner top rim
+     so a filled control reads as lit molded plastic, not a flat swatch. */
+  --shadow-glow-warm:
+    0 8px 22px -8px rgba(207, 138, 52, 0.55), 0 1px 2px rgba(58, 40, 20, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-glow-teal:
+    0 8px 22px -8px rgba(94, 148, 145, 0.5), 0 1px 2px rgba(58, 40, 20, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
   /* Liquid-glass edge — bright inner rim + top highlight + soft lift */
   --shadow-glass:
     inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.45),
@@ -181,6 +191,12 @@
   /* Card depth shadows — softer for charcoal, with top highlight for premium depth */
   --shadow-card: 0 1px 3px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.03);
   --shadow-card-hover: 0 4px 12px oklch(0 0 0 / 0.25), inset 0 1px 0 oklch(1 0 0 / 0.04);
+  --shadow-glow-warm:
+    0 8px 24px -8px rgba(234, 169, 79, 0.5), 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --shadow-glow-teal:
+    0 8px 24px -8px rgba(127, 179, 173, 0.42), 0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --shadow-elevated: 0 8px 24px oklch(0 0 0 / 0.3);
   --shadow-modal: 0 24px 48px -12px oklch(0 0 0 / 0.4);
 
@@ -1082,6 +1098,54 @@ a:hover {
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
   pointer-events: none;
+}
+
+/* Molded-plastic convex gloss for filled controls. Unlike .material-gloss (a
+   hard top sheen that bands across small buttons), this layers a smooth top-down
+   highlight over the control's own fill — bright at the crown, fading through the
+   middle, a whisper of shade at the base — so the whole face reads as one curved,
+   lit shell. Content sits cleanly on top; no seam for an icon to straddle. */
+.gloss-convex {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.12) 32%,
+    rgba(255, 255, 255, 0) 54%,
+    rgba(58, 40, 20, 0.06) 100%
+  );
+}
+:root:not([data-theme="light"]) .gloss-convex,
+.dark .gloss-convex {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.06) 32%,
+    rgba(255, 255, 255, 0) 54%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+}
+
+/* Warm radial glow for the app canvas — a soft, off-center bloom that lifts the
+   cream ground the way the Neddy mascot sits in a warm halo. Purely decorative;
+   sits behind content. */
+.canvas-glow {
+  background-image: radial-gradient(
+    140% 110% at 82% -8%,
+    rgba(234, 178, 96, 0.28) 0%,
+    rgba(234, 178, 96, 0.12) 28%,
+    rgba(207, 138, 52, 0.05) 46%,
+    rgba(234, 178, 96, 0) 66%
+  );
+}
+:root:not([data-theme="light"]) .canvas-glow,
+.dark .canvas-glow {
+  background-image: radial-gradient(
+    140% 110% at 82% -8%,
+    rgba(234, 169, 79, 0.16) 0%,
+    rgba(234, 169, 79, 0.07) 28%,
+    rgba(234, 169, 79, 0.03) 46%,
+    rgba(234, 169, 79, 0) 66%
+  );
 }
 
 /* Gradient accent bar — top border highlight for panels */

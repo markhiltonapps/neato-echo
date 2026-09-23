@@ -71,10 +71,10 @@ export default function ConversationItem({
         "group relative w-full text-left px-3 py-2 cursor-pointer transition-all duration-150 flex items-center gap-2",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
         selectionMode && selected
-          ? "bg-primary/10"
+          ? "gloss-convex bg-brand-teal-soft"
           : isActive && !selectionMode
-            ? "bg-primary/8 dark:bg-primary/10"
-            : "hover:bg-foreground/4 dark:hover:bg-white/4"
+            ? "gloss-convex bg-brand-teal-soft"
+            : "hover:bg-brand-teal-soft/40"
       )}
     >
       {selectionMode && (

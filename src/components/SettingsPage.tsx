@@ -199,7 +199,7 @@ function SettingsPanel({
 }) {
   return (
     <div
-      className={`rounded-lg border border-border/50 dark:border-border-subtle/70 bg-card/50 dark:bg-surface-2/50 backdrop-blur-sm divide-y divide-border/30 dark:divide-border-subtle/50 ${className}`}
+      className={`rounded-xl border border-border/50 dark:border-border-subtle/70 bg-card/60 dark:bg-surface-2/50 backdrop-blur-sm shadow-[var(--shadow-card)] divide-y divide-border/30 dark:divide-border-subtle/50 ${className}`}
     >
       {children}
     </div>

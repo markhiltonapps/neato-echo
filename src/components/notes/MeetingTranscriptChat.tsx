@@ -17,17 +17,20 @@ import {
 // Partial-bubble styles match the settled/final bubble exactly (see final
 // styles below) so a line doesn't flicker its color/border when it finalizes;
 // the italic text + blinking cursor already signal "in progress".
+// Neddy finish: soft molded-plastic bubbles — the local mic ("you") sits on the
+// right in a warm amber tint, remote speakers on the left in brand teal. Both
+// carry the glossy card shadow so they read as raised, not flat fills.
 const BUBBLE_STYLES = {
   mic: {
-    align: "justify-start",
-    radius: "rounded-bl-sm",
-    bg: "bg-primary/90 text-primary-foreground",
-    cursor: "bg-primary-foreground/60",
-  },
-  system: {
     align: "justify-end",
     radius: "rounded-br-sm",
-    bg: "bg-surface-2 border border-border/30 text-foreground",
+    bg: "bg-brand-warm/15 border border-brand-warm/30 text-foreground",
+    cursor: "bg-foreground/50",
+  },
+  system: {
+    align: "justify-start",
+    radius: "rounded-bl-sm",
+    bg: "bg-brand-teal/12 border border-brand-teal/25 text-foreground",
     cursor: "bg-foreground/40",
   },
 } as const;
@@ -655,9 +658,9 @@ const SegmentRow = memo(function SegmentRow({
     <div
       className={cn(
         "group flex flex-col",
-        selfSide ? "items-start" : "items-end",
+        selfSide ? "items-end" : "items-start",
         !sameSpeaker && !isFirst && "mt-2",
-        selectable && (selfSide ? "pl-6" : "pr-6")
+        selectable && (selfSide ? "pr-6" : "pl-6")
       )}
       style={isNewest ? { animation: "agent-message-in 200ms ease-out both" } : undefined}
     >
@@ -675,16 +678,16 @@ const SegmentRow = memo(function SegmentRow({
       <div className="relative max-w-[80%]">
         <div
           className={cn(
-            "px-3 py-1.5 cursor-default transition-colors",
-            "text-[13px] leading-relaxed",
+            "px-3.5 py-2 cursor-default transition-colors",
+            "text-[13px] leading-relaxed shadow-[var(--shadow-card)]",
             selfSide
               ? cn(
-                  "bg-primary/90 text-primary-foreground",
-                  sameSpeaker ? "rounded-lg rounded-tl-sm" : "rounded-lg rounded-bl-sm"
+                  "bg-brand-warm/15 border border-brand-warm/30 text-foreground",
+                  sameSpeaker ? "rounded-2xl rounded-tr-sm" : "rounded-2xl rounded-br-sm"
                 )
               : cn(
-                  "bg-surface-2 border border-border/30 text-foreground",
-                  sameSpeaker ? "rounded-lg rounded-tr-sm" : "rounded-lg rounded-br-sm",
+                  "bg-brand-teal/12 border border-brand-teal/25 text-foreground",
+                  sameSpeaker ? "rounded-2xl rounded-tl-sm" : "rounded-2xl rounded-bl-sm",
                   isSystemSpeaker && cn("border-l-2", SPEAKER_BORDER_COLORS[colorIdx])
                 ),
             isSelected && "ring-2 ring-primary/60"
@@ -696,7 +699,7 @@ const SegmentRow = memo(function SegmentRow({
           <SelectCheckbox
             isSelected={isSelected}
             onToggle={() => onToggleSelect?.(segment.id)}
-            className={cn("absolute top-1.5", selfSide ? "-left-6" : "-right-6")}
+            className={cn("absolute top-1.5", selfSide ? "-right-6" : "-left-6")}
           />
         )}
       </div>
@@ -871,7 +874,7 @@ export function MeetingTranscriptChat({
     <div className="h-full flex flex-col">
       {consentNotice}
       {(isRecording || isDiarizing) && (
-        <div className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 mx-4 mb-1.5 px-3 py-1.5 rounded-lg border border-border/60 bg-surface-2/40 text-xs text-foreground">
+        <div className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 mx-4 mb-1.5 px-3 py-1.5 rounded-xl border border-border/50 bg-surface-1 shadow-[var(--shadow-card)] text-xs text-foreground">
           <div className="flex items-center gap-1.5 min-w-0">
             {isDiarizing ? (
               <Loader2 size={12} className="animate-spin text-muted-foreground shrink-0" />

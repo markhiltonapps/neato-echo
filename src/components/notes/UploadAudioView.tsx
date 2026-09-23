@@ -1450,10 +1450,10 @@ function IdleView({
         onClick={handleBrowse}
         onKeyDown={handleKeyDown}
         className={cn(
-          "relative rounded-lg p-8 text-center cursor-pointer transition-[background-color,border-color,transform] duration-300 group",
-          "bg-surface-1/40 dark:bg-white/[0.03] backdrop-blur-sm",
+          "gloss-convex relative rounded-2xl p-8 text-center cursor-pointer transition-[background-color,border-color,transform,box-shadow] duration-300 group",
+          "bg-surface-1/60 dark:bg-white/[0.03] backdrop-blur-sm shadow-[var(--shadow-card)]",
           "border border-foreground/6 dark:border-white/6",
-          "hover:bg-surface-1/60 dark:hover:bg-white/[0.05] hover:border-foreground/12 dark:hover:border-white/10",
+          "hover:bg-surface-1/80 dark:hover:bg-white/[0.05] hover:border-foreground/12 dark:hover:border-white/10 hover:shadow-[var(--shadow-card-hover)]",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
           isDragOver && "border-primary/30 bg-primary/[0.04] dark:bg-primary/[0.06] scale-[1.01]"
         )}

@@ -192,14 +192,14 @@ export default function HistoryView({
               </div>
             )}
             {isLoading && history.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card/50 dark:bg-card/60 backdrop-blur-sm">
+              <div className="gloss-convex rounded-xl border border-border bg-card/60 dark:bg-card/60 backdrop-blur-sm shadow-[var(--shadow-card)]">
                 <div className="flex items-center justify-center gap-2 py-8">
                   <Loader2 size={14} className="animate-spin text-primary" />
                   <span className="text-sm text-muted-foreground">{t("controlPanel.loading")}</span>
                 </div>
               </div>
             ) : history.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card/50 dark:bg-card/60 backdrop-blur-sm">
+              <div className="gloss-convex rounded-xl border border-border bg-card/60 dark:bg-card/60 backdrop-blur-sm shadow-[var(--shadow-card)]">
                 <div className="flex flex-col items-center justify-center py-16 px-4">
                   <svg
                     className="text-foreground dark:text-white mb-5"

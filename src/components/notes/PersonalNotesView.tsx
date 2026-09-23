@@ -827,7 +827,7 @@ export default function PersonalNotesView({
         className="shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
         style={{ width: isSidePanelLayout ? 0 : "13rem" }}
       >
-        <div className="w-52 shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full">
+        <div className="w-52 shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full bg-surface-1/40 dark:bg-surface-1/20">
           <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
             <button
               onClick={() => setShowActionManager(true)}
@@ -845,9 +845,10 @@ export default function PersonalNotesView({
               <button
                 onClick={handleNewRecording}
                 className={cn(
-                  "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs font-medium",
-                  "text-brand-warm bg-brand-warm/10 border border-brand-warm/20 hover:bg-brand-warm/18",
-                  "transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-warm/40"
+                  "gloss-convex flex items-center gap-2 w-full px-2 py-2 rounded-lg text-xs font-semibold",
+                  "text-[#2a2013] bg-brand-warm shadow-[var(--shadow-glow-warm)]",
+                  "hover:brightness-[1.03] active:scale-[0.99]",
+                  "transition-[filter,transform,box-shadow] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-warm/50"
                 )}
               >
                 <Mic size={14} className="shrink-0" />
@@ -867,7 +868,7 @@ export default function PersonalNotesView({
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 h-6 rounded text-[11px] font-medium transition-colors",
                     notesLayout === mode
-                      ? "bg-card text-foreground shadow-sm"
+                      ? "bg-card text-foreground shadow-[var(--shadow-card)]"
                       : "text-muted-foreground/60 hover:text-foreground"
                   )}
                 >
@@ -888,7 +889,7 @@ export default function PersonalNotesView({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div className="canvas-glow flex-1 flex flex-col min-w-0 min-h-0">
         {notesLayout === "calendar" ? (
           <NotesCalendarView
             onOpenNote={(id) => {
@@ -1092,7 +1093,7 @@ export default function PersonalNotesView({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleNewRecording}
-                    className="flex items-center gap-1.5 px-4 h-7 rounded-md bg-brand-warm/10 border border-brand-warm/25 text-xs font-medium text-brand-warm hover:bg-brand-warm/18 transition-colors"
+                    className="gloss-convex flex items-center gap-1.5 px-4 h-8 rounded-lg bg-brand-warm shadow-[var(--shadow-glow-warm)] text-xs font-semibold text-[#2a2013] hover:brightness-[1.03] active:scale-[0.99] transition-[filter,transform,box-shadow]"
                   >
                     <Mic size={11} />
                     {t("notes.list.newRecording")}

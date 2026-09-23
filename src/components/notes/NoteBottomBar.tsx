@@ -171,6 +171,7 @@ export default function NoteBottomBar({
                 className={cn(
                   "flex items-center justify-center w-11 h-11 rounded-full",
                   WARM_GRADIENT_CIRCLE,
+                  "shadow-[var(--shadow-glow-warm)]",
                   "transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
                   "hover:brightness-110",
                   "active:scale-95",

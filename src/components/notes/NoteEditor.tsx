@@ -1069,7 +1069,7 @@ export default function NoteEditor({
                   className="relative flex items-center shrink-0 rounded-md bg-foreground/3 dark:bg-white/3 p-0.5"
                 >
                   <div
-                    className="absolute top-0.5 left-0 rounded bg-background dark:bg-surface-2 shadow-sm transition-[width,height,transform,opacity] duration-200 ease-out pointer-events-none"
+                    className="absolute top-0.5 left-0 rounded bg-card shadow-[var(--shadow-card)] transition-[width,height,transform,opacity] duration-200 ease-out pointer-events-none"
                     style={indicatorStyle}
                   />
                   {(hasMeetingTranscript || hasChatSegments || isRecording) && (
