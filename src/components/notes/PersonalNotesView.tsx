@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import neddyMascot from "@/assets/neddy.webp";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { Plus, Sparkles, Mic, List, CalendarDays } from "lucide-react";
@@ -984,102 +985,17 @@ export default function PersonalNotesView({
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center -mt-6">
-            <svg
-              className="text-foreground dark:text-white mb-5"
-              width="72"
-              height="64"
-              viewBox="0 0 72 64"
-              fill="none"
-            >
-              <rect
-                x="22"
-                y="2"
-                width="32"
-                height="42"
-                rx="3"
-                transform="rotate(6 38 23)"
-                fill="currentColor"
-                fillOpacity={0.025}
-                stroke="currentColor"
-                strokeOpacity={0.06}
-              />
-              <rect
-                x="18"
-                y="5"
-                width="32"
-                height="42"
-                rx="3"
-                transform="rotate(3 34 26)"
-                fill="currentColor"
-                fillOpacity={0.04}
-                stroke="currentColor"
-                strokeOpacity={0.08}
-              />
-              <rect
-                x="14"
-                y="8"
-                width="32"
-                height="42"
-                rx="3"
-                fill="currentColor"
-                fillOpacity={0.05}
-                stroke="currentColor"
-                strokeOpacity={0.1}
-              />
-              <rect
-                x="20"
-                y="16"
-                width="16"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.08}
-              />
-              <rect
-                x="20"
-                y="21"
-                width="20"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.06}
-              />
-              <rect
-                x="20"
-                y="26"
-                width="12"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.05}
-              />
-              <rect
-                x="20"
-                y="31"
-                width="18"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.04}
-              />
-              <circle
-                cx="54"
-                cy="50"
-                r="5"
-                fill="currentColor"
-                fillOpacity={0.03}
-                stroke="currentColor"
-                strokeOpacity={0.06}
-              />
-              <path
-                d="M51.5 50L53 51.5L56.5 48"
-                stroke="currentColor"
-                strokeOpacity={0.12}
-                strokeWidth={1.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <img
+              src={neddyMascot}
+              alt=""
+              aria-hidden="true"
+              width={104}
+              height={117}
+              draggable={false}
+              decoding="async"
+              className="mb-5 select-none drop-shadow-[0_12px_28px_rgba(58,40,20,0.20)]"
+              style={{ width: 104, height: 117 }}
+            />
             {notes.length === 0 ? (
               <>
                 <h3 className="text-xs font-semibold text-foreground/60 mb-1">

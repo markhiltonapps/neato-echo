@@ -16,6 +16,7 @@ import { canManageSystemAudioInApp } from "../../utils/systemAudioAccess";
 import { getPlatform } from "../../utils/platform";
 import { needsLinuxPasteToolGuidance } from "../../utils/linuxPasteTools";
 import MicPermissionWarning from "../ui/MicPermissionWarning";
+import neddyMascot from "@/assets/neddy.webp";
 import PasteToolsInfo from "../ui/PasteToolsInfo";
 import { CompactOnboardingFrame } from "./OnboardingShell";
 
@@ -175,6 +176,17 @@ export default function CompactPermissionsStep({
             minutes") instead of leaving one word stranded. Preferred over a
             hardcoded <br> because the break point stays correct in all 9
             locales, where the string length differs. */}
+        <img
+          src={neddyMascot}
+          alt=""
+          aria-hidden="true"
+          width={84}
+          height={95}
+          draggable={false}
+          decoding="async"
+          className="mx-auto mb-3 select-none drop-shadow-[0_10px_24px_rgba(58,40,20,0.20)]"
+          style={{ width: 84, height: 95 }}
+        />
         <h1 className="onboarding-display-title mx-auto max-w-72 text-balance text-3xl!">
           {t("onboarding.rehaul.permissions.title")}
         </h1>
