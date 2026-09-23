@@ -7,57 +7,59 @@
 @theme {
   /* OpenWhispr Theme — registers color tokens with Tailwind v4.
      These are the light-mode defaults; .dark overrides them below. */
-  --color-primary: #0f7a70;
+  /* Neddy finish — warm ivory ground, deep dusty teal as the primary
+     (button/white-text contrast AA), amber reserved for "your voice." */
+  --color-primary: #3d726c;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #171717;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #525252;
-  --color-accent: oklch(0.55 0.22 285);
-  --color-accent-foreground: #ffffff;
+  --color-secondary: #ece4d1;
+  --color-secondary-foreground: #3a322b;
+  --color-muted: #ece4d1;
+  --color-muted-foreground: #6d6255;
+  /* Subtle warm hover slab for menus/rows (shadcn `accent`), not a vivid color. */
+  --color-accent: #ece4d1;
+  --color-accent-foreground: #3a322b;
   /* Agent Mode identity, sourced from the supplied sparkle/leaf mark. */
   --color-agent-brand: #8787ff;
-  /* Neato brand signals — teal (calm/navigation) + burnt-orange (AI/action).
-     Light-mode values; .dark redefines them below. Deepened for contrast on
-     the cream/white ground. */
-  --color-brand-teal: #17958a;
-  --color-brand-teal-dim: #0f7a70;
-  --color-brand-teal-soft: #17958a1f;
-  --color-brand-warm: #e0551d;
-  --color-brand-warm-2: #f0713f;
-  --color-brand-warm-soft: #e0551d1a;
+  /* Neddy brand signals — dusty teal (structure/navigation) + amber (your voice/action).
+     Light-mode values; .dark redefines them below. */
+  --color-brand-teal: #5e9491;
+  --color-brand-teal-dim: #37605c;
+  --color-brand-teal-soft: #5e949122;
+  --color-brand-warm: #cf8a34;
+  --color-brand-warm-2: #e8b25a;
+  --color-brand-warm-soft: #e7a94c1f;
   /* Brand display/label face as a Tailwind utility (font-brand). */
   --font-brand: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
-  --color-destructive: #dc2626;
+  --color-destructive: #c2554a;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e5e5e5;
-  --color-input: #f9f6f1;
-  --color-ring: #17958a;
-  --color-background: #ffffff;
-  --color-foreground: #171717;
-  --color-card: #ffffff;
-  --color-card-foreground: #171717;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #171717;
-  --color-link: #17958a;
-  --color-success: #16a34a;
+  --color-border: #e3d9c1;
+  --color-input: #fdfbf3;
+  --color-ring: #5e9491;
+  --color-background: #f4efe1;
+  --color-foreground: #3a322b;
+  --color-card: #fbf8ef;
+  --color-card-foreground: #3a322b;
+  --color-popover: #fdfbf3;
+  --color-popover-foreground: #3a322b;
+  --color-link: #37605c;
+  --color-success: #3f8f6e;
   --color-success-foreground: #ffffff;
-  --color-warning: #d97706;
+  --color-warning: #c07f28;
   --color-warning-foreground: #ffffff;
-  --color-info: #2563eb;
+  --color-info: #4a72a8;
   --color-info-foreground: #ffffff;
 
-  /* Surface hierarchy — light mode equivalents */
-  --color-surface-0: #ffffff;
-  --color-surface-1: #fafafa;
-  --color-surface-2: #ffffff;
-  --color-surface-3: #f5f5f5;
-  --color-surface-raised: #f0f0f0;
+  /* Surface hierarchy — ivory ladder (light) */
+  --color-surface-0: #fdfbf3;
+  --color-surface-1: #fbf8ef;
+  --color-surface-2: #f4efe1;
+  --color-surface-3: #ece4d1;
+  --color-surface-raised: #e3d9c1;
 
   /* Border states — light mode equivalents */
-  --color-border-subtle: #e5e5e5;
-  --color-border-hover: #d4d4d4;
-  --color-border-active: #17958a;
+  --color-border-subtle: #e3d9c1;
+  --color-border-hover: #d9cbb0;
+  --color-border-active: #5e9491;
 }
 
 :root {
@@ -71,9 +73,12 @@
   --onboarding-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* Typography */
+  /* Neddy finish body voice — Outfit, self-hosted (see assets/fonts/outfit.css).
+     Outfit is latin-only, so CJK falls through to Noto Sans, same as the Inter
+     stack does elsewhere. */
   --font-family-sans:
-    "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
+    "Outfit", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   /* Neato brand display/label voice — labels, times, date numerals, wordmark. */
   --font-family-brand:
     "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
@@ -105,6 +110,16 @@
   --shadow-metallic-light: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-card-hover-subtle: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
 
+  /* Neddy finish — glossy ivory card: warm soft lift + a bright top rim, so
+     raised surfaces read as molded plastic rather than flat paper. Warm-tinted
+     (rgba 58,40,20) to sit in the cream world. .card binds to these. */
+  --shadow-card:
+    0 1px 2px rgba(58, 40, 20, 0.07), 0 10px 26px -20px rgba(58, 40, 20, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --shadow-card-hover:
+    0 3px 6px rgba(58, 40, 20, 0.09), 0 16px 34px -22px rgba(58, 40, 20, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
   /* Liquid-glass edge — bright inner rim + top highlight + soft lift */
   --shadow-glass:
     inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.45),
@@ -115,51 +130,53 @@
   /* Dark mode — charcoal surfaces with clear elevation hierarchy
      Base L=0.22 (charcoal) with 0.05 steps between layers.
      Hue 260 (neutral blue) with minimal chroma for sophistication. */
-  --color-background: oklch(0.22 0.006 260);
-  --color-foreground: oklch(0.93 0 0);
-  --color-card: oklch(0.27 0.008 260);
-  --color-card-foreground: oklch(0.93 0 0);
-  --color-popover: oklch(0.29 0.009 260);
-  --color-popover-foreground: oklch(0.93 0 0);
-  --color-primary: oklch(0.56 0.1 195);
-  --color-primary-foreground: oklch(0.99 0 0);
-  --color-secondary: oklch(0.28 0.007 260);
-  --color-secondary-foreground: oklch(0.9 0 0);
-  --color-muted: oklch(0.24 0.006 260);
-  --color-muted-foreground: oklch(0.65 0 0);
-  --color-accent: oklch(0.68 0.18 285);
-  --color-accent-foreground: oklch(0.99 0 0);
-  /* Neato brand signals on charcoal — brighter teal + burnt-orange. */
-  --color-brand-teal: #45bcb0;
-  --color-brand-teal-dim: #2f8981;
-  --color-brand-teal-soft: #45bcb029;
-  --color-brand-warm: #f2683c;
-  --color-brand-warm-2: #f47a4f;
-  --color-brand-warm-soft: #f2683c26;
-  --color-destructive: oklch(0.62 0.22 25);
-  --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.35 0.007 260);
-  --color-input: oklch(0.19 0.005 260);
-  --color-ring: oklch(0.66 0.11 195);
-  --color-success: oklch(0.7 0.18 145);
-  --color-success-foreground: oklch(0.99 0 0);
-  --color-warning: oklch(0.75 0.15 70);
-  --color-warning-foreground: oklch(0.15 0 0);
-  --color-info: oklch(0.68 0.18 240);
-  --color-info-foreground: oklch(0.99 0 0);
+  /* Dark Neddy — deep espresso ground, warm cream text, glowing teal + amber.
+     The mascot's "screen" world after dark. */
+  --color-background: #211c18;
+  --color-foreground: #f0e9da;
+  --color-card: #2a241f;
+  --color-card-foreground: #f0e9da;
+  --color-popover: #2e2823;
+  --color-popover-foreground: #f0e9da;
+  --color-primary: #57938c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #2e2823;
+  --color-secondary-foreground: #ece4d1;
+  --color-muted: #26211c;
+  --color-muted-foreground: #b3a794;
+  --color-accent: #2e2823;
+  --color-accent-foreground: #f0e9da;
+  /* Neddy brand signals on espresso — brighter teal + amber. */
+  --color-brand-teal: #7fb3ad;
+  --color-brand-teal-dim: #5e9491;
+  --color-brand-teal-soft: #7fb3ad2b;
+  --color-brand-warm: #eaa94f;
+  --color-brand-warm-2: #f4c877;
+  --color-brand-warm-soft: #eaa94f26;
+  --color-destructive: #e0705f;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #3a3128;
+  --color-input: #1c1813;
+  --color-ring: #6fa5a0;
+  --color-success: #5aa588;
+  --color-success-foreground: #ffffff;
+  --color-warning: #eaa94f;
+  --color-warning-foreground: #241f1b;
+  --color-info: #6f9bd0;
+  --color-info-foreground: #ffffff;
 
-  /* Surface hierarchy — charcoal depth system (0.22 → 0.33) */
-  --color-surface-0: oklch(0.22 0.006 260);
-  --color-surface-1: oklch(0.25 0.007 260);
-  --color-surface-2: oklch(0.27 0.008 260);
-  --color-surface-3: oklch(0.3 0.009 260);
-  --color-surface-raised: oklch(0.33 0.01 260);
+  /* Surface hierarchy — espresso depth ladder */
+  --color-surface-0: #211c18;
+  --color-surface-1: #262019;
+  --color-surface-2: #2a241f;
+  --color-surface-3: #302921;
+  --color-surface-raised: #362e25;
 
   /* Border states */
-  --color-border-subtle: oklch(0.33 0.006 260);
-  --color-border-hover: oklch(0.42 0.01 260);
-  --color-border-active: oklch(0.6 0.11 195);
-  --color-link: oklch(0.72 0.11 195);
+  --color-border-subtle: #322a22;
+  --color-border-hover: #453b30;
+  --color-border-active: #6fa5a0;
+  --color-link: #83b7b3;
 
   /* Card depth shadows — softer for charcoal, with top highlight for premium depth */
   --shadow-card: 0 1px 3px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.03);
@@ -288,20 +305,22 @@
    tokens are shared — the canvas keeps its own painted background below. */
 .onboarding-canvas,
 body:has(.onboarding-canvas) {
-  /* Inter is prepended rather than replacing the stack: the woff2 files are
-     subset by unicode-range and carry no CJK, so zh-CN/zh-TW/ja glyphs must still
-     fall through to the original fonts. Overriding the variable as well covers
-     descendants that re-declare font-family from it. */
+  /* Neddy finish unifies onboarding on Outfit — the same body face as the rest
+     of the app (was Inter). Outfit is latin-only, so CJK still falls through to
+     Noto. Kept as an explicit override so Radix-portalled descendants that
+     re-declare font-family from the variable pick it up too. */
   --font-family-sans:
-    "Inter Variable", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Outfit", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   font-family: var(--font-family-sans);
   font-optical-sizing: auto;
 
-  /* Onboarding design tokens, straight from the Figma library. The accent is
-     #4079ED, which is close to but NOT Tailwind's blue-500 (#3b82f6) — bind
-     these rather than re-typing the literals. */
-  --onboarding-accent: #4079ed;
+  /* Onboarding design tokens. The accent tracks the Neddy brand teal
+     (--color-primary, #3d726c) so onboarding matches the rest of the app; bind
+     to this token rather than re-typing the literal. It can't be
+     var(--color-primary) because .onboarding-canvas remaps --color-primary onto
+     this token (would be circular), so the value is kept in sync by hand. */
+  --onboarding-accent: #3d726c;
   --onboarding-accent-foreground: #ffffff;
   /* Hover on a filled accent means "darker" on light and "lighter" on dark, so the
      mix target is a token rather than a literal `black` in the utility class. */
@@ -358,10 +377,10 @@ body:has(.onboarding-canvas) {
 .dark .onboarding-canvas,
 .dark:has(.onboarding-canvas),
 body.dark:has(.onboarding-canvas) {
-  /* Lifted off #4079ED: the Figma accent is tuned against white and goes muddy on
-     a near-black surface, so dark takes the same hue a few steps brighter to hold
-     the 4.5:1 it has in light. */
-  --onboarding-accent: #6f9bf5;
+  /* Lifted off the deep teal: the light accent is tuned against white and sinks
+     into a near-black surface, so dark takes the same hue brighter to lift the
+     filled CTA off the page. Matches the app's dark --color-primary (#57938c). */
+  --onboarding-accent: #57938c;
   /* White, same as light: a filled brand CTA reads as the brand in both themes,
      and flipping its label to near-black made the dark-mode buttons look like a
      different component. */
@@ -725,28 +744,19 @@ body.dark:has(.onboarding-canvas) {
   background-image: none;
 }
 
-/* The indigo-to-white hero ramp is a baked Bayer 16x16 ordered dither (2px
-   cells, 5 steps along the ramp) rather than a CSS gradient plus a dot grid.
-   The ramp is purely vertical, so one Bayer period — 16 cells at 2px = 32px —
-   tiles horizontally with no seam, and the whole strip costs ~250 bytes.
-   background-size pins it to 1 image px per CSS px so the cells stay square;
-   image-rendering keeps them hard-edged on fractional device pixel ratios
-   instead of resampling the dither into mush. The background-image URL is set
-   inline from an imported asset (see CompactOnboardingFrame) so Vite
-   fingerprints it and it resolves under the packaged file:// origin — which is
-   also why the theme swap reads two inline custom properties instead of naming
-   the files here. The strips are 32px-wide Bayer-dither gradients, one per
-   theme, baked into src/assets/onboarding-hero-dither{,-dark}.webp. */
+/* The compact-screen hero is a Neddy-teal wash: a vertical gradient from a
+   translucent accent tint down to transparent, so it sits over the surface token
+   in either theme. It replaced the baked indigo Bayer-dither strip in the Neddy
+   reskin. The gradient value comes in as an inline custom property (set in
+   OnboardingShell) so light/dark can carry different intensities. */
 .onboarding-compact-hero {
   background-image: var(--onboarding-hero-dither-light);
-  background-repeat: repeat-x;
-  background-size: 32px 100%;
-  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
-/* The dark strip resolves into --onboarding-surface rather than white, so it has
-   to be a separate asset — a filter or blend on the light one would take the
-   indigo with it. */
+/* Dark carries a slightly stronger tint so the wash reads over the near-black
+   onboarding surface. */
 .dark .onboarding-compact-hero {
   background-image: var(--onboarding-hero-dither-dark);
 }
@@ -1056,6 +1066,22 @@ a:hover {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-xl);
+}
+
+/* Neddy material — a wet-plastic top highlight for glossy raised elements
+   (record pill, primary orbs, hero buttons). Opt in by adding `material-gloss`
+   to a `position: relative; overflow: hidden` element; the sheen sits above the
+   fill and never intercepts clicks. */
+.material-gloss::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 2px;
+  height: 42%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 
 /* Gradient accent bar — top border highlight for panels */

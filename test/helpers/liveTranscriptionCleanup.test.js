@@ -1,10 +1,16 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const {
-  splitSettledAndTail,
-  composeLivePreview,
-  planLivePreview,
-} = require("../../src/helpers/liveTranscriptionCleanup");
+
+// liveTranscriptionCleanup is an ES module (renderer-side seam), so load it via
+// dynamic import rather than require. See dictationRouting.test.js for the pattern.
+let splitSettledAndTail;
+let composeLivePreview;
+let planLivePreview;
+test.before(async () => {
+  ({ splitSettledAndTail, composeLivePreview, planLivePreview } = await import(
+    "../../src/helpers/liveTranscriptionCleanup.js"
+  ));
+});
 
 test("splitSettledAndTail: no sentence yet is all tail", () => {
   assert.deepEqual(splitSettledAndTail("hello there this is"), {

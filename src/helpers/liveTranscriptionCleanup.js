@@ -84,4 +84,4 @@ function planLivePreview(raw, cache, minSettledChars = 1) {
   };
 }
 
-module.exports = { splitSettledAndTail, composeLivePreview, planLivePreview };
+export { splitSettledAndTail, composeLivePreview, planLivePreview };

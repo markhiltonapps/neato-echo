@@ -38,7 +38,7 @@ const RESTING_WAVE_HEIGHTS = Array.from(
 const STATE_APPEARANCE: Record<VoicePillState, string> = {
   idle: "border-border-hover bg-surface-1 text-muted-foreground dark:border-border/50",
   hover: "border-border-hover bg-surface-3 text-foreground",
-  recording: "border-border-hover bg-surface-1 text-foreground",
+  recording: "border-brand-warm/40 bg-surface-1 text-brand-warm",
   processing: "border-border/60 bg-surface-1 text-foreground/70",
   thinking: "border-border/60 bg-surface-1 text-foreground",
   unavailable: "border-border/60 bg-surface-1 text-muted-foreground",
@@ -88,7 +88,7 @@ export const VoicePill = forwardRef<HTMLDivElement, VoicePillProps>(function Voi
     <div
       ref={ref}
       className={cn(
-        "voice-pill-control relative flex items-center justify-center overflow-hidden rounded-full border",
+        "voice-pill-control material-gloss relative flex items-center justify-center overflow-hidden rounded-full border",
         showCompactPill && "pr-1",
         "shadow-[var(--shadow-card)]",
         STATE_APPEARANCE[state],

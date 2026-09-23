@@ -2717,7 +2717,7 @@ export default function SettingsPage({
                           >
                             <Check
                               size={9}
-                              className="mt-[2px] text-purple-500 dark:text-purple-400 shrink-0"
+                              className="mt-[2px] text-primary shrink-0"
                             />
                             {feature}
                           </li>

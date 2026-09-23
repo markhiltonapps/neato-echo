@@ -16,15 +16,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary CTA — ultra-premium with subtle depth
+        // Primary CTA — Neddy finish: glossy teal with a wet-plastic top rim and a warm lift.
         default: [
           "relative text-primary-foreground font-semibold tracking-[0.005em]",
           "bg-primary",
-          "border border-primary/60",
-          "shadow-sm",
-          "hover:bg-primary/95 hover:shadow",
+          "border border-primary/50",
+          "shadow-[0_1.5px_3px_rgba(58,40,20,0.16),inset_0_1px_0_rgba(255,255,255,0.30)]",
+          "hover:bg-primary/95 hover:shadow-[0_3px_10px_-2px_rgba(58,40,20,0.26),inset_0_1px_0_rgba(255,255,255,0.34)]",
           "active:bg-primary/85 active:scale-[0.985]",
-          "transition-[background-color,border-color,color,transform] duration-200 ease-out",
+          "transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-out",
         ].join(" "),
 
         // Success — uses design tokens

@@ -210,7 +210,7 @@ export default function ControlPanelSidebar({
 
       {showUpgradeBanner && (
         <div className="px-2 pb-2">
-          <div className="relative rounded-xl border border-[#6c50e9]/25 dark:border-[#6c50e9]/40 bg-card bg-gradient-to-b from-[#6c50e9]/15 via-[#6c50e9]/5 to-transparent dark:from-[#6c50e9]/30 dark:via-[#6c50e9]/10 p-3">
+          <div className="relative rounded-xl border border-brand-teal/25 dark:border-brand-teal/35 bg-card bg-gradient-to-b from-brand-teal/12 via-brand-teal/4 to-transparent dark:from-brand-teal/20 dark:via-brand-teal/8 p-3">
             <button
               onClick={() => {
                 setUpgradeDismissed(true);
@@ -244,7 +244,7 @@ export default function ControlPanelSidebar({
             </div>
             <button
               onClick={onUpgrade}
-              className="w-full h-7 rounded-full bg-[#4079ed] text-white text-xs font-medium hover:bg-[#3568d9] active:bg-[#2f5dc4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4079ed]/40 transition-colors"
+              className="w-full h-7 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors"
             >
               {t("sidebar.learnMore")}
             </button>

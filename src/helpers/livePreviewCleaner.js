@@ -1,4 +1,4 @@
-const { planLivePreview } = require("./liveTranscriptionCleanup");
+import { planLivePreview } from "./liveTranscriptionCleanup.js";
 
 // Stateful controller for sentence-settled live-preview cleanup.
 //
@@ -88,4 +88,4 @@ function createLivePreviewCleaner({ clean, onDisplay, minSettledChars = 12 }) {
   };
 }
 
-module.exports = { createLivePreviewCleaner };
+export { createLivePreviewCleaner };
