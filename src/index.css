@@ -305,12 +305,12 @@
    tokens are shared — the canvas keeps its own painted background below. */
 .onboarding-canvas,
 body:has(.onboarding-canvas) {
-  /* Inter is prepended rather than replacing the stack: the woff2 files are
-     subset by unicode-range and carry no CJK, so zh-CN/zh-TW/ja glyphs must still
-     fall through to the original fonts. Overriding the variable as well covers
-     descendants that re-declare font-family from it. */
+  /* Neddy finish unifies onboarding on Outfit — the same body face as the rest
+     of the app (was Inter). Outfit is latin-only, so CJK still falls through to
+     Noto. Kept as an explicit override so Radix-portalled descendants that
+     re-declare font-family from the variable pick it up too. */
   --font-family-sans:
-    "Inter Variable", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Outfit", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   font-family: var(--font-family-sans);
   font-optical-sizing: auto;
