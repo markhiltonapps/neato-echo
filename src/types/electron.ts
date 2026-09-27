@@ -219,6 +219,9 @@ export interface NoteItem {
   cloud_id: string | null;
   is_shared: number;
   share_token: string | null;
+  // Device the note originated on ('mobile' | 'desktop'), from Neato Cloud sync. NULL for
+  // local-only notes (badged as desktop).
+  origin?: string | null;
   // The note's owner (CloudNote.user_id) — who created it, not who last
   // edited it. Only populated from the cloud; NULL on local-only rows and on
   // team notes mirrored before ownership shipped (the UI fails closed on
@@ -1186,6 +1189,31 @@ declare global {
       getAudioPath: (id: number) => Promise<string | null>;
       showAudioInFolder: (id: number) => Promise<{ success: boolean }>;
       getAudioBuffer: (id: number) => Promise<ArrayBuffer | null>;
+      getMeetingAudio: (
+        noteId: number | string
+      ) => Promise<{ data: ArrayBuffer; contentType: string; durationMs?: number | null } | null>;
+      neatoIdMapRead: () => Promise<Record<string, string>>;
+      neatoIdMapWrite: (map: Record<string, string>) => Promise<boolean>;
+      neatoPullMapRead: () => Promise<Record<string, number>>;
+      neatoPullMapWrite: (map: Record<string, number>) => Promise<boolean>;
+      neatoUpsertConversation: (payload: {
+        clientConversationId: string;
+        title: string;
+        messages: { role: string; content: string }[];
+        updatedAt: string | null;
+        deletedAt?: string | null;
+      }) => Promise<{ status: string; error?: string }>;
+      neatoGetConversationTombstones: () => Promise<
+        { id: number; client_conversation_id: string; updated_at: string }[]
+      >;
+      neatoMarkConversationSynced: (id: number) => Promise<boolean>;
+      neatoUpsertFolder: (payload: {
+        clientFolderId: string;
+        name: string;
+        sortOrder?: number;
+      }) => Promise<{ success: boolean; created?: boolean; folder?: any; error?: string }>;
+      neatoSetNoteOrigin: (id: number, origin: string) => Promise<boolean>;
+      onNeatoMeetingSaved: (cb: (data: { noteId: number | string }) => void) => () => void;
       deleteTranscriptionAudio: (id: number) => Promise<{ success: boolean }>;
       getAudioStorageUsage: () => Promise<{ fileCount: number; totalBytes: number }>;
       deleteAllAudio: () => Promise<{ deleted: number }>;

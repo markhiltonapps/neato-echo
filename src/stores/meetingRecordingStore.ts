@@ -1660,6 +1660,29 @@ if (typeof window !== "undefined") {
   // getNote await and overwrite each other's speaker labels — the later
   // result merges on top of the earlier one's persisted transcript.
   const enqueueDiarizationCompletion = createSerialQueue();
+
+  // Neato Cloud auto-push: when a meeting recording is saved, upload it (and any
+  // other pending notes) automatically so the user never has to press Push. Gated
+  // by a setting (default on) and silently skipped when not signed in / offline.
+  let neatoAutoPushInFlight = false;
+  window.electronAPI?.onNeatoMeetingSaved?.(() => {
+    try {
+      if (localStorage.getItem("neato.autoPush.v1") === "off") return;
+    } catch {
+      // default on
+    }
+    if (neatoAutoPushInFlight) return;
+    neatoAutoPushInFlight = true;
+    void import("../services/neatoCloud")
+      .then(({ pushNotesToCloud }) => pushNotesToCloud())
+      .catch(() => {
+        // not signed in / offline — manual Push still works
+      })
+      .finally(() => {
+        neatoAutoPushInFlight = false;
+      });
+  });
+
   window.electronAPI?.onMeetingDiarizationComplete?.((data) => {
     enqueueDiarizationCompletion(async () => {
       const {

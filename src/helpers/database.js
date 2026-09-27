@@ -1241,6 +1241,13 @@ class DatabaseManager {
       } catch (err) {
         if (!err.message.includes("duplicate column")) throw err;
       }
+      // Device a note originated on ('mobile' | 'desktop'), from the Neato Cloud sync, so
+      // the UI can badge phone-made recordings. NULL for local-only notes (shown as desktop).
+      try {
+        this.db.exec("ALTER TABLE notes ADD COLUMN origin TEXT");
+      } catch (err) {
+        if (!err.message.includes("duplicate column")) throw err;
+      }
 
       // Space vector purges owed to Qdrant while the sidecar was down/booting;
       // drained once the vector index is ready.
@@ -2857,6 +2864,24 @@ class DatabaseManager {
     }
   }
 
+  // Set a note's origin device ('mobile' | 'desktop') for the UI badge, WITHOUT touching
+  // sync_status or updated_at — this is sync metadata from the cloud pull, not a user edit,
+  // so it must not re-queue the note for cloud backup or bump its edit time.
+  setNoteOrigin(id, origin) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!origin) return false;
+      const accountScope = this._accountScopeCondition("notes");
+      const result = this.db
+        .prepare(`UPDATE notes SET origin = ? WHERE id = ? AND ${accountScope.sql}`)
+        .run(origin, id, ...accountScope.params);
+      return result.changes > 0;
+    } catch (error) {
+      debugLogger.error("Error setting note origin", { error: error.message }, "notes");
+      return false;
+    }
+  }
+
   getFolders(spaceId = null) {
     try {
       if (!this.db) throw new Error("Database not initialized");
@@ -2916,6 +2941,47 @@ class DatabaseManager {
     } catch (error) {
       debugLogger.error("Error creating folder", { error: error.message }, "notes");
       throw error;
+    }
+  }
+
+  // Create (or revive) a local folder that originated on another device, keyed by the
+  // SHARED client_folder_id so recordings pointing at that folder map correctly. Idempotent:
+  // if the folder already exists (by client_folder_id) it's returned/undeleted unchanged —
+  // a desktop rename is never clobbered. Used by the cloud pull so mobile-made folders appear.
+  createFolderFromCloud(clientFolderId, name, sortOrder = 0) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!clientFolderId) return { success: false, error: "client_folder_id required" };
+      const trimmed = (name || "Folder").trim() || "Folder";
+      const spaceId = this.getPrivateSpaceId();
+      const existing = this.db
+        .prepare("SELECT * FROM folders WHERE client_folder_id = ?")
+        .get(clientFolderId);
+      if (existing) {
+        if (existing.deleted_at) {
+          this.db
+            .prepare("UPDATE folders SET deleted_at = NULL WHERE id = ?")
+            .run(existing.id);
+        }
+        return {
+          success: true,
+          created: false,
+          folder: this.db.prepare("SELECT * FROM folders WHERE id = ?").get(existing.id),
+        };
+      }
+      const accountId = this._accountIdForSpace(spaceId);
+      const result = this.db
+        .prepare(
+          "INSERT INTO folders (name, sort_order, space_id, client_folder_id, account_id) VALUES (?, ?, ?, ?, ?)"
+        )
+        .run(trimmed, sortOrder || 0, spaceId, clientFolderId, accountId);
+      const folder = this.db
+        .prepare("SELECT * FROM folders WHERE id = ?")
+        .get(result.lastInsertRowid);
+      return { success: true, created: true, folder };
+    } catch (error) {
+      debugLogger.error("Error creating folder from cloud", { error: error.message }, "notes");
+      return { success: false, error: error.message };
     }
   }
 
@@ -3895,12 +3961,48 @@ class DatabaseManager {
       if (!this.db) throw new Error("Database not initialized");
       return this.db
         .prepare(
-          "SELECT * FROM agent_conversations WHERE deleted_at IS NULL AND space_id IS NULL AND folder_id IS NULL ORDER BY updated_at DESC LIMIT ?"
+          "SELECT * FROM agent_conversations WHERE deleted_at IS NULL AND note_id IS NULL AND space_id IS NULL AND folder_id IS NULL ORDER BY updated_at DESC LIMIT ?"
         )
         .all(limit);
     } catch (error) {
       debugLogger.error("Error getting agent conversations", { error: error.message }, "database");
       throw error;
+    }
+  }
+
+  // Standalone (non-scoped) chats deleted locally but not yet pushed to the cloud, so the
+  // cloud sync can propagate the tombstone to other devices. Scoped chats never sync.
+  getStandaloneConversationTombstones() {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      return this.db
+        .prepare(
+          `SELECT id, client_conversation_id, updated_at FROM agent_conversations
+           WHERE deleted_at IS NOT NULL AND client_conversation_id IS NOT NULL
+             AND note_id IS NULL AND space_id IS NULL AND folder_id IS NULL
+             AND (sync_status IS NULL OR sync_status != 'synced')`
+        )
+        .all();
+    } catch (error) {
+      debugLogger.error(
+        "Error getting conversation tombstones",
+        { error: error.message },
+        "database"
+      );
+      throw error;
+    }
+  }
+
+  markConversationSynced(id) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      this.db
+        .prepare("UPDATE agent_conversations SET sync_status = 'synced' WHERE id = ?")
+        .run(id);
+      return true;
+    } catch (error) {
+      debugLogger.error("Error marking conversation synced", { error: error.message }, "database");
+      return false;
     }
   }
 
@@ -4031,6 +4133,100 @@ class DatabaseManager {
       })();
     } catch (error) {
       debugLogger.error("Error adding agent message", { error: error.message }, "database");
+      throw error;
+    }
+  }
+
+  // Merge a conversation pulled from Neato Cloud (echo_conversations) into the local
+  // agent_conversations, keyed by the shared client_conversation_id. Last-write-wins by
+  // updated_at: a newer cloud copy replaces title + messages, an older/equal one is left
+  // alone, and a conversation the user deleted locally is never resurrected. Messages
+  // arrive as [{ role, content }] (no per-message ids), so the whole message set is
+  // replaced when the cloud copy wins. Returns { status } for pull accounting.
+  upsertConversationFromCloud(clientConversationId, title, messages, updatedAtIso, deletedAtIso) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!clientConversationId) return { status: "skipped-no-id" };
+      const msgs = Array.isArray(messages) ? messages : [];
+      const validRoles = new Set(["user", "assistant", "system"]);
+      // Cloud updated_at (ISO) -> the 'YYYY-MM-DD HH:MM:SS' UTC form the table uses, so
+      // ordering by updated_at keeps working after a merge.
+      const cloudMs = updatedAtIso ? Date.parse(updatedAtIso) : Date.now();
+      const sqlTime = new Date(Number.isNaN(cloudMs) ? Date.now() : cloudMs)
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+      const safeTitle = (title || "Chat").toString().slice(0, 500);
+
+      return this.db.transaction(() => {
+        const existing = this.db
+          .prepare("SELECT * FROM agent_conversations WHERE client_conversation_id = ?")
+          .get(clientConversationId);
+
+        // Sync only ever manages STANDALONE Ask-Neddy chats. Note/space/folder-scoped
+        // conversations live with their container and must never be created, updated, or
+        // deleted by the cloud merge — so a matching local row that is scoped is left alone.
+        const isScoped = (row) =>
+          row && (row.note_id != null || row.space_id != null || row.folder_id != null);
+
+        // Cloud tombstone: the chat was deleted on another device. Soft-delete the local
+        // standalone copy so it disappears here too; never resurrect and never create.
+        if (deletedAtIso) {
+          if (existing && !isScoped(existing) && !existing.deleted_at) {
+            this.db
+              .prepare(
+                "UPDATE agent_conversations SET deleted_at = ?, sync_status = 'synced', updated_at = ? WHERE id = ?"
+              )
+              .run(sqlTime, sqlTime, existing.id);
+            return { status: "deleted" };
+          }
+          return { status: "skipped-deleted" };
+        }
+
+        const insMsg = this.db.prepare(
+          "INSERT INTO agent_messages (conversation_id, role, content) VALUES (?, ?, ?)"
+        );
+        const writeMessages = (conversationId) => {
+          for (const m of msgs) {
+            const role = m && validRoles.has(m.role) ? m.role : null;
+            if (!role) continue;
+            insMsg.run(conversationId, role, String(m.content ?? ""));
+          }
+        };
+
+        if (existing) {
+          if (isScoped(existing)) return { status: "skipped-scoped" };
+          if (existing.deleted_at) return { status: "skipped-deleted" };
+          const localMs = existing.updated_at
+            ? Date.parse(existing.updated_at.replace(" ", "T") + "Z")
+            : 0;
+          if (localMs >= cloudMs) return { status: "up-to-date" };
+          this.db
+            .prepare("DELETE FROM agent_messages WHERE conversation_id = ?")
+            .run(existing.id);
+          writeMessages(existing.id);
+          this.db
+            .prepare(
+              "UPDATE agent_conversations SET title = ?, updated_at = ?, cloud_id = COALESCE(cloud_id, ?), sync_status = 'synced' WHERE id = ?"
+            )
+            .run(safeTitle, sqlTime, clientConversationId, existing.id);
+          return { status: "updated" };
+        }
+
+        const res = this.db
+          .prepare(
+            "INSERT INTO agent_conversations (title, client_conversation_id, cloud_id, sync_status, updated_at) VALUES (?, ?, ?, 'synced', ?)"
+          )
+          .run(safeTitle, clientConversationId, clientConversationId, sqlTime);
+        writeMessages(res.lastInsertRowid);
+        return { status: "created" };
+      })();
+    } catch (error) {
+      debugLogger.error(
+        "Error upserting conversation from cloud",
+        { error: error.message },
+        "database"
+      );
       throw error;
     }
   }
@@ -4888,8 +5084,8 @@ class DatabaseManager {
     try {
       if (!this.db) throw new Error("Database not initialized");
       const archiveFilter = includeArchived
-        ? "WHERE c.archived_at IS NOT NULL AND c.deleted_at IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL"
-        : "WHERE c.archived_at IS NULL AND c.deleted_at IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL";
+        ? "WHERE c.archived_at IS NOT NULL AND c.deleted_at IS NULL AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL"
+        : "WHERE c.archived_at IS NULL AND c.deleted_at IS NULL AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL";
       return this.db
         .prepare(
           `SELECT c.id, c.title, c.created_at, c.updated_at, c.archived_at, c.cloud_id,
@@ -4928,7 +5124,7 @@ class DatabaseManager {
           LEFT JOIN agent_messages m ON m.conversation_id = c.id
           LEFT JOIN agent_messages ms ON ms.conversation_id = c.id
           WHERE c.archived_at IS NULL AND c.deleted_at IS NULL
-            AND c.space_id IS NULL AND c.folder_id IS NULL
+            AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL
             AND (c.title LIKE ? OR ms.content LIKE ?)
           GROUP BY c.id
           ORDER BY c.updated_at DESC

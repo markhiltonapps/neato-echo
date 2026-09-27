@@ -91,6 +91,12 @@ const {
   MEETING_MIC_SILENCE_PEAK,
 } = require("./meetingMicGate");
 const { resolveDiarizationInput } = require("./meetingDiarizationInput");
+const {
+  meetingAudioRecorder,
+  getMeetingAudioPath,
+  meetingAudioExists,
+  getMeetingAudioDurationMs,
+} = require("./meetingAudioRecorder");
 const { applySmartSpacing } = require("./smartSpacing");
 const { applyAutoLearnSetting } = require("./autoLearnSetting");
 const {
@@ -1535,6 +1541,132 @@ class IPCHandlers {
     ipcMain.handle("get-audio-buffer", async (event, id) => {
       const buffer = this.audioStorageManager.getAudioBuffer(id);
       return buffer ? buffer.buffer : null;
+    });
+
+    // Durable note→Neato-Cloud id map. Kept in userData (survives app reinstalls) so
+    // desktop pushes stay idempotent and never create duplicate cloud rows.
+    const neatoIdMapFile = () => path.join(app.getPath("userData"), "neato-echo-idmap.json");
+    ipcMain.handle("neato-idmap-read", async () => {
+      try {
+        return JSON.parse(fs.readFileSync(neatoIdMapFile(), "utf8"));
+      } catch {
+        return {};
+      }
+    });
+    ipcMain.handle("neato-idmap-write", async (event, map) => {
+      try {
+        fs.writeFileSync(neatoIdMapFile(), JSON.stringify(map || {}));
+        return true;
+      } catch (error) {
+        debugLogger.debug("neato-idmap-write failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Pull dedup map (cloud recording id -> local note id) so re-pulling never
+    // creates duplicate desktop notes. Also in userData, survives reinstalls.
+    const neatoPullMapFile = () => path.join(app.getPath("userData"), "neato-echo-pullmap.json");
+    ipcMain.handle("neato-pullmap-read", async () => {
+      try {
+        return JSON.parse(fs.readFileSync(neatoPullMapFile(), "utf8"));
+      } catch {
+        return {};
+      }
+    });
+    ipcMain.handle("neato-pullmap-write", async (event, map) => {
+      try {
+        fs.writeFileSync(neatoPullMapFile(), JSON.stringify(map || {}));
+        return true;
+      } catch (error) {
+        debugLogger.debug("neato-pullmap-write failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Merge one Neato Cloud conversation into local agent_conversations (last-write-wins
+    // by updated_at). Used by the desktop's chat pull so mobile-authored chats land here.
+    ipcMain.handle("neato-upsert-conversation", async (event, payload) => {
+      try {
+        const { clientConversationId, title, messages, updatedAt, deletedAt } = payload || {};
+        return this.databaseManager.upsertConversationFromCloud(
+          clientConversationId,
+          title,
+          messages,
+          updatedAt,
+          deletedAt || null
+        );
+      } catch (error) {
+        debugLogger.debug("neato-upsert-conversation failed", { error: error.message });
+        return { status: "error", error: error.message };
+      }
+    });
+
+    // Standalone chats deleted locally that still need their tombstone pushed to the cloud.
+    ipcMain.handle("neato-get-conversation-tombstones", async () => {
+      try {
+        return this.databaseManager.getStandaloneConversationTombstones();
+      } catch (error) {
+        debugLogger.debug("neato-get-conversation-tombstones failed", { error: error.message });
+        return [];
+      }
+    });
+
+    ipcMain.handle("neato-mark-conversation-synced", async (event, id) => {
+      try {
+        return this.databaseManager.markConversationSynced(id);
+      } catch (error) {
+        debugLogger.debug("neato-mark-conversation-synced failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Set a note's origin device for the badge (from the cloud pull; no sync side effects).
+    ipcMain.handle("neato-set-note-origin", async (event, id, origin) => {
+      try {
+        return this.databaseManager.setNoteOrigin(id, origin);
+      } catch (error) {
+        debugLogger.debug("neato-set-note-origin failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Create a local folder from a cloud folder (mobile-made folders appear on the desktop).
+    ipcMain.handle("neato-upsert-folder", async (event, payload) => {
+      try {
+        const { clientFolderId, name, sortOrder } = payload || {};
+        return this.databaseManager.createFolderFromCloud(clientFolderId, name, sortOrder);
+      } catch (error) {
+        debugLogger.debug("neato-upsert-folder failed", { error: error.message });
+        return { success: false, error: error.message };
+      }
+    });
+
+    // Tell the renderer a meeting recording was just saved, so Neato Cloud auto-push
+    // (when enabled + signed in) can upload it without the user pressing Push.
+    const notifyNeatoMeetingSaved = (noteId) => {
+      try {
+        BrowserWindow.getAllWindows().forEach((w) => {
+          if (!w.isDestroyed()) w.webContents.send("neato-meeting-saved", { noteId });
+        });
+      } catch (error) {
+        debugLogger.debug("notifyNeatoMeetingSaved failed", { error: error.message });
+      }
+    };
+
+    // Saved meeting recording (mixed mic + system .m4a) for a note, for cloud sync.
+    // Returns the raw bytes + content type, or null when the note has no saved audio.
+    ipcMain.handle("get-meeting-audio", async (event, noteId) => {
+      try {
+        if (!noteId || !meetingAudioExists(noteId)) return null;
+        const filePath = getMeetingAudioPath(noteId);
+        const buf = fs.readFileSync(filePath);
+        // Return a tightly-sliced ArrayBuffer so the renderer gets exactly the bytes.
+        const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+        return { data: arrayBuffer, contentType: "audio/mp4", durationMs: getMeetingAudioDurationMs(noteId) };
+      } catch (error) {
+        debugLogger.debug("get-meeting-audio failed", { error: error.message });
+        return null;
+      }
     });
 
     ipcMain.handle("delete-transcription-audio", async (event, id) => {
@@ -7112,6 +7244,11 @@ class IPCHandlers {
     };
 
     const dispatchMeetingAudioBuffer = (buffer, source) => {
+      // Persist the full meeting audio (both streams) for mobile sync/playback.
+      // Best-effort and off to the side of transcription; a no-op unless a note-
+      // linked meeting is being captured.
+      meetingAudioRecorder.append(source, buffer);
+
       if (meetingLocalMode) {
         if (meetingLocalLive && meetingLocalStreams[source]) {
           sendLiveMeetingChunk(buffer, source);
@@ -8196,6 +8333,8 @@ class IPCHandlers {
         meetingOneOnOneProfileBound = false;
         meetingNoteId = options.noteId ?? null;
         this._activeMeetingNoteId = meetingNoteId;
+        // Start persisting this meeting's audio (mic + system) for mobile playback.
+        meetingAudioRecorder.start(meetingNoteId);
 
         // Seed the speaker cap from the note/calendar participants up front so live
         // identification isn't stuck at the default if the renderer never pushes a config.
@@ -8608,6 +8747,14 @@ class IPCHandlers {
             diarizedSource
           );
 
+          // Save the captured meeting audio (mic + system) for mobile playback.
+          void meetingAudioRecorder.finish().then((audioPath) => {
+            if (audioPath) {
+              debugLogger.debug("Meeting audio saved", { noteId: noteIdSnapshot });
+              notifyNeatoMeetingSaved(noteIdSnapshot);
+            }
+          });
+
           return { success: true, transcript, diarizationSessionId };
         }
 
@@ -8635,9 +8782,18 @@ class IPCHandlers {
           diarizedSource
         );
 
+        // Save the captured meeting audio (mic + system) for mobile playback.
+        void meetingAudioRecorder.finish().then((audioPath) => {
+          if (audioPath) {
+            debugLogger.debug("Meeting audio saved", { noteId: noteIdSnapshot });
+            notifyNeatoMeetingSaved(noteIdSnapshot);
+          }
+        });
+
         return { success: true, transcript, diarizationSessionId };
       } catch (error) {
         debugLogger.error("Meeting transcription stop error", { error: error.message });
+        meetingAudioRecorder.abort();
         return { success: false, error: error.message };
       }
     };

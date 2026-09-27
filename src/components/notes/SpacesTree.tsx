@@ -1012,6 +1012,21 @@ function NoteLeaf({
       >
         {title}
       </span>
+      {(note.origin === "mobile" || note.origin === "desktop") && (
+        <span
+          className={cn(
+            "text-[9px] font-medium uppercase tracking-wide shrink-0 rounded px-1 py-px transition-opacity group-hover:opacity-0",
+            note.origin === "mobile"
+              ? "bg-primary/10 text-primary/70"
+              : "bg-foreground/8 text-foreground/45 dark:bg-white/8"
+          )}
+          title={
+            note.origin === "mobile" ? t("notes.origin.mobile") : t("notes.origin.desktop")
+          }
+        >
+          {note.origin === "mobile" ? t("notes.origin.mobile") : t("notes.origin.desktop")}
+        </span>
+      )}
       {durationSec != null && durationSec > 0 && (
         <span
           role={short ? "img" : undefined}
