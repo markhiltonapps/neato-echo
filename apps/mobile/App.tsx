@@ -368,6 +368,52 @@ type Rec = {
   origin?: string; // where it was created: "mobile" | "desktop" | "youtube"
 };
 
+// Recover recordings orphaned by a crash/kill mid-capture. PCM is streamed to disk as it's
+// captured, but the WAV header (and the list entry) are only written at stop — so a file
+// interrupted by a crash, OOM, force-close, or reboot is left with a zero-length header and
+// no list entry, invisible even though the audio is on disk. On launch, rewrite each such
+// file's header from its real size and hand it back so it shows up and plays. Best-effort.
+async function recoverOrphanRecordings(existing: Rec[]): Promise<Rec[]> {
+  try {
+    const dir = FS.documentDirectory;
+    if (!dir) return [];
+    const names = await FS.readDirectoryAsync(dir);
+    const known = new Set(existing.map((r) => r.uri));
+    const HEADER = 44;
+    const SR = 16000; // the app always records 16 kHz mono 16-bit
+    const MIN_BYTES = HEADER + SR * 2; // require ~1s of audio, else skip empties/noise
+    const out: Rec[] = [];
+    for (const name of names) {
+      const m = name.match(/^rec-(\d+)\.wav$/);
+      if (!m) continue;
+      const uri = dir + name;
+      if (known.has(uri)) continue; // already filed
+      let info: { exists?: boolean; size?: number } | null = null;
+      try {
+        info = await FS.getInfoAsync(uri);
+      } catch {
+        continue;
+      }
+      if (!info?.exists || !info.size || info.size < MIN_BYTES) continue;
+      const dataSize = info.size - HEADER;
+      try {
+        const f = new FsFile(uri);
+        const h = f.open(FileMode.ReadWrite);
+        h.offset = 0; // stamp the real dataSize over the zero placeholder
+        h.writeBytes(wavHeader(dataSize, SR, 1));
+        h.close();
+      } catch {
+        continue; // couldn't repair — leave it untouched
+      }
+      const durationMillis = Math.round((dataSize / 2 / SR) * 1000);
+      out.push({ uri, durationMillis, date: new Date(Number(m[1]) || Date.now()), origin: "mobile" });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 type Folder = { id: string; name: string; sortOrder: number };
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
@@ -386,6 +432,16 @@ const CHATS_STORE = "neato.chats.v1";
 const FOLDERS_STORE = "neato.folders.v1";
 const STYLES_STORE = "neato.summaryStyles.v1";
 const DBX_REFRESH_STORE = "dropboxRefresh"; // long-lived OAuth refresh token (SecureStore)
+
+// In-app update check. Bump APP_VERSION every mobile build and name the mobile-latest
+// GitHub release the same version; the app compares and shows a banner when a newer build
+// is out (sideloaded APKs have no auto-update, so testers would otherwise run stale builds).
+const APP_VERSION = "1.1.55";
+const MOBILE_RELEASE_API =
+  "https://api.github.com/repos/markhiltonapps/neato-echo/releases/tags/mobile-latest";
+const APK_DOWNLOAD_URL =
+  "https://github.com/markhiltonapps/neato-echo/releases/download/mobile-latest/Neato-Echo.apk";
+const UPDATE_DISMISS_STORE = "neato.updateDismissed.v1";
 const DBX_APP_KEY = "ms570m1vr5wecz7"; // public PKCE client id for the Neato Echo Dropbox app
 const DBX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token";
 const DBX_FOLDER = "/Neato Echo";
@@ -553,6 +609,11 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [cloudBusy, setCloudBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // In-app update banner + Neato Cloud sync status (last success / last error).
+  const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null);
+  const [updateDismissed, setUpdateDismissed] = useState<string | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [autoCloud, setAutoCloud] = useState(false);
   const cloudInFlight = useRef<Set<string>>(new Set());
 
@@ -599,6 +660,7 @@ export default function App() {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        let stored: Rec[] = [];
         if (raw) {
           const parsed = JSON.parse(raw) as {
             uri: string;
@@ -615,8 +677,11 @@ export default function App() {
             cloudId?: string;
             cloudSynced?: number;
           }[];
-          setRecs(parsed.map((p) => ({ ...p, date: new Date(p.date) })));
+          stored = parsed.map((p) => ({ ...p, date: new Date(p.date) }));
         }
+        // Fold in any recordings orphaned by a crash mid-capture (see recoverOrphanRecordings).
+        const recovered = await recoverOrphanRecordings(stored);
+        setRecs(recovered.length ? [...recovered, ...stored] : stored);
       } catch {}
       try {
         setApiKey(await SecureStore.getItemAsync(KEY_STORE));
@@ -640,6 +705,7 @@ export default function App() {
         if (rawFolders) setFolders(JSON.parse(rawFolders) as Folder[]);
         const rawStyles = await AsyncStorage.getItem(STYLES_STORE);
         if (rawStyles) setCustomStyles(JSON.parse(rawStyles) as SummaryStyle[]);
+        setUpdateDismissed(await AsyncStorage.getItem(UPDATE_DISMISS_STORE));
       } catch {}
       setLoaded(true);
     })();
@@ -1672,15 +1738,22 @@ export default function App() {
     setRefreshing(true);
     // Push and pull independently — a push failure must not skip the pull, so a
     // swipe always brings cloud changes down even if the upload half hiccups.
+    let ok = true;
     try {
       await pushToCloud({ silent: true });
     } catch {
-      // ignore; still pull below
+      ok = false; // still pull below
     }
     try {
       await pullFromCloud({ silent: true });
     } catch {
-      // ignore; list stays as-is
+      ok = false; // list stays as-is
+    }
+    if (ok) {
+      setLastSyncAt(Date.now());
+      setSyncError(null);
+    } else {
+      setSyncError("Sync failed — tap to retry");
     }
     setRefreshing(false);
   }
@@ -1874,12 +1947,23 @@ export default function App() {
       if (cloudSyncRunning.current) return;
       cloudSyncRunning.current = true;
       try {
+        let ok = true;
         try {
           await pushToCloud({ silent: true });
-        } catch {}
+        } catch {
+          ok = false;
+        }
         try {
           await pullFromCloud({ silent: true });
-        } catch {}
+        } catch {
+          ok = false;
+        }
+        if (ok) {
+          setLastSyncAt(Date.now());
+          setSyncError(null);
+        } else {
+          setSyncError("Sync failed — tap to retry");
+        }
       } finally {
         cloudSyncRunning.current = false;
       }
@@ -1890,7 +1974,61 @@ export default function App() {
     });
     return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [loaded, session, autoCloud]);
+
+  // In-app update check: compare APP_VERSION to the version named on the mobile-latest
+  // release; a newer one raises the update banner. Runs on launch and on foreground.
+  useEffect(() => {
+    if (!loaded) return;
+    const parseVer = (s: string): number[] | null => {
+      const m = String(s || "").match(/(\d+)\.(\d+)\.(\d+)/);
+      return m ? [+m[1], +m[2], +m[3]] : null;
+    };
+    const isNewer = (remote: string, local: string): boolean => {
+      const a = parseVer(remote);
+      const b = parseVer(local);
+      if (!a || !b) return false;
+      for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
+      return false;
+    };
+    const checkForUpdate = async () => {
+      try {
+        const res = await fetch(MOBILE_RELEASE_API, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const remote = data?.name || data?.tag_name || "";
+        if (isNewer(remote, APP_VERSION)) {
+          setUpdateInfo({ version: (parseVer(remote) || []).join(".") });
+        }
+      } catch {
+        // offline or rate-limited — try again next launch/foreground
+      }
+    };
+    void checkForUpdate();
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") void checkForUpdate();
+    });
+    return () => sub.remove();
+  }, [loaded]);
+
+  function dismissUpdate() {
+    if (!updateInfo) return;
+    setUpdateDismissed(updateInfo.version);
+    AsyncStorage.setItem(UPDATE_DISMISS_STORE, updateInfo.version).catch(() => {});
+  }
+
+  function relSyncTime(ts: number): string {
+    const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (s < 60) return "just now";
+    const m = Math.round(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.round(h / 24)}d ago`;
+  }
 
   // Map local recordings to the shared RecordingMeta shape and build the LLM context
   // via @neato/core (same logic the desktop + cloud use).
@@ -2304,6 +2442,44 @@ export default function App() {
           <View style={[styles.cloudDot, { backgroundColor: dbxRefresh ? C.tealBright : "#c9bfa8" }]} />
         </Pressable>
       </View>
+
+      {updateInfo && updateDismissed !== updateInfo.version ? (
+        <View style={styles.updateBanner}>
+          <Text style={styles.updateText} numberOfLines={1}>
+            Update available · v{updateInfo.version}
+          </Text>
+          <View style={styles.updateActions}>
+            <Pressable
+              onPress={() => Linking.openURL(APK_DOWNLOAD_URL)}
+              style={({ pressed }) => [styles.updateBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.updateBtnText}>Download</Text>
+            </Pressable>
+            <Pressable onPress={dismissUpdate} hitSlop={10}>
+              <Text style={styles.updateDismiss}>✕</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {session && (syncError || lastSyncAt) ? (
+        <Pressable
+          onPress={() => {
+            setSyncError(null);
+            void swipeSync();
+          }}
+          style={styles.syncStatus}
+        >
+          <View
+            style={[styles.syncDot, { backgroundColor: syncError ? C.destructive : C.tealBright }]}
+          />
+          <Text style={[styles.syncText, syncError && { color: C.destructive }]} numberOfLines={1}>
+            {syncError
+              ? syncError
+              : `Synced ${relSyncTime(lastSyncAt as number)}${session.user?.email ? " · " + session.user.email : ""}`}
+          </Text>
+        </Pressable>
+      ) : null}
 
       <ScrollView
         style={{ flex: 1 }}
@@ -3926,6 +4102,42 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: F.bold, fontSize: 18, color: C.text },
   emptyBody: { fontFamily: F.reg, fontSize: 14, color: C.sub, textAlign: "center", marginTop: 6, lineHeight: 20 },
 
+  updateBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "rgba(45,122,110,0.12)",
+    borderWidth: 1,
+    borderColor: C.teal,
+  },
+  updateText: { flex: 1, fontFamily: F.semi, fontSize: 13.5, color: C.text },
+  updateActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  updateBtn: {
+    paddingHorizontal: 12,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.teal,
+  },
+  updateBtnText: { fontFamily: F.bold, fontSize: 12.5, color: "#fdfbf3" },
+  updateDismiss: { fontFamily: F.med, fontSize: 15, color: C.sub },
+  syncStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  syncDot: { width: 7, height: 7, borderRadius: 4 },
+  syncText: { flex: 1, fontFamily: F.med, fontSize: 12, color: C.sub },
   filterRow: { flexDirection: "row", gap: 8, marginTop: 4, marginBottom: 4, flexWrap: "wrap" },
   folderFilterRow: { marginTop: 2, marginBottom: 6, marginHorizontal: -2 },
   folderFilterContent: { gap: 8, paddingHorizontal: 2, paddingRight: 8 },

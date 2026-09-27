@@ -2,7 +2,7 @@
   "expo": {
     "name": "Neato Echo",
     "slug": "neato-echo",
-    "version": "1.0.0",
+    "version": "1.1.55",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,7 +23,8 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "package": "com.anonymous.neatomobile"
+      "package": "com.anonymous.neatomobile",
+      "versionCode": 10155
     },
     "web": {
       "favicon": "./assets/favicon.png"
