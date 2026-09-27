@@ -1632,6 +1632,10 @@
       "system": {
         "description": "Updates, storage & developer tools",
         "label": "System"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "Sync notes to the mobile app"
       }
     },
     "title": "Settings"
@@ -2818,7 +2822,8 @@
     "notSignedIn": "Not signed in",
     "chat": "Chat",
     "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar"
+    "expand": "Expand sidebar",
+    "resize": "Resize sidebar"
   },
   "insights": {
     "title": "Insights",
@@ -3537,6 +3542,10 @@
       "author": {
         "you": "You"
       }
+    },
+    "origin": {
+      "mobile": "Mobile",
+      "desktop": "Desktop"
     }
   },
   "dictionary": {

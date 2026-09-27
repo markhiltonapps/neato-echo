@@ -1542,6 +1542,10 @@
       "workspace": {
         "description": "成員、團隊空間與 API 金鑰",
         "label": "工作區"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "將筆記同步到行動應用程式"
       }
     },
     "title": "設定"
@@ -3275,6 +3279,10 @@
       "author": {
         "you": "你"
       }
+    },
+    "origin": {
+      "mobile": "手機",
+      "desktop": "桌面"
     }
   },
   "dictionary": {
@@ -3394,7 +3402,8 @@
     "notSignedIn": "尚未登入",
     "chat": "聊天",
     "collapse": "收合側邊欄",
-    "expand": "展開側邊欄"
+    "expand": "展開側邊欄",
+    "resize": "調整側邊欄大小"
   },
   "chat": {
     "newChat": "新對話",

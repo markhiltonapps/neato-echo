@@ -1542,6 +1542,10 @@
       "workspace": {
         "description": "成员、团队空间和 API 密钥",
         "label": "工作区"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "将笔记同步到移动应用"
       }
     },
     "title": "设置"
@@ -3275,6 +3279,10 @@
       "author": {
         "you": "你"
       }
+    },
+    "origin": {
+      "mobile": "手机",
+      "desktop": "桌面"
     }
   },
   "dictionary": {
@@ -3394,7 +3402,8 @@
     "notSignedIn": "未登录",
     "chat": "聊天",
     "collapse": "折叠侧边栏",
-    "expand": "展开侧边栏"
+    "expand": "展开侧边栏",
+    "resize": "调整侧边栏大小"
   },
   "chat": {
     "newChat": "新对话",

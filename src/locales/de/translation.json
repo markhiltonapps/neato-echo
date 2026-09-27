@@ -1632,6 +1632,10 @@
       "system": {
         "description": "Updates, Speicher & Entwicklertools",
         "label": "System"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "Notizen mit der mobilen App synchronisieren"
       }
     },
     "title": "Einstellungen"
@@ -2857,7 +2861,8 @@
     "notSignedIn": "Nicht angemeldet",
     "chat": "Chat",
     "collapse": "Seitenleiste einklappen",
-    "expand": "Seitenleiste ausklappen"
+    "expand": "Seitenleiste ausklappen",
+    "resize": "Seitenleiste anpassen"
   },
   "workspaces": {
     "switcher": {
@@ -3537,6 +3542,10 @@
       "author": {
         "you": "Du"
       }
+    },
+    "origin": {
+      "mobile": "Mobil",
+      "desktop": "Desktop"
     }
   },
   "dictionary": {

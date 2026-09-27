@@ -1632,6 +1632,10 @@
       "system": {
         "description": "Mises à jour, stockage & outils de développement",
         "label": "Système"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "Synchronisez les notes avec l’application mobile"
       }
     },
     "title": "Paramètres"
@@ -2857,7 +2861,8 @@
     "notSignedIn": "Non connecté",
     "chat": "Chat",
     "collapse": "Réduire la barre latérale",
-    "expand": "Développer la barre latérale"
+    "expand": "Développer la barre latérale",
+    "resize": "Redimensionner la barre latérale"
   },
   "workspaces": {
     "switcher": {
@@ -3537,6 +3542,10 @@
       "author": {
         "you": "Vous"
       }
+    },
+    "origin": {
+      "mobile": "Mobile",
+      "desktop": "Bureau"
     }
   },
   "dictionary": {

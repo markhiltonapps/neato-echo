@@ -1542,6 +1542,10 @@
       "workspace": {
         "description": "メンバー、チームスペース、API キー",
         "label": "ワークスペース"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "モバイルアプリにノートを同期"
       }
     },
     "title": "設定"
@@ -3203,6 +3207,10 @@
       "author": {
         "you": "自分"
       }
+    },
+    "origin": {
+      "mobile": "モバイル",
+      "desktop": "デスクトップ"
     }
   },
   "dictionary": {
@@ -3394,7 +3402,8 @@
     "notSignedIn": "未サインイン",
     "chat": "チャット",
     "collapse": "サイドバーを折りたたむ",
-    "expand": "サイドバーを展開"
+    "expand": "サイドバーを展開",
+    "resize": "サイドバーのサイズ変更"
   },
   "chat": {
     "newChat": "新しいチャット",

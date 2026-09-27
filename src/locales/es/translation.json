@@ -1591,6 +1591,10 @@
       "workspace": {
         "label": "Espacio de trabajo",
         "description": "Miembros, espacios de equipo y claves API"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "Sincroniza notas con la app móvil"
       }
     },
     "title": "Ajustes"
@@ -3328,6 +3332,10 @@
       "author": {
         "you": "Tú"
       }
+    },
+    "origin": {
+      "mobile": "Móvil",
+      "desktop": "Escritorio"
     }
   },
   "dictionary": {
@@ -3447,7 +3455,8 @@
     "notSignedIn": "Sin sesión iniciada",
     "chat": "Chat",
     "collapse": "Contraer barra lateral",
-    "expand": "Expandir barra lateral"
+    "expand": "Expandir barra lateral",
+    "resize": "Redimensionar barra lateral"
   },
   "chat": {
     "newChat": "Nuevo chat",
