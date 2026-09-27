@@ -4,6 +4,7 @@ import { listMeetingsTool } from "./listMeetingsTool";
 import { getNoteTool } from "./getNoteTool";
 import { createNoteTool } from "./createNoteTool";
 import { updateNoteTool } from "./updateNoteTool";
+import { moveNoteTool } from "./moveNoteTool";
 import { listFoldersTool } from "./listFoldersTool";
 import { clipboardTool } from "./clipboardTool";
 import { webSearchTool } from "./webSearchTool";
@@ -32,6 +33,7 @@ export function createToolRegistry(settings: ToolRegistrySettings): ToolRegistry
   registry.register(getNoteTool);
   registry.register(createNoteTool);
   registry.register(updateNoteTool);
+  registry.register(moveNoteTool);
   registry.register(listFoldersTool);
   registry.register(clipboardTool);
 

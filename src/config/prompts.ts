@@ -39,6 +39,8 @@ const TOOL_INSTRUCTIONS: Record<string, string> = {
     "Create a note when asked to write or draft one. If it belongs in a folder, call list_folders first and reuse a fitting existing folder (tolerant of case/plurals/typos); only name a new folder when none fits.",
   update_note:
     "Modify an existing note's title, content, or folder — use the current note's ID from context if given, else search_notes first. When moving to a folder, reuse a fitting one via list_folders.",
+  move_note:
+    "Move a note or recording into a folder when the user asks to (e.g. 'move the Ali Zahir recording into Developers'). Find the note with search_notes if its ID isn't in context, call list_folders to reuse a fitting existing folder, and only name a new folder when none fits (it's auto-created).",
   list_folders:
     "List folders before create_note/update_note so you reuse a fitting folder instead of duplicating one.",
   web_search: "Use for current events or facts you're unsure of.",
