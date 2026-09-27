@@ -44,6 +44,7 @@ import { getValidatedAuthGeneration } from "../lib/authRequestContext";
 import { useBillingPortal } from "../hooks/useBillingPortal";
 import MicPermissionWarning from "./ui/MicPermissionWarning";
 import MicrophoneSettings from "./ui/MicrophoneSettings";
+import NeatoCloudSettings from "./NeatoCloudSettings";
 import PermissionCard from "./ui/PermissionCard";
 import PasteToolsInfo from "./ui/PasteToolsInfo";
 import NixOsPasteInfo from "./ui/NixOsPasteInfo";
@@ -161,6 +162,7 @@ export type SettingsSectionType =
   | "speechToText"
   | "llms"
   | "privacyData"
+  | "neatoCloud"
   | "system";
 
 interface SettingsPageProps {
@@ -2055,6 +2057,8 @@ export default function SettingsPage({
 
   const renderSectionContent = () => {
     switch (activeSection) {
+      case "neatoCloud":
+        return <NeatoCloudSettings />;
       case "account":
         return (
           <div className="space-y-5">

@@ -12,6 +12,7 @@ import {
   CreditCard,
   Shield,
   Users,
+  Cloud,
 } from "lucide-react";
 import SidebarModal, { type SidebarItem } from "./ui/SidebarModal";
 import SettingsPage, { AccountAvatar, SettingsSectionType } from "./SettingsPage";
@@ -117,6 +118,15 @@ export default function SettingsModal({ open, onOpenChange, initialSection }: Se
         label: t("settingsModal.sections.privacyData.label"),
         icon: Shield,
         description: t("settingsModal.sections.privacyData.description"),
+        group: t("settingsModal.groups.system"),
+      },
+      {
+        id: "neatoCloud",
+        label: t("settingsModal.sections.neatoCloud.label", { defaultValue: "Neato Cloud" }),
+        icon: Cloud,
+        description: t("settingsModal.sections.neatoCloud.description", {
+          defaultValue: "Sync notes to the mobile app",
+        }),
         group: t("settingsModal.groups.system"),
       },
       {
