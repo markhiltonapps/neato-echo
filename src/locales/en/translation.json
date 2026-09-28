@@ -3356,7 +3356,7 @@
       "restartFailed": "Couldn't restart the meeting recording.",
       "systemAudioSilent": {
         "title": "No meeting audio detected yet",
-        "description": "Only your microphone has picked up sound so far. On a video call? Check that the meeting audio is playing on this computer and isn't muted. Recording in person? You can ignore this — your microphone captures the room.",
+        "description": "Only your microphone has picked up sound so far. On a video call? Make sure the meeting audio is playing on this computer and isn’t muted — and if another meeting recorder or audio app is running, close it (or turn off “exclusive control” for your speakers in Sound settings), since it can block system-audio capture. Recording in person? You can ignore this — your microphone captures the room.",
         "openSettings": "Open Sound settings"
       }
     },

@@ -3356,7 +3356,7 @@
       "restartFailed": "Impossible de redémarrer l'enregistrement de la réunion.",
       "systemAudioSilent": {
         "title": "Aucun son de réunion détecté pour le moment",
-        "description": "Seul votre microphone a capté du son jusqu'à présent. Vous êtes en visioconférence ? Vérifiez que le son de la réunion est diffusé sur cet ordinateur et qu'il n'est pas coupé. Vous enregistrez en présentiel ? Vous pouvez ignorer ce message : votre microphone capte la salle.",
+        "description": "Pour l’instant, seul votre micro a capté du son. En visioconférence ? Vérifiez que l’audio de la réunion est diffusé sur cet ordinateur et n’est pas coupé ; et si une autre app d’enregistrement ou audio est ouverte, fermez-la (ou désactivez le « contrôle exclusif » de vos haut-parleurs dans les paramètres Son), car elle peut bloquer la capture de l’audio système. Enregistrement en personne ? Vous pouvez ignorer ceci : votre micro capte la pièce.",
         "openSettings": "Ouvrir les réglages du son"
       }
     },

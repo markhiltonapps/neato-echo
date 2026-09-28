@@ -3098,7 +3098,7 @@
       "restartFailed": "Não foi possível reiniciar a gravação da reunião.",
       "systemAudioSilent": {
         "title": "Nenhum áudio da reunião detectado até agora",
-        "description": "Até agora, apenas o seu microfone captou som. Está em uma videochamada? Verifique se o áudio da reunião está sendo reproduzido neste computador e não está silenciado. Está gravando presencialmente? Você pode ignorar este aviso: seu microfone capta o ambiente.",
+        "description": "Até agora só o seu microfone captou som. Em uma videochamada? Verifique se o áudio da reunião está sendo reproduzido neste computador e não está mudo; e, se houver outro gravador de reuniões ou app de áudio aberto, feche-o (ou desative o “controle exclusivo” das suas caixas de som nas configurações de Som), pois ele pode bloquear a captura do áudio do sistema. Gravando presencialmente? Pode ignorar isto — o seu microfone capta a sala.",
         "openSettings": "Abrir configurações de som"
       }
     },
