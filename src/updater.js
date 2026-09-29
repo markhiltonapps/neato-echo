@@ -67,7 +67,9 @@ class UpdateManager {
       autoUpdater.channel = nativeArch === "arm64" ? "latest-arm64" : "latest-x64";
     }
 
-    autoUpdater.autoDownload = false;
+    // Download updates in the background automatically and install on quit, so users who
+    // ignore the notification still end up current (they were staying stuck on old builds).
+    autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.logger = console;
 
@@ -309,14 +311,25 @@ class UpdateManager {
 
   // Prefs are read at fire time, not scheduling time, so flipping the
   // "App updates" toggle takes effect without a restart (#1605).
-  _autoCheckForUpdates(label) {
+  _autoCheckForUpdates(label, attempt = 0) {
     if (!appUpdatesEnabled(this.windowManager?.notificationPrefs)) {
       console.log(`⏭️ ${label} update check skipped (app updates disabled)`);
       return;
     }
-    console.log(`🔄 ${label} update check...`);
+    console.log(`🔄 ${label} update check${attempt ? ` (retry ${attempt})` : ""}...`);
     autoUpdater.checkForUpdates().catch((err) => {
-      console.error(`${label} update check failed:`, err);
+      console.error(`${label} update check failed (attempt ${attempt + 1}):`, err);
+      // Transient GitHub/network hiccups otherwise stranded users on old builds until
+      // they manually re-checked several times. Retry a few times with backoff so the
+      // automatic check self-heals; the 4h periodic check remains the long-term backstop.
+      const RETRY_DELAYS_MS = [10000, 30000, 60000];
+      if (attempt < RETRY_DELAYS_MS.length) {
+        if (this._autoCheckRetry) clearTimeout(this._autoCheckRetry);
+        this._autoCheckRetry = setTimeout(() => {
+          this._autoCheckRetry = null;
+          this._autoCheckForUpdates(label, attempt + 1);
+        }, RETRY_DELAYS_MS[attempt]);
+      }
     });
   }
 
@@ -337,6 +350,10 @@ class UpdateManager {
     if (this.updateCheckInterval) {
       clearInterval(this.updateCheckInterval);
       this.updateCheckInterval = null;
+    }
+    if (this._autoCheckRetry) {
+      clearTimeout(this._autoCheckRetry);
+      this._autoCheckRetry = null;
     }
     this.eventListeners.forEach(({ event, handler }) => {
       autoUpdater.removeListener(event, handler);

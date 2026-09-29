@@ -378,20 +378,46 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // When an update has finished downloading (auto-download runs in the background), prompt
+  // to install with a prominent modal — not just a toast, which users missed and left them
+  // stranded on old builds. Shown once per session; reappears next launch while pending.
+  // Installing on quit still happens automatically regardless (autoInstallOnAppQuit).
   useEffect(() => {
-    if (updateStatus.updateDownloaded && !isDownloading) {
+    if (updateStatus.isDevelopment) return;
+    if (updateStatus.updateDownloaded && !isDownloading && !isInstalling) {
       if (!updateReadyToastShown.current) {
         updateReadyToastShown.current = true;
-        toast({
+        showConfirmDialog({
           title: t("controlPanel.update.readyTitle"),
-          description: t("controlPanel.update.readyDescription"),
-          variant: "success",
+          description: t("controlPanel.update.installDescription"),
+          confirmText: t("controlPanel.update.installButton"),
+          cancelText: t("controlPanel.update.later"),
+          onConfirm: async () => {
+            try {
+              await installUpdate();
+            } catch {
+              toast({
+                title: t("controlPanel.update.couldNotInstallTitle"),
+                description: t("controlPanel.update.couldNotInstallDescription"),
+                variant: "destructive",
+              });
+            }
+          },
         });
       }
     } else {
       updateReadyToastShown.current = false;
     }
-  }, [updateStatus.updateDownloaded, isDownloading, toast, t]);
+  }, [
+    updateStatus.updateDownloaded,
+    updateStatus.isDevelopment,
+    isDownloading,
+    isInstalling,
+    showConfirmDialog,
+    installUpdate,
+    toast,
+    t,
+  ]);
 
   useEffect(() => {
     if (updateError && updateError !== updateErrorToastShown.current) {

@@ -685,7 +685,8 @@
       "installButton": "Install Update",
       "availableButton": "Update Available",
       "availableTitle": "Update available",
-      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install."
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install.",
+      "later": "Later"
     },
     "limit": {
       "weeklyTitle": "Weekly limit reached",
@@ -2802,7 +2803,7 @@
   "sidebar": {
     "home": "Home",
     "insights": "Insights",
-    "notes": "Notes",
+    "notes": "Notes/Meetings",
     "upload": "Upload",
     "dictionary": "Dictionary",
     "referral": "Get a free month",

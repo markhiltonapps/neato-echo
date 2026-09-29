@@ -684,7 +684,8 @@
       "installButton": "安裝更新",
       "availableButton": "有可用更新",
       "availableTitle": "Update available",
-      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install."
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install.",
+      "later": "稍後"
     },
     "limit": {
       "weeklyTitle": "已達每週使用上限",
@@ -3383,7 +3384,7 @@
   "sidebar": {
     "insights": "統計",
     "home": "首頁",
-    "notes": "筆記",
+    "notes": "筆記/會議",
     "upload": "上傳",
     "dictionary": "字典",
     "referral": "獲得一個月免費",
