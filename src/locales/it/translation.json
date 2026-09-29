@@ -2955,7 +2955,8 @@
       "minutesAgo": "{{count}}m",
       "hoursAgo": "{{count}}h",
       "daysAgo": "{{count}}g",
-      "filterByDate": "Filtra per data"
+      "filterByDate": "Filtra per data",
+      "resize": "Ridimensiona elenco note"
     },
     "editor": {
       "untitled": "Senza titolo",

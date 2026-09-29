@@ -2952,7 +2952,8 @@
       "minutesAgo": "{{count}} 分钟前",
       "hoursAgo": "{{count}} 小时前",
       "daysAgo": "{{count}} 天前",
-      "filterByDate": "按日期筛选"
+      "filterByDate": "按日期筛选",
+      "resize": "调整笔记列表大小"
     },
     "editor": {
       "untitled": "无标题",

@@ -3213,7 +3213,8 @@
       "minutesAgo": "{{count}}m",
       "hoursAgo": "{{count}}h",
       "daysAgo": "{{count}}d",
-      "filterByDate": "Filter by date"
+      "filterByDate": "Filter by date",
+      "resize": "Resize notes list"
     },
     "editor": {
       "untitled": "Untitled",

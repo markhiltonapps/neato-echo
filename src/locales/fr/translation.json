@@ -3213,7 +3213,8 @@
       "minutesAgo": "il y a {{count}}m",
       "hoursAgo": "il y a {{count}}h",
       "daysAgo": "il y a {{count}}j",
-      "filterByDate": "Filtrer par date"
+      "filterByDate": "Filtrer par date",
+      "resize": "Redimensionner la liste des notes"
     },
     "editor": {
       "untitled": "Sans titre",

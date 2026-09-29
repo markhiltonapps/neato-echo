@@ -3003,7 +3003,8 @@
       "minutesAgo": "hace {{count}}m",
       "hoursAgo": "hace {{count}}h",
       "daysAgo": "hace {{count}}d",
-      "filterByDate": "Filtrar por fecha"
+      "filterByDate": "Filtrar por fecha",
+      "resize": "Redimensionar lista de notas"
     },
     "editor": {
       "untitled": "Sin título",

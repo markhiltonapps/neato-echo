@@ -2979,7 +2979,8 @@
       "minutesAgo": "{{count}}分前",
       "hoursAgo": "{{count}}時間前",
       "daysAgo": "{{count}}日前",
-      "filterByDate": "日付で絞り込み"
+      "filterByDate": "日付で絞り込み",
+      "resize": "ノートリストのサイズ変更"
     },
     "upload": {
       "title": "音声をアップロード",

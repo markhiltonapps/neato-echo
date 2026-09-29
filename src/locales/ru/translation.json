@@ -2983,7 +2983,8 @@
       "minutesAgo": "{{count}} мин. назад",
       "hoursAgo": "{{count}} ч. назад",
       "daysAgo": "{{count}} дн. назад",
-      "filterByDate": "Фильтр по дате"
+      "filterByDate": "Фильтр по дате",
+      "resize": "Изменить размер списка заметок"
     },
     "editor": {
       "untitled": "Без названия",

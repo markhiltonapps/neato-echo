@@ -149,6 +149,45 @@ export default function PersonalNotesView({
   const [showActionManager, setShowActionManager] = useState(false);
   const [showAddNotesDialog, setShowAddNotesDialog] = useState(false);
   const [notesLayout, setNotesLayout] = useState<"list" | "calendar">("list");
+  // Resizable notes-list column (mirrors the left rail resize in ControlPanel).
+  // Width persisted + clamped; default 208px (the old fixed w-52).
+  const [notesListWidth, setNotesListWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem("notesListWidth") || "", 10);
+      return Number.isFinite(v) ? Math.min(460, Math.max(176, v)) : 208;
+    } catch {
+      return 208;
+    }
+  });
+  const startNotesListResize = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = notesListWidth;
+      const onMove = (ev: PointerEvent) => {
+        setNotesListWidth(Math.min(460, Math.max(176, startW + (ev.clientX - startX))));
+      };
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        setNotesListWidth((w) => {
+          try {
+            localStorage.setItem("notesListWidth", String(w));
+          } catch {
+            /* blocked storage — width holds for this session only */
+          }
+          return w;
+        });
+      };
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [notesListWidth]
+  );
   // Neato Echo: offer a summary preset once a meeting recording ends.
   const [pendingSummary, setPendingSummary] = useState<{
     noteId: number;
@@ -823,12 +862,15 @@ export default function PersonalNotesView({
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       <div
         className="shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
-        style={{ width: isSidePanelLayout ? 0 : "13rem" }}
+        style={{ width: isSidePanelLayout ? 0 : notesListWidth }}
       >
-        <div className="w-52 shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full bg-surface-1/40 dark:bg-surface-1/20">
+        <div
+          className="shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full bg-surface-1/40 dark:bg-surface-1/20"
+          style={{ width: notesListWidth }}
+        >
           <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
             <button
               onClick={() => setShowActionManager(true)}
@@ -889,6 +931,19 @@ export default function PersonalNotesView({
           />
         </div>
       </div>
+
+      {!isSidePanelLayout && (
+        <div
+          onPointerDown={startNotesListResize}
+          className="group absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize"
+          style={{ left: notesListWidth }}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t("notes.list.resize", "Resize notes list")}
+        >
+          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors duration-150 group-hover:bg-brand-teal/50" />
+        </div>
+      )}
 
       <div className="canvas-glow flex-1 flex flex-col min-w-0 min-h-0">
         {notesLayout === "calendar" ? (
