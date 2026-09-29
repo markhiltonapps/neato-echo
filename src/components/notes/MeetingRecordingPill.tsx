@@ -37,6 +37,9 @@ export default function MeetingRecordingPill({
   const recordingNoteId = useMeetingRecordingStore((s) => s.recordingNoteId);
   const recordingNoteTitle = useMeetingRecordingStore((s) => s.recordingNoteTitle);
   const micLevel = useMeetingRecordingStore((s) => s.currentMicLevel);
+  const systemLevel = useMeetingRecordingStore((s) => s.currentSystemLevel);
+  // The waveform reflects whoever is speaking — your mic OR the remote side (system audio).
+  const waveLevel = Math.max(micLevel, systemLevel);
   const micCaptureStatus = useMeetingRecordingStore((s) => s.micCaptureStatus);
   const isWaitingForMic = micCaptureStatus === "reconnecting" || micCaptureStatus === "unavailable";
   const [isStopping, setIsStopping] = useState(false);
@@ -101,7 +104,7 @@ export default function MeetingRecordingPill({
                   "w-0.75 rounded-full origin-bottom",
                   isWaitingForMic ? "bg-amber-500" : "bg-primary/60 dark:bg-primary/70"
                 )}
-                style={{ height: computeBarHeight(micLevel, i) }}
+                style={{ height: computeBarHeight(waveLevel, i) }}
               />
             ))}
           </div>

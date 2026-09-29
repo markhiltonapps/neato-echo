@@ -8575,9 +8575,33 @@ class IPCHandlers {
 
     const startManagedMeetingSystemAudio = (event, manager, warningLabel, onWarningCode) => {
       const win = BrowserWindow.fromWebContents(event.sender);
+      // Throttled RMS of the system PCM (24 kHz mono s16le) → the meeting waveform, so
+      // the bars move when the far side speaks (the mic meter never sees remote audio).
+      let lastSystemLevelAt = 0;
+      const emitSystemLevel = (chunk) => {
+        const now = Date.now();
+        if (now - lastSystemLevelAt < 60) return; // ~16 fps is plenty for a meter
+        lastSystemLevelAt = now;
+        try {
+          const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          const n = Math.floor(buf.length / 2);
+          if (n === 0) return;
+          let sumSq = 0;
+          for (let i = 0; i < n; i++) {
+            const v = buf.readInt16LE(i * 2) / 32768;
+            sumSq += v * v;
+          }
+          const rms = Math.sqrt(sumSq / n);
+          const level = rms < 0 ? 0 : rms > 1 ? 1 : rms;
+          if (win && !win.isDestroyed()) win.webContents.send("meeting-system-level", level);
+        } catch {
+          // level is cosmetic — never let it disrupt capture
+        }
+      };
       return manager.start({
         onChunk: (chunk) => {
           sendMeetingAudio(chunk, "system");
+          emitSystemLevel(chunk);
         },
         onError: (error) => {
           if (win && !win.isDestroyed()) {

@@ -2777,6 +2777,7 @@ declare global {
         callback: (data: { systemAudioStrategy: SystemAudioStrategy }) => void
       ) => () => void;
       onMeetingSystemAudioDegraded?: (callback: () => void) => () => void;
+      onMeetingSystemLevel?: (callback: (level: number) => void) => () => void;
 
       // Speaker diarization
       downloadDiarizationModels?: () => Promise<{ success: boolean; error?: string }>;

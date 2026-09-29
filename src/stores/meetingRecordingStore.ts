@@ -103,6 +103,8 @@ interface MeetingRecordingState {
   /** Latched once per recording when main reports the system-audio tap has produced only silence. */
   systemAudioSilentWarning: boolean;
   currentMicLevel: number;
+  /** Live system-audio (remote participants) level for the waveform, 0–1. */
+  currentSystemLevel: number;
   micCaptureStatus: "inactive" | "active" | "reconnecting" | "unavailable";
   windowWidth: number;
 }
@@ -402,6 +404,9 @@ let systemContext: AudioContext | null = null;
 let systemSource: MediaStreamAudioSourceNode | null = null;
 let systemProcessor: AudioWorkletNode | null = null;
 let systemStream: MediaStream | null = null;
+// Analyser for the renderer (display-media) system-audio path; the native main-process
+// path reports its level over IPC instead (see MeetingRecordingMount).
+let systemAnalyser: AnalyserNode | null = null;
 let isRecordingFlag = false;
 let isStartingFlag = false;
 let activeRecordingSessionId: string | null = null;
@@ -444,6 +449,7 @@ export const useMeetingRecordingStore = create<MeetingRecordingState>()(() => ({
   errorNonce: 0,
   systemAudioSilentWarning: false,
   currentMicLevel: 0,
+  currentSystemLevel: 0,
   micCaptureStatus: "inactive",
   windowWidth: typeof window !== "undefined" ? window.innerWidth : SIDE_PANEL_BREAKPOINT_PX,
 }));
@@ -457,6 +463,7 @@ function reportMeetingError(error: string, extra: Partial<MeetingRecordingState>
 }
 
 export const getMicAnalyser = (): AnalyserNode | null => micAnalyser;
+export const getSystemAnalyser = (): AnalyserNode | null => systemAnalyser;
 
 export const getActiveRecordingSessionId = (): string | null => activeRecordingSessionId;
 
@@ -662,6 +669,8 @@ async function cleanup(): Promise<void> {
 
   micAnalyser?.disconnect();
   micAnalyser = null;
+  systemAnalyser?.disconnect();
+  systemAnalyser = null;
 
   try {
     micStream?.getTracks().forEach((t) => t.stop());
@@ -1349,6 +1358,18 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
         });
         systemSource = source;
         systemProcessor = processor;
+
+        // Drive the waveform from the remote (system) audio too. Muted-gain sink so the
+        // analyser's pull-based buffer keeps updating without routing audio to output.
+        const sysAnalyser = ctx.createAnalyser();
+        sysAnalyser.fftSize = 256;
+        sysAnalyser.smoothingTimeConstant = 0.4;
+        const sysSink = ctx.createGain();
+        sysSink.gain.value = 0;
+        source.connect(sysAnalyser);
+        sysAnalyser.connect(sysSink);
+        sysSink.connect(ctx.destination);
+        systemAnalyser = sysAnalyser;
       };
 
       if (systemCaptureResult.stream) {
@@ -1501,6 +1522,7 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
     return { diarizationSessionId: null, stopped: false };
   }
@@ -1597,6 +1619,7 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
 
     // Name a still-default recording from its transcript so the notes list does
