@@ -9,6 +9,7 @@
 //   SUPABASE_URL, SUPABASE_ANON_KEY            (optional — sensible Neato defaults)
 //
 // Run: node src/index.js  (configured as an MCP stdio server — see README.md)
+import "dotenv/config"; // load NEATO_EMAIL/NEATO_PASSWORD from a local .env if present
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createClient } from "@supabase/supabase-js";
