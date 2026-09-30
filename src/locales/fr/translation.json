@@ -3548,6 +3548,17 @@
     "origin": {
       "mobile": "Mobile",
       "desktop": "Bureau"
+    },
+    "audioPanel": {
+      "title": "Périphériques audio",
+      "microphone": "Microphone",
+      "systemAudio": "Audio système",
+      "systemDefaultMic": "Défaut du système",
+      "refresh": "Actualiser les périphériques",
+      "systemNoSignal": "Aucun audio système détecté",
+      "systemReceiving": "Réception de l’audio système",
+      "systemListening": "Écoute de l’audio système…",
+      "systemHint": "Si cela reste vide, une autre app bloque peut-être l’audio système — fermez les autres enregistreurs, ou arrêtez et redémarrez l’enregistrement."
     }
   },
   "dictionary": {

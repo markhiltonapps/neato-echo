@@ -3290,6 +3290,17 @@
     "origin": {
       "mobile": "Celular",
       "desktop": "Desktop"
+    },
+    "audioPanel": {
+      "title": "Dispositivos de áudio",
+      "microphone": "Microfone",
+      "systemAudio": "Áudio do sistema",
+      "systemDefaultMic": "Padrão do sistema",
+      "refresh": "Atualizar dispositivos",
+      "systemNoSignal": "Nenhum áudio do sistema detectado",
+      "systemReceiving": "Recebendo áudio do sistema",
+      "systemListening": "Aguardando áudio do sistema…",
+      "systemHint": "Se continuar vazio, outro app pode estar bloqueando o áudio do sistema — feche outros gravadores ou pare e reinicie a gravação."
     }
   },
   "dictionary": {

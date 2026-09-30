@@ -3213,6 +3213,17 @@
     "origin": {
       "mobile": "モバイル",
       "desktop": "デスクトップ"
+    },
+    "audioPanel": {
+      "title": "オーディオデバイス",
+      "microphone": "マイク",
+      "systemAudio": "システム音声",
+      "systemDefaultMic": "システムの既定",
+      "refresh": "デバイスを更新",
+      "systemNoSignal": "システム音声が検出されません",
+      "systemReceiving": "システム音声を受信中",
+      "systemListening": "システム音声を待機中…",
+      "systemHint": "空のままの場合、別のアプリがシステム音声をブロックしている可能性があります。他の録音アプリを閉じるか、録音を停止して再開してください。"
     }
   },
   "dictionary": {

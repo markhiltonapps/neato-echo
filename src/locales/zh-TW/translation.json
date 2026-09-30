@@ -3285,6 +3285,17 @@
     "origin": {
       "mobile": "手機",
       "desktop": "桌面"
+    },
+    "audioPanel": {
+      "title": "音訊裝置",
+      "microphone": "麥克風",
+      "systemAudio": "系統音訊",
+      "systemDefaultMic": "系統預設",
+      "refresh": "重新整理裝置",
+      "systemNoSignal": "未偵測到系統音訊",
+      "systemReceiving": "正在接收系統音訊",
+      "systemListening": "正在等待系統音訊…",
+      "systemHint": "如果一直是空的，可能有其他應用程式在阻擋系統音訊——請關閉其他錄製程式，或停止並重新開始錄製。"
     }
   },
   "dictionary": {

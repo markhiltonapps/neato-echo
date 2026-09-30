@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { Square } from "lucide-react";
+import { Square, SlidersHorizontal } from "lucide-react";
 import { stopRecording, useMeetingRecordingStore } from "../../stores/meetingRecordingStore";
 import { cn } from "../lib/utils";
 import { isControlPanelWindow } from "../../utils/windowContext";
+import MeetingDevicePanel from "./MeetingDevicePanel";
 
 interface MeetingRecordingPillProps {
   activeView: string;
@@ -43,6 +44,7 @@ export default function MeetingRecordingPill({
   const micCaptureStatus = useMeetingRecordingStore((s) => s.micCaptureStatus);
   const isWaitingForMic = micCaptureStatus === "reconnecting" || micCaptureStatus === "unavailable";
   const [isStopping, setIsStopping] = useState(false);
+  const [showDevices, setShowDevices] = useState(false);
 
   const isViewingRecordingNote =
     activeView === "personal-notes" && activeNoteId === recordingNoteId;
@@ -115,6 +117,23 @@ export default function MeetingRecordingPill({
 
         <button
           type="button"
+          onClick={() => setShowDevices((v) => !v)}
+          aria-label={t("notes.audioPanel.title")}
+          title={t("notes.audioPanel.title")}
+          aria-expanded={showDevices}
+          className={cn(
+            "flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-150",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
+            showDevices
+              ? "bg-primary/18 text-primary"
+              : "text-foreground/50 hover:text-foreground hover:bg-foreground/8"
+          )}
+        >
+          <SlidersHorizontal size={13} />
+        </button>
+
+        <button
+          type="button"
           onClick={handleStop}
           disabled={isStopping}
           aria-label={stopLabel}
@@ -131,6 +150,18 @@ export default function MeetingRecordingPill({
           <Square size={12} fill="currentColor" />
         </button>
       </div>
+
+      {showDevices && (
+        <div
+          className={cn(
+            "absolute top-full mt-2 left-1/2 -translate-x-1/2 rounded-xl overflow-hidden",
+            "bg-card/98 dark:bg-surface-2/98 backdrop-blur-xl",
+            "border border-primary/20 dark:border-primary/25 shadow-elevated"
+          )}
+        >
+          <MeetingDevicePanel />
+        </div>
+      )}
     </div>,
     document.body
   );

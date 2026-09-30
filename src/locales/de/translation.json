@@ -3548,6 +3548,17 @@
     "origin": {
       "mobile": "Mobil",
       "desktop": "Desktop"
+    },
+    "audioPanel": {
+      "title": "Audiogeräte",
+      "microphone": "Mikrofon",
+      "systemAudio": "Systemaudio",
+      "systemDefaultMic": "Systemstandard",
+      "refresh": "Geräte aktualisieren",
+      "systemNoSignal": "Kein Systemaudio erkannt",
+      "systemReceiving": "Systemaudio wird empfangen",
+      "systemListening": "Warte auf Systemaudio…",
+      "systemHint": "Bleibt dies leer, blockiert evtl. eine andere App das Systemaudio – schließe andere Rekorder oder stoppe und starte die Aufnahme neu."
     }
   },
   "dictionary": {
