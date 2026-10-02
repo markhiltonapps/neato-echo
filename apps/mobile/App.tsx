@@ -444,7 +444,7 @@ const DBX_REFRESH_STORE = "dropboxRefresh"; // long-lived OAuth refresh token (S
 // In-app update check. Bump APP_VERSION every mobile build and name the mobile-latest
 // GitHub release the same version; the app compares and shows a banner when a newer build
 // is out (sideloaded APKs have no auto-update, so testers would otherwise run stale builds).
-const APP_VERSION = "1.1.55";
+const APP_VERSION = "1.1.56";
 const MOBILE_RELEASE_API =
   "https://api.github.com/repos/markhiltonapps/neato-echo/releases/tags/mobile-latest";
 const APK_DOWNLOAD_URL =
