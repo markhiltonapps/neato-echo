@@ -6,6 +6,7 @@ import {
   pushConversationsToCloud,
   pullConversationsFromCloud,
 } from "../services/neatoCloud";
+import ConnectAiAgentCard from "./ConnectAiAgentCard";
 
 // Neato Cloud settings section: sign in to the shared Supabase backend and push the
 // desktop's notes so they appear in the mobile app. First increment = metadata push
@@ -185,6 +186,8 @@ export default function NeatoCloudSettings() {
           <p className="text-xs text-muted-foreground">
             Pushes titles, summaries, transcripts, and meeting audio.
           </p>
+
+          {session.user?.id ? <ConnectAiAgentCard userId={session.user.id} /> : null}
         </div>
       ) : (
         <div className="space-y-2">

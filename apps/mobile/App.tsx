@@ -51,11 +51,19 @@ import {
   DATE_RANGES,
   isInRange,
   dateBucket,
+  MCP_ENDPOINT,
+  MCP_CONNECTOR_NAME,
+  MCP_KEY_RANDOM_BYTES,
+  formatMcpKey,
+  buildMcpConnectUrl,
+  bytesToHex,
   type DateRange,
   type SummaryStyle,
 } from "@neato/core";
 import { supabase, SUPABASE_URL, AUDIO_BUCKET } from "./supabase";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import * as Crypto from "expo-crypto";
+import * as Clipboard from "expo-clipboard";
 
 // ── Neato Echo "Neddy" design tokens (ported from the desktop app's index.css) ──
 // Palette comes from the shared @neato/core tokens; the two translucent values are
@@ -616,6 +624,14 @@ export default function App() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [autoCloud, setAutoCloud] = useState(false);
   const cloudInFlight = useRef<Set<string>>(new Set());
+  // "Connect AI Agent": on-device minted MCP key. Plaintext lives only in memory and is
+  // shown once; we store only its hash (see generateAiAgentKey).
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiMinted, setAiMinted] = useState<{ key: string; url: string } | null>(null);
+  const [aiHasKey, setAiHasKey] = useState(false);
+  const [aiShowFields, setAiShowFields] = useState(false);
+  const [aiCopied, setAiCopied] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const [showChat, setShowChat] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -766,6 +782,29 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Does this account already have an AI-agent key? (We can't recover the plaintext, so
+  // this only toggles Generate vs. Regenerate wording.)
+  useEffect(() => {
+    const uid = session?.user?.id;
+    if (!uid) {
+      setAiHasKey(false);
+      setAiMinted(null);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("echo_mcp_keys")
+      .select("key_hash")
+      .eq("user_id", uid)
+      .limit(1)
+      .then(({ data }) => {
+        if (active) setAiHasKey((data?.length ?? 0) > 0);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id]);
 
   const displayName = (r: Rec) => {
     if (r.name && r.name.trim()) return r.name.trim();
@@ -1397,6 +1436,48 @@ export default function App() {
     AsyncStorage.setItem(AUTOCLOUD_STORE, v ? "1" : "0").catch(() => {});
   }
 
+  // Mint a personal, read-only MCP access key on-device: store only its SHA-256 hash
+  // (RLS pins it to this account), hand back a single personalized URL. One link per
+  // account, so any previous key is dropped first — regenerating invalidates the old one.
+  async function generateAiAgentKey() {
+    const uid = session?.user?.id;
+    if (!uid) return;
+    setAiBusy(true);
+    setAiError("");
+    try {
+      const randomBytes = await Crypto.getRandomBytesAsync(MCP_KEY_RANDOM_BYTES);
+      const key = formatMcpKey(bytesToHex(randomBytes));
+      const keyHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        key,
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+      await supabase.from("echo_mcp_keys").delete().eq("user_id", uid);
+      const { error } = await supabase
+        .from("echo_mcp_keys")
+        .insert({ key_hash: keyHash, user_id: uid, label: "AI agent (mobile)" });
+      if (error) throw error;
+      setAiMinted({ key, url: buildMcpConnectUrl(key) });
+      setAiHasKey(true);
+      setAiShowFields(false);
+    } catch (e: any) {
+      setAiError(String(e?.message || e));
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  async function copyAiUrl() {
+    if (!aiMinted) return;
+    try {
+      await Clipboard.setStringAsync(aiMinted.url);
+      setAiCopied(true);
+      setTimeout(() => setAiCopied(false), 1800);
+    } catch {
+      // clipboard unavailable — the Share button is the fallback
+    }
+  }
+
   // A recording has local audio on disk (as opposed to a cloud-only pulled row).
   function hasLocalAudio(rec: Rec) {
     return !!rec.uri && !rec.uri.startsWith("cloud:") && !rec.uri.startsWith("youtube:");
@@ -1480,7 +1561,11 @@ export default function App() {
       messages: conv.messages,
       updated_at: new Date(conv.updated || Date.now()).toISOString(),
     }));
-    const { error } = await supabase.from("echo_conversations").upsert(rows);
+    // Dedupe by id so a single upsert never lists the same row twice (Postgres rejects
+    // the whole batch with "ON CONFLICT DO UPDATE command cannot affect row a second
+    // time"). Same guard as the recordings push.
+    const uniqueRows = Array.from(new Map(rows.map((r) => [r.id, r])).values());
+    const { error } = await supabase.from("echo_conversations").upsert(uniqueRows);
     if (error) throw error;
     setConversations((prev) =>
       prev.map((c) => {
@@ -1563,10 +1648,25 @@ export default function App() {
         rec: r,
         id: r.cloudId && ownedIds.has(r.cloudId) ? r.cloudId : uuidv4(),
       }));
+      // A pulled "cloud:" copy of a recording and its local original can both carry the
+      // same cloudId, so two entries map to one id. A single upsert that lists the same
+      // id twice makes Postgres reject the WHOLE batch ("ON CONFLICT DO UPDATE command
+      // cannot affect row a second time"), blocking all sync. Dedupe by id, keeping a
+      // real local recording over a cloud-only phantom (which is already in the cloud).
+      const entryById = new Map<string, (typeof withIds)[number]>();
+      for (const entry of withIds) {
+        const prev = entryById.get(entry.id);
+        if (!prev) {
+          entryById.set(entry.id, entry);
+        } else if (prev.rec.uri.startsWith("cloud:") && !entry.rec.uri.startsWith("cloud:")) {
+          entryById.set(entry.id, entry);
+        }
+      }
+      const pushEntries = [...entryById.values()];
       // Upload any not-yet-uploaded local audio first (best-effort per recording),
       // so the pushed rows carry a playable audio_path.
       const audioByUri = new Map<string, string | null>();
-      for (const { rec, id } of withIds) {
+      for (const { rec, id } of pushEntries) {
         let audioPath = rec.cloudAudioPath ?? null;
         try {
           audioPath = await uploadAudioToCloud(rec, uid, id);
@@ -1575,7 +1675,7 @@ export default function App() {
         }
         audioByUri.set(rec.uri, audioPath);
       }
-      const rows = withIds.map(({ rec, id }) => ({
+      const rows = pushEntries.map(({ rec, id }) => ({
         id,
         user_id: uid,
         name: displayName(rec),
@@ -3095,6 +3195,133 @@ export default function App() {
                     : "Push sends your recordings' notes to Neato Cloud; Pull merges in recordings from your other devices."}{" "}
                   (Audio blob sync is coming next — for now this syncs titles, transcripts, and summaries.)
                 </Text>
+
+                <View style={{ height: 1, backgroundColor: C.border, marginVertical: 18 }} />
+
+                <Text style={styles.toggleTitle}>Connect an AI agent</Text>
+                <Text style={[styles.cloudHelp, { marginTop: 4, marginBottom: 0 }]}>
+                  Give an outside AI agent read-only access to your meetings. It can search and read
+                  your transcripts — it can never change or delete anything.
+                </Text>
+
+                {aiMinted ? (
+                  <>
+                    <TextInput
+                      value={aiMinted.url}
+                      editable={false}
+                      selectTextOnFocus
+                      multiline
+                      style={[styles.input, { marginTop: 12, fontSize: 12, minHeight: 64 }]}
+                    />
+                    <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+                      <Pressable
+                        onPress={copyAiUrl}
+                        style={({ pressed }) => [
+                          styles.smallBtn,
+                          { flex: 1, marginTop: 0 },
+                          pressed && { opacity: 0.9 },
+                        ]}
+                      >
+                        <Text style={styles.smallBtnText}>{aiCopied ? "Copied ✓" : "Copy link"}</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => Share.share({ message: aiMinted.url })}
+                        style={({ pressed }) => [
+                          styles.smallBtn,
+                          { flex: 1, marginTop: 0, backgroundColor: C.surface3 },
+                          pressed && { opacity: 0.9 },
+                        ]}
+                      >
+                        <Text style={[styles.smallBtnText, { color: C.tealDim }]}>Share</Text>
+                      </Pressable>
+                    </View>
+                    <Text
+                      style={{
+                        marginTop: 10,
+                        color: "#9a6a16",
+                        backgroundColor: "rgba(212,160,23,0.12)",
+                        borderRadius: 10,
+                        padding: 10,
+                        fontFamily: F.med,
+                        fontSize: 12,
+                      }}
+                    >
+                      Copy this now. We only keep a scrambled copy, so you won't be able to see this
+                      link again — but you can generate a new one anytime.
+                    </Text>
+                    <Text style={[styles.cloudHelp, { marginTop: 10 }]}>
+                      In your agent, add a custom/remote MCP connector and paste this as the{" "}
+                      <Text style={{ fontFamily: F.semi }}>Web address</Text>. Leave the access-key
+                      field blank.
+                    </Text>
+                    <Pressable onPress={() => setAiShowFields((v) => !v)} hitSlop={8}>
+                      <Text style={{ color: C.tealDim, fontFamily: F.semi, fontSize: 13, marginTop: 4 }}>
+                        {aiShowFields ? "Hide separate fields" : "My agent asks for separate fields"}
+                      </Text>
+                    </Pressable>
+                    {aiShowFields ? (
+                      <View style={{ marginTop: 8, gap: 8 }}>
+                        <View>
+                          <Text style={styles.toggleSub}>Name</Text>
+                          <Text selectable style={{ color: C.text, fontFamily: F.med, fontSize: 13 }}>
+                            {MCP_CONNECTOR_NAME}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={styles.toggleSub}>Web address</Text>
+                          <TextInput
+                            value={MCP_ENDPOINT}
+                            editable={false}
+                            selectTextOnFocus
+                            multiline
+                            style={[styles.input, { fontSize: 12, minHeight: 48 }]}
+                          />
+                        </View>
+                        <View>
+                          <Text style={styles.toggleSub}>Access key</Text>
+                          <TextInput
+                            value={aiMinted.key}
+                            editable={false}
+                            selectTextOnFocus
+                            style={[styles.input, { fontSize: 12 }]}
+                          />
+                        </View>
+                      </View>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    {aiHasKey ? (
+                      <Text style={[styles.cloudHelp, { marginTop: 10 }]}>
+                        ✓ A connection link is active. Regenerating makes a new link and stops the old
+                        one from working.
+                      </Text>
+                    ) : null}
+                    <Pressable
+                      onPress={generateAiAgentKey}
+                      disabled={aiBusy}
+                      style={({ pressed }) => [
+                        styles.smallBtn,
+                        { marginTop: 12 },
+                        pressed && { opacity: 0.9 },
+                        aiBusy && { opacity: 0.6 },
+                      ]}
+                    >
+                      {aiBusy ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.smallBtnText}>
+                          {aiHasKey ? "Regenerate connection link" : "Generate connection link"}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </>
+                )}
+                {aiError ? (
+                  <Text style={{ color: C.destructive, fontFamily: F.med, fontSize: 12, marginTop: 8 }}>
+                    {aiError}
+                  </Text>
+                ) : null}
               </>
             ) : (
               <>
