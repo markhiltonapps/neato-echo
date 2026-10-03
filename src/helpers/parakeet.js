@@ -275,6 +275,7 @@ class ParakeetManager {
       modelName: model,
       language: options.language,
       signal: options.signal,
+      onProgress: options.onProgress,
     });
     const elapsed = Date.now() - startTime;
 

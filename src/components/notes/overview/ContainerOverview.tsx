@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, UserPlus } from "lucide-react";
+import { Plus, UserPlus, Mic } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import InviteTeammateDialog from "../../InviteTeammateDialog";
 import { useWorkspaceStore } from "../../../stores/workspaceStore";
@@ -25,6 +25,7 @@ interface ContainerOverviewProps {
   folder: FolderItem | null;
   onOpenNote: (noteId: number) => void;
   onNewNote: () => void;
+  onNewRecording?: () => void;
   onAddExisting?: () => void;
 }
 
@@ -33,6 +34,7 @@ export function ContainerOverview({
   folder,
   onOpenNote,
   onNewNote,
+  onNewRecording,
   onAddExisting,
 }: ContainerOverviewProps) {
   const { t } = useTranslation();
@@ -115,6 +117,15 @@ export function ContainerOverview({
             {metaParts.join(" · ")}
           </p>
           <div className="mt-1 flex items-center gap-2">
+            {onNewRecording && (
+              <button
+                onClick={onNewRecording}
+                className="inline-flex items-center gap-1.5 px-3 h-7 rounded-md bg-brand-warm/10 border border-brand-warm/25 text-xs font-medium text-brand-warm hover:bg-brand-warm/18 transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-warm/40"
+              >
+                <Mic size={12} />
+                {t("notes.list.newRecording")}
+              </button>
+            )}
             {/* The empty state keeps its own focal create CTA in the list. */}
             {notes.length > 0 && (
               <button

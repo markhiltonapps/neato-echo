@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED, LOCAL_FIRST } from "../config/edition";
 import { AlertCircle } from "lucide-react";
 import { CompactAuthenticationFlow } from "./CompactAuthenticationFlow";
 import UseCaseStep from "./onboarding/UseCaseStep";
@@ -13,6 +14,7 @@ import DemoStep from "./onboarding/DemoStep";
 import CalendarConnectionsStep from "./onboarding/CalendarConnectionsStep";
 import SetupChoiceStep from "./onboarding/SetupChoiceStep";
 import { ByokProviderStep, LocalModelSetupStep } from "./onboarding/ProviderSetupStep";
+import { AutoLocalSetupStep } from "./onboarding/AutoLocalSetupStep";
 import { RequiredModelDownloadStep } from "./onboarding/RequiredModelDownloadStep";
 import { AlertDialog } from "./ui/dialog";
 import { useAuth } from "../hooks/useAuth";
@@ -100,6 +102,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   );
   const [dictationHotkeyConfirmed, setDictationHotkeyConfirmed] = useState(false);
   const [assistantHotkeyConfirmed, setAssistantHotkeyConfirmed] = useState(false);
+  // Ctrl+Alt+M: free in every major meeting app (Teams already uses
+  // Ctrl+Shift+M for mute, so that one is not offered).
+  const [meetingHotkey, setMeetingHotkey] = useState(
+    () => parseHotkeyList(settings.meetingKey)[0] || "Control+Alt+M"
+  );
+  const [meetingHotkeyConfirmed, setMeetingHotkeyConfirmed] = useState(false);
   // Seeded from main rather than getDefaultHotkey(): main already knows when the
   // platform default can't bind (GNOME/X11 reject modifier-only combos) and
   // registered a fallback instead — recommending the unregistrable default would
@@ -110,6 +118,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [stageReady, setStageReady] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
+  // Local-first installs the recommended models automatically; the
+  // "Advanced" link on that step swaps the manual pickers back in.
+  const [localAdvanced, setLocalAdvanced] = useState(false);
   const [permissionAlert, setPermissionAlert] = useState<{
     title: string;
     description: string;
@@ -225,9 +236,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         agentAllowed,
         requiredModelsPending,
         skipSetupChoice: skipSetupChoiceForEnterprise,
+        autoLocalSetup: LOCAL_FIRST && !localAdvanced,
+        meetingHotkeyStep: LOCAL_FIRST,
       }),
     [
       agentAllowed,
+      localAdvanced,
       requiredModelsPending,
       session.authPath,
       session.setupMode,
@@ -235,6 +249,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     ]
   );
   const currentStepId = reconcileStepWithRoute(session.currentStepId, route);
+
+  // Neato Echo local-first edition: with accounts disabled the sign-in step is
+  // skipped and every user takes the guest route (permissions, hotkey, setup).
+  useEffect(() => {
+    if (ACCOUNTS_ENABLED || currentStepId !== "auth") return;
+    setAuthPath("guest");
+    goTo("permissions");
+  }, [currentStepId, goTo, setAuthPath]);
   const compact = COMPACT_STEPS.has(currentStepId);
 
   useEffect(() => {
@@ -358,6 +380,31 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     [settings, t]
   );
 
+  const validateMeetingHotkey = useCallback(
+    (value: string) =>
+      validateHotkeyForSlot(
+        value,
+        {
+          "settingsPage.general.hotkey.title": withExtraDictationHotkeys(dictationHotkey),
+          "settingsPage.general.voiceAgentHotkey.title": assistantHotkeyConfirmed
+            ? assistantHotkey
+            : "",
+        },
+        t
+      ),
+    [assistantHotkey, assistantHotkeyConfirmed, dictationHotkey, t, withExtraDictationHotkeys]
+  );
+
+  const confirmMeetingHotkey = useCallback(
+    async (value: string) => {
+      const result = await window.electronAPI?.registerMeetingHotkey?.(value);
+      if (!result?.success) return t("onboarding.rehaul.hotkey.inUse");
+      settings.setMeetingKey(value);
+      return null;
+    },
+    [settings, t]
+  );
+
   const syncUseCases = useCallback(() => {
     if (!isSignedIn || session.authPath === "guest") return;
     cloudPost("/api/onboarding-intent", {
@@ -396,6 +443,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         await window.electronAPI?.saveAllKeysToEnv?.();
         await window.electronAPI?.markBundleMigrated?.();
         await window.electronAPI?.setOnboardingWindowMode?.("restore");
+        // Local-first: start with Windows (into the tray) so the speech
+        // engine is already warm before the first dictation of the day.
+        if (LOCAL_FIRST && mode === "local") {
+          try {
+            await window.electronAPI?.setAutoStartEnabled?.(true);
+          } catch {
+            // A launch-at-login failure must not block finishing setup.
+          }
+        }
 
         // hasPendingLocalModels() covers proceeding past a still-running download
         // rather than skipping: the model was remembered when the download
@@ -456,11 +512,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       // values from before the pick. Reading it stale configured the other three
       // scopes to the defaults (groq / openai/gpt-oss-120b) with no key.
       const { chatAgentProvider, chatAgentModel } = useSettingsStore.getState();
+      // Local-first keeps dictation cleanup off: routing every dictation through
+      // the on-device LLM adds seconds before the text pastes, and the local
+      // speech models already punctuate. The summary and assistant still use
+      // the model; cleanup stays one toggle away in Settings.
       settingsStore.setCloudReasoningForAllScopes({
         cleanupCloudMode: mode,
         cleanupProvider: chatAgentProvider,
         cleanupModel: chatAgentModel,
-        useCleanupModel: true,
+        useCleanupModel: !(LOCAL_FIRST && mode === "local"),
         useDictationAgent: true,
       });
     },
@@ -496,11 +556,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         setupMode: mode,
         agentAllowed,
         requiredModelsPending,
+        autoLocalSetup: LOCAL_FIRST && !localAdvanced,
+        meetingHotkeyStep: LOCAL_FIRST,
       });
       const next = getNextOnboardingStep("setup-choice", nextRoute);
       if (next) goTo(next);
     },
     [
+      localAdvanced,
       agentAllowed,
       finalizeOnboarding,
       goTo,
@@ -545,6 +608,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           return;
         }
       }
+    } else if (currentStepId === "meeting-hotkey") {
+      if (parseHotkeyList(settings.meetingKey)[0] !== meetingHotkey) {
+        const problem = await confirmMeetingHotkey(meetingHotkey);
+        if (problem) {
+          setFatalError(problem);
+          return;
+        }
+      }
     } else if (currentStepId === "byok-dictation") {
       settingsStore.setCloudTranscriptionForAllScopes({
         useLocalWhisper: false,
@@ -567,6 +638,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       }
     } else if (currentStepId === "local-assistant") {
       applyReasoningSelectionToAllScopes("local");
+    } else if (currentStepId === "local-auto") {
+      settingsStore.setCloudTranscriptionForAllScopes({ useLocalWhisper: true });
+      applyReasoningSelectionToAllScopes("local");
     }
 
     const next = getNextOnboardingStep(currentStepId, route);
@@ -583,6 +657,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   }, [
     applyReasoningSelectionToAllScopes,
     assistantHotkey,
+    confirmMeetingHotkey,
+    meetingHotkey,
     currentStepId,
     dictationHotkey,
     finalizeOnboarding,
@@ -627,12 +703,15 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         return dictationDemoSuccess;
       case "assistant-hotkey":
         return assistantHotkeyConfirmed;
+      case "meeting-hotkey":
+        return meetingHotkeyConfirmed;
       case "assistant-demo":
         return assistantDemoSuccess;
       case "notes":
         return !workspaceResolutionPending;
       case "byok-dictation":
       case "byok-assistant":
+      case "local-auto":
       case "local-dictation":
       case "local-assistant":
         return stageReady;
@@ -803,6 +882,35 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           </div>
         );
       }
+
+      case "meeting-hotkey":
+        return (
+          <div className="flex h-full min-h-0 w-full flex-col pt-2">
+            <OnboardingStepHeader
+              title={t("onboarding.rehaul.meetingHotkey.title")}
+              titleLines={[
+                t("onboarding.rehaul.meetingHotkey.titleLineOne"),
+                t("onboarding.rehaul.meetingHotkey.titleLineTwo"),
+              ]}
+              description={t("onboarding.rehaul.meetingHotkey.description")}
+            />
+            <ShortcutSetupStep
+              value={meetingHotkeyConfirmed ? meetingHotkey : ""}
+              onChange={(value) => {
+                setMeetingHotkey(value);
+                setMeetingHotkeyConfirmed(true);
+              }}
+              onClearSelection={() => setMeetingHotkeyConfirmed(false)}
+              recommended="Control+Alt+M"
+              captureLabel={t("onboarding.rehaul.hotkey.capture")}
+              recommendedLabel={t("common.recommended")}
+              chooseAnotherLabel={t("onboarding.rehaul.hotkey.chooseAnother")}
+              validate={validateMeetingHotkey}
+              onConfirm={confirmMeetingHotkey}
+              showCandidateActions
+            />
+          </div>
+        );
 
       case "activation-mode":
         return (
@@ -992,6 +1100,30 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           </div>
         );
 
+      case "local-auto":
+        return (
+          <div className="h-full w-full pt-2">
+            <OnboardingStepHeader
+              title={t("onboarding.rehaul.localAuto.title")}
+              wideTitle
+              description={t("onboarding.rehaul.localAuto.description")}
+              descriptionLines={[
+                t("onboarding.rehaul.localAuto.descriptionLineOne"),
+                t("onboarding.rehaul.localAuto.descriptionLineTwo"),
+              ]}
+            />
+            <AutoLocalSetupStep
+              onReadinessChange={setStageReady}
+              onProceed={() => void continueFromCurrentStep()}
+              onSkip={() => void skipLocalSetup()}
+              onAdvanced={() => {
+                setLocalAdvanced(true);
+                goTo("local-dictation");
+              }}
+            />
+          </div>
+        );
+
       case "local-dictation":
       case "local-assistant":
         return (
@@ -1019,13 +1151,17 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   };
 
   const hasShellNavigation = !compact;
-  const hotkeyStep = currentStepId === "dictation-hotkey" || currentStepId === "assistant-hotkey";
+  const hotkeyStep =
+    currentStepId === "dictation-hotkey" ||
+    currentStepId === "assistant-hotkey" ||
+    currentStepId === "meeting-hotkey";
   const demoStep = currentStepId === "dictation-demo" || currentStepId === "assistant-demo";
   const inlineGatedStep = hotkeyStep || demoStep;
   const choiceStep = currentStepId === "setup-choice";
   const inlineProviderStep =
     currentStepId === "byok-dictation" ||
     currentStepId === "byok-assistant" ||
+    currentStepId === "local-auto" ||
     currentStepId === "local-dictation" ||
     currentStepId === "local-assistant";
   // Choice/provider pages own their forward action, while hotkey/demo pages

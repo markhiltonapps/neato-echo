@@ -7,6 +7,7 @@ import { followsSystemDefaultMic } from "../helpers/micSelectionRecovery";
 import { resolvePreferredMicrophone } from "../helpers/microphoneSelection";
 import { ActiveMicRecoveryController } from "../helpers/activeMicRecovery";
 import { getBaseLanguageCode } from "../utils/languageSupport";
+import { autoTitleRecording } from "../utils/recordingAutoTitle";
 import {
   resolveInitialSpeakerCountOverride,
   resolveParticipantSpeakerCountSync,
@@ -102,6 +103,8 @@ interface MeetingRecordingState {
   /** Latched once per recording when main reports the system-audio tap has produced only silence. */
   systemAudioSilentWarning: boolean;
   currentMicLevel: number;
+  /** Live system-audio (remote participants) level for the waveform, 0–1. */
+  currentSystemLevel: number;
   micCaptureStatus: "inactive" | "active" | "reconnecting" | "unavailable";
   windowWidth: number;
 }
@@ -158,6 +161,7 @@ const getMeetingTranscriptionOptions = () => {
     cortiEnvironment: state.cortiEnvironment,
     cortiTenant: state.cortiTenant,
     keyterms: (state.customDictionary ?? []).filter(Boolean),
+    liveTranscription: state.meetingLiveTranscription,
   });
 };
 
@@ -400,9 +404,15 @@ let systemContext: AudioContext | null = null;
 let systemSource: MediaStreamAudioSourceNode | null = null;
 let systemProcessor: AudioWorkletNode | null = null;
 let systemStream: MediaStream | null = null;
+// Analyser for the renderer (display-media) system-audio path; the native main-process
+// path reports its level over IPC instead (see MeetingRecordingMount).
+let systemAnalyser: AnalyserNode | null = null;
 let isRecordingFlag = false;
 let isStartingFlag = false;
 let activeRecordingSessionId: string | null = null;
+// Wall-clock start of the active recording, used to persist audio_duration_seconds
+// on stop so short recordings can be flagged in the notes list.
+let recordingStartedAtMs: number | null = null;
 const meetingRecordingStartCoordinator = createMeetingRecordingStartCoordinator();
 const meetingRecordingStopBarrier = createMeetingRecordingStopBarrier();
 let isPrepared = false;
@@ -439,6 +449,7 @@ export const useMeetingRecordingStore = create<MeetingRecordingState>()(() => ({
   errorNonce: 0,
   systemAudioSilentWarning: false,
   currentMicLevel: 0,
+  currentSystemLevel: 0,
   micCaptureStatus: "inactive",
   windowWidth: typeof window !== "undefined" ? window.innerWidth : SIDE_PANEL_BREAKPOINT_PX,
 }));
@@ -452,6 +463,7 @@ function reportMeetingError(error: string, extra: Partial<MeetingRecordingState>
 }
 
 export const getMicAnalyser = (): AnalyserNode | null => micAnalyser;
+export const getSystemAnalyser = (): AnalyserNode | null => systemAnalyser;
 
 export const getActiveRecordingSessionId = (): string | null => activeRecordingSessionId;
 
@@ -657,6 +669,8 @@ async function cleanup(): Promise<void> {
 
   micAnalyser?.disconnect();
   micAnalyser = null;
+  systemAnalyser?.disconnect();
+  systemAnalyser = null;
 
   try {
     micStream?.getTracks().forEach((t) => t.stop());
@@ -822,6 +836,7 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
     });
 
     isRecordingFlag = true;
+    recordingStartedAtMs = Date.now();
     let setupMicResult: MediaStream | null = null;
     let setupSystemCaptureResult: { stream: MediaStream | null; error: Error | null } = {
       stream: null,
@@ -1343,6 +1358,18 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
         });
         systemSource = source;
         systemProcessor = processor;
+
+        // Drive the waveform from the remote (system) audio too. Muted-gain sink so the
+        // analyser's pull-based buffer keeps updating without routing audio to output.
+        const sysAnalyser = ctx.createAnalyser();
+        sysAnalyser.fftSize = 256;
+        sysAnalyser.smoothingTimeConstant = 0.4;
+        const sysSink = ctx.createGain();
+        sysSink.gain.value = 0;
+        source.connect(sysAnalyser);
+        sysAnalyser.connect(sysSink);
+        sysSink.connect(ctx.destination);
+        systemAnalyser = sysAnalyser;
       };
 
       if (systemCaptureResult.stream) {
@@ -1495,6 +1522,7 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
     return { diarizationSessionId: null, stopped: false };
   }
@@ -1525,10 +1553,20 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
     // that view is unmounted, and any view-scoped saver dies with it. (Delayed
     // diarization results are persisted by the module-level listener below.)
     const { recordingNoteId, segments: finalSegments } = useMeetingRecordingStore.getState();
+    // Duration from wall-clock start→stop, persisted so the notes list can flag
+    // short (likely accidental) recordings. Only the upload path set this before.
+    const durationSeconds =
+      recordingStartedAtMs != null
+        ? Math.max(0, Math.round((Date.now() - recordingStartedAtMs) / 1000))
+        : null;
+    recordingStartedAtMs = null;
     const persistTranscript = async (transcript: string) => {
       if (recordingNoteId == null) return;
       try {
-        await window.electronAPI?.updateNote?.(recordingNoteId, { transcript });
+        await window.electronAPI?.updateNote?.(recordingNoteId, {
+          transcript,
+          ...(durationSeconds != null ? { audio_duration_seconds: durationSeconds } : {}),
+        });
       } catch (err) {
         logger.error(
           "Failed to persist final meeting transcript",
@@ -1581,7 +1619,22 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
+
+    // Name a still-default recording from its transcript so the notes list does
+    // not fill with "Untitled Note". Fire-and-forget; never blocks the stop.
+    if (recordingNoteId != null) {
+      const titleText =
+        buildTranscriptText(finalSegments) ||
+        useMeetingRecordingStore.getState().transcript ||
+        "";
+      void autoTitleRecording(
+        recordingNoteId,
+        titleText,
+        useMeetingRecordingStore.getState().recordingNoteTitle
+      );
+    }
 
     logger.info("Meeting transcription stopped", {}, "meeting");
     // Reaching here means this call ended a live recording and its transcript
@@ -1630,6 +1683,29 @@ if (typeof window !== "undefined") {
   // getNote await and overwrite each other's speaker labels — the later
   // result merges on top of the earlier one's persisted transcript.
   const enqueueDiarizationCompletion = createSerialQueue();
+
+  // Neato Cloud auto-push: when a meeting recording is saved, upload it (and any
+  // other pending notes) automatically so the user never has to press Push. Gated
+  // by a setting (default on) and silently skipped when not signed in / offline.
+  let neatoAutoPushInFlight = false;
+  window.electronAPI?.onNeatoMeetingSaved?.(() => {
+    try {
+      if (localStorage.getItem("neato.autoPush.v1") === "off") return;
+    } catch {
+      // default on
+    }
+    if (neatoAutoPushInFlight) return;
+    neatoAutoPushInFlight = true;
+    void import("../services/neatoCloud")
+      .then(({ pushNotesToCloud }) => pushNotesToCloud())
+      .catch(() => {
+        // not signed in / offline — manual Push still works
+      })
+      .finally(() => {
+        neatoAutoPushInFlight = false;
+      });
+  });
+
   window.electronAPI?.onMeetingDiarizationComplete?.((data) => {
     enqueueDiarizationCompletion(async () => {
       const {

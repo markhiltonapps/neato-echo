@@ -1,7 +1,7 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="1024" height="1024" rx="241" fill="#2056DF"/>
-<circle cx="512" cy="512" r="314" fill="#2056DF" stroke="white" stroke-width="74"/>
-<path d="M512 383V641" stroke="white" stroke-width="74" stroke-linecap="round"/>
-<path d="M627 457V568" stroke="white" stroke-width="74" stroke-linecap="round"/>
-<path d="M397 457V568" stroke="white" stroke-width="74" stroke-linecap="round"/>
+<rect width="1024" height="1024" rx="241" fill="#45c4c2"/>
+<rect x="211" y="437" width="74" height="150" rx="37.0" fill="#f6f5ee"/><rect x="343" y="362" width="74" height="300" rx="37.0" fill="#f6f5ee"/><rect x="475" y="277" width="74" height="470" rx="37.0" fill="#f6f5ee"/><rect x="607" y="362" width="74" height="300" rx="37.0" fill="#f6f5ee"/><rect x="739" y="437" width="74" height="150" rx="37.0" fill="#f6f5ee"/>
+<path d="M192.5 395.7 A340 340 0 0 1 831.5 395.7" stroke="#f6f5ee" stroke-width="56" stroke-linecap="round" fill="none"/>
+<path d="M831.5 628.3 A340 340 0 0 1 192.5 628.3" stroke="#f6f5ee" stroke-width="56" stroke-linecap="round" fill="none"/>
+<circle cx="857" cy="177" r="35" fill="#f85830"/>
 </svg>

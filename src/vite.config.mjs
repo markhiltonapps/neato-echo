@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "."),
+        "@neato/core": path.resolve(__dirname, "../packages/core/src"),
       },
     },
     server: {

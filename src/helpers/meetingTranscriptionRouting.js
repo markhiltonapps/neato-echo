@@ -22,6 +22,7 @@ export function resolveMeetingTranscriptionOptions({
   cortiEnvironment,
   cortiTenant,
   keyterms,
+  liveTranscription,
 }) {
   if (transcriptionMode === "local") {
     return {
@@ -34,6 +35,8 @@ export function resolveMeetingTranscriptionOptions({
             ? cohereModel || "cohere-transcribe-03-2026"
             : whisperModel || "base",
       language,
+      // Stream words as they are spoken when the local model supports it.
+      liveTranscription: liveTranscription !== false,
     };
   }
 

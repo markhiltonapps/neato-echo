@@ -1094,3 +1094,29 @@ test("linux: a listing with no attributable stream falls through to the unfilter
   );
   assert.equal(detector._pidScopedCapability, false);
 });
+
+test("win32: a new capture beside a long-running one re-arms the prompt", async () => {
+  const { detector, children } = createDetector("win32", {
+    excludedProcessIds: () => [process.pid],
+  });
+
+  await detector.start();
+  // A voice changer that holds the mic all day was prompted for once (the
+  // prompt may even have been refused during onboarding).
+  children[0].stdout.emit("data", "READY\nCAPABILITY PID\nMIC_START 900\n");
+  detector._markPrompted();
+  assert.equal(detector.hasPrompted, true);
+
+  // Too recent to count as ambient: a second pid does not re-arm.
+  children[0].stdout.emit("data", "MIC_START 901\n");
+  assert.equal(detector.hasPrompted, true, "a fresh capture pair is one call, not two");
+  children[0].stdout.emit("data", "MIC_STOP 901\n");
+
+  // Once the first capture has been open long enough, a new app opening the
+  // mic is treated as a new call even though the mic never went idle.
+  detector._pidActiveSince.set(900, Date.now() - 3 * 60 * 1000);
+  children[0].stdout.emit("data", "MIC_START 902\n");
+  assert.equal(detector.hasPrompted, false);
+  assert.notEqual(detector._sustainedTimer, null, "sustained detection is armed again");
+  detector.stop();
+});

@@ -1,48 +1,25 @@
+import neddy from "@/assets/neddy.webp";
+
 interface ChatEmptyIllustrationProps {
+  /** Rendered height in px. Neddy is portrait (461x520). */
   size?: number;
 }
 
-export function ChatEmptyIllustration({ size = 56 }: ChatEmptyIllustrationProps) {
-  const h = Math.round(size * (48 / 56));
+export function ChatEmptyIllustration({ size = 128 }: ChatEmptyIllustrationProps) {
+  const h = size;
+  const w = Math.round((461 / 520) * h);
 
   return (
-    <svg
-      className="text-foreground dark:text-white"
-      width={size}
+    <img
+      src={neddy}
+      alt=""
+      aria-hidden="true"
+      width={w}
       height={h}
-      viewBox="0 0 56 48"
-      fill="none"
-    >
-      {/* Back bubble */}
-      <rect
-        x="16"
-        y="18"
-        width="36"
-        height="24"
-        rx="4"
-        fill="currentColor"
-        fillOpacity={0.03}
-        stroke="currentColor"
-        strokeOpacity={0.06}
-      />
-      <rect x="22" y="25" width="18" height="2" rx="1" fill="currentColor" fillOpacity={0.05} />
-      <rect x="22" y="30" width="24" height="2" rx="1" fill="currentColor" fillOpacity={0.03} />
-
-      {/* Front bubble */}
-      <rect
-        x="4"
-        y="6"
-        width="36"
-        height="24"
-        rx="4"
-        fill="currentColor"
-        fillOpacity={0.04}
-        stroke="currentColor"
-        strokeOpacity={0.08}
-      />
-      <rect x="10" y="13" width="18" height="2" rx="1" fill="currentColor" fillOpacity={0.06} />
-      <rect x="10" y="18" width="24" height="2" rx="1" fill="currentColor" fillOpacity={0.04} />
-      <rect x="10" y="23" width="14" height="2" rx="1" fill="currentColor" fillOpacity={0.03} />
-    </svg>
+      draggable={false}
+      decoding="async"
+      className="select-none drop-shadow-[0_12px_28px_rgba(58,40,20,0.20)]"
+      style={{ width: w, height: h }}
+    />
   );
 }

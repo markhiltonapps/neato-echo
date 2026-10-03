@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import neddyMascot from "@/assets/neddy.webp";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Mic, List, CalendarDays } from "lucide-react";
+import NotesCalendarView from "./NotesCalendarView";
 import { useToast } from "../ui/useToast";
 import NoteEditor from "./NoteEditor";
 import SpacesTree from "./SpacesTree";
@@ -9,10 +11,12 @@ import { ContainerOverview } from "./overview/ContainerOverview";
 import NotesStructureIntroDialog from "./NotesStructureIntroDialog";
 import ActionPicker from "./ActionPicker";
 import ActionManagerDialog from "./ActionManagerDialog";
+import PostRecordingSummaryDialog from "./PostRecordingSummaryDialog";
+import { shouldAskForSummaryAfterRecording } from "./summaryPromptPreference";
 import AddNotesToFolderDialog from "./AddNotesToFolderDialog";
 import { useActionProcessing } from "../../hooks/useActionProcessing";
 import type { NoteMoveTarget } from "../../hooks/useNoteDragAndDrop";
-import type { NoteItem } from "../../types/electron";
+import type { ActionItem, NoteItem } from "../../types/electron";
 import {
   useSettingsStore,
   selectIsCloudNoteFormattingMode,
@@ -144,6 +148,75 @@ export default function PersonalNotesView({
   const draftRef = useRef<NoteEditorDraft | null>(null);
   const [showActionManager, setShowActionManager] = useState(false);
   const [showAddNotesDialog, setShowAddNotesDialog] = useState(false);
+  const [notesLayout, setNotesLayout] = useState<"list" | "calendar">("list");
+  // Resizable notes-list column (mirrors the left rail resize in ControlPanel).
+  // Width persisted + clamped; default 208px (the old fixed w-52).
+  const [notesListWidth, setNotesListWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem("notesListWidth") || "", 10);
+      return Number.isFinite(v) ? Math.min(460, Math.max(176, v)) : 208;
+    } catch {
+      return 208;
+    }
+  });
+  const startNotesListResize = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = notesListWidth;
+      const onMove = (ev: PointerEvent) => {
+        setNotesListWidth(Math.min(460, Math.max(176, startW + (ev.clientX - startX))));
+      };
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        setNotesListWidth((w) => {
+          try {
+            localStorage.setItem("notesListWidth", String(w));
+          } catch {
+            /* blocked storage — width holds for this session only */
+          }
+          return w;
+        });
+      };
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [notesListWidth]
+  );
+  // Neato Echo: offer a summary preset once a meeting recording ends.
+  const [pendingSummary, setPendingSummary] = useState<{
+    noteId: number;
+    transcript: string;
+  } | null>(null);
+  const recordingWatchRef = useRef<{ isRecording: boolean; noteId: number | null }>({
+    isRecording: false,
+    noteId: null,
+  });
+  useEffect(
+    () =>
+      useMeetingRecordingStore.subscribe((state) => {
+        const previous = recordingWatchRef.current;
+        recordingWatchRef.current = {
+          isRecording: state.isRecording,
+          noteId: state.recordingNoteId ?? previous.noteId,
+        };
+        if (
+          previous.isRecording &&
+          !state.isRecording &&
+          previous.noteId != null &&
+          state.transcript.trim() &&
+          shouldAskForSummaryAfterRecording()
+        ) {
+          setPendingSummary({ noteId: previous.noteId, transcript: state.transcript });
+        }
+      }),
+    []
+  );
   const pendingDocumentRef = useRef<PendingDocumentSave | null>(null);
   const pendingEnhancedRef = useRef<PendingEnhancedSave | null>(null);
 
@@ -535,6 +608,40 @@ export default function PersonalNotesView({
     else handleNewNoteInPrivate();
   }, [activeContext, handleNewNoteIn, handleNewNoteInPrivate]);
 
+  // One-click "new recording": create a fresh note in the current context and
+  // immediately start recording into it (a recording needs a note to save its
+  // transcript). Mirrors the in-note record path, just without requiring the
+  // user to make/open a note first.
+  const handleNewRecording = useCallback(async () => {
+    const spaceId = activeContext?.spaceId ?? privateSpaceId;
+    const folderId = activeContext?.folderId ?? null;
+    if (spaceId == null) return;
+    const result = await window.electronAPI.saveNote(
+      t("notes.list.untitledNote"),
+      "",
+      "personal",
+      null,
+      null,
+      folderId,
+      spaceId
+    );
+    if (!result.success || !result.note) return;
+    const note = result.note;
+    setActiveContext(note.space_id, note.folder_id);
+    revealContainer(note.space_id, note.folder_id);
+    setActiveNoteId(note.id);
+    await storeStartRecording({
+      noteId: note.id,
+      noteTitle: note.title ?? null,
+      folderId: note.folder_id ?? null,
+      seedSegments: [],
+      diarizationEnabled: note.diarization_enabled == null ? null : note.diarization_enabled === 1,
+      expectedCount: resolveExpectedSpeakerCount(note),
+      expectedCountIsExplicit: isExplicitSpeakerCount(note.expected_speaker_count),
+      autoEndEligible: isMeetingAutoEndEligible(note),
+    });
+  }, [activeContext, privateSpaceId, t, setActiveContext, revealContainer, setActiveNoteId]);
+
   const handleNotesAdded = useCallback(async () => {
     if (activeFolderId) {
       await initializeNotes(null, 50, activeFolderId);
@@ -596,6 +703,8 @@ export default function PersonalNotesView({
   const {
     state: actionProcessingState,
     actionName,
+    startedAt: actionStartedAt,
+    estimatedSeconds: actionEstimatedSeconds,
     runAction,
   } = useActionProcessing(activeNoteId ?? null);
 
@@ -692,13 +801,76 @@ export default function PersonalNotesView({
     );
   }
 
+  const handleRunAction = async (action: ActionItem, transcriptOverride?: string) => {
+    if (!editorNote) return;
+    const { recordingNoteId: liveNoteId, transcript: liveTranscript } =
+      useMeetingRecordingStore.getState();
+    const rawTranscript =
+      transcriptOverride ||
+      (liveNoteId === activeNote?.id ? liveTranscript : "") ||
+      activeNoteRawTranscript;
+    const noteContent = editorNote.content;
+    const hasNotes = !!noteContent.trim();
+    if (!hasNotes && !rawTranscript) return;
+
+    let formattedTranscript = "";
+    let meetingContext = "";
+    let isMeetingNote = false;
+    let knownPeople: MentionPerson[] = [];
+    if (rawTranscript) {
+      const segments = parseTranscriptSegments(rawTranscript);
+      if (segments.length > 0) {
+        isMeetingNote = true;
+        const mappingRows =
+          (await window.electronAPI?.getSpeakerMappings?.(editorNote.id).catch(() => [])) || [];
+        const speakerMappings: Record<string, string> = {};
+        for (const m of mappingRows) speakerMappings[m.speaker_id] = m.display_name;
+
+        const identity: MeetingIdentity = {
+          selfName: user?.name?.trim() || null,
+          selfEmail: user?.email?.trim() || null,
+          participants: parseNoteParticipants(editorNote.participants),
+        };
+        const selfLabel = identity.selfName || t("notes.speaker.you");
+        meetingContext = buildMeetingContext(identity, selfLabel);
+        formattedTranscript = buildLlmTranscript(segments, speakerMappings, selfLabel, t);
+        knownPeople = collectKnownPeople(identity, speakerMappings, segments);
+      }
+      if (!formattedTranscript) {
+        formattedTranscript = rawTranscript;
+      }
+    }
+
+    const parts = [
+      hasNotes ? noteContent : "",
+      meetingContext,
+      formattedTranscript ? `## Meeting Transcript\n${formattedTranscript}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    runAction(action, parts, makeContentHash(`${noteContent}\n${rawTranscript}`), {
+      isCloudMode,
+      modelId: effectiveModelId,
+      isMeetingNote,
+      knownPeople,
+      allowTitleGeneration: isRegenerableNoteTitle(
+        editorNote.title,
+        [t("notes.list.untitledNote"), t("notes.list.newNote"), t("notes.sidebar.newNote")],
+        calendarEventName
+      ),
+    });
+  };
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       <div
         className="shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
-        style={{ width: isSidePanelLayout ? 0 : "13rem" }}
+        style={{ width: isSidePanelLayout ? 0 : notesListWidth }}
       >
-        <div className="w-52 shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full">
+        <div
+          className="shrink-0 border-r border-border/15 dark:border-white/4 flex flex-col h-full bg-surface-1/40 dark:bg-surface-1/20"
+          style={{ width: notesListWidth }}
+        >
           <div className="px-2 pt-2 pb-1 shrink-0 space-y-0.5">
             <button
               onClick={() => setShowActionManager(true)}
@@ -712,6 +884,42 @@ export default function PersonalNotesView({
               <Sparkles size={14} className="shrink-0" />
               {t("notes.sidebar.actions")}
             </button>
+            {meetingRecordingAllowed && (
+              <button
+                onClick={handleNewRecording}
+                className={cn(
+                  "gloss-convex flex items-center gap-2 w-full px-2 py-2 rounded-lg text-xs font-semibold",
+                  "text-[#2a2013] bg-brand-warm shadow-[var(--shadow-glow-warm)]",
+                  "hover:brightness-[1.03] active:scale-[0.99]",
+                  "transition-[filter,transform,box-shadow] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-warm/50"
+                )}
+              >
+                <Mic size={14} className="shrink-0" />
+                {t("notes.list.newRecording")}
+              </button>
+            )}
+            <div className="flex items-center gap-0.5 rounded-md bg-foreground/4 dark:bg-white/5 p-0.5 mt-0.5">
+              {(
+                [
+                  ["list", List, t("notesCalendar.viewList")],
+                  ["calendar", CalendarDays, t("notesCalendar.viewCalendar")],
+                ] as const
+              ).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setNotesLayout(mode)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 h-6 rounded text-[11px] font-medium transition-colors",
+                    notesLayout === mode
+                      ? "bg-card text-foreground shadow-[var(--shadow-card)]"
+                      : "text-muted-foreground/60 hover:text-foreground"
+                  )}
+                >
+                  <Icon size={12} />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <SpacesTree
@@ -724,8 +932,28 @@ export default function PersonalNotesView({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        {editorNote ? (
+      {!isSidePanelLayout && (
+        <div
+          onPointerDown={startNotesListResize}
+          className="group absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize"
+          style={{ left: notesListWidth }}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t("notes.list.resize", "Resize notes list")}
+        >
+          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors duration-150 group-hover:bg-brand-teal/50" />
+        </div>
+      )}
+
+      <div className="canvas-glow flex-1 flex flex-col min-w-0 min-h-0">
+        {notesLayout === "calendar" ? (
+          <NotesCalendarView
+            onOpenNote={(id) => {
+              setActiveNoteId(id);
+              setNotesLayout("list");
+            }}
+          />
+        ) : editorNote ? (
           <>
             <NoteEditor
               key={editorNote.id}
@@ -764,77 +992,11 @@ export default function PersonalNotesView({
               onCancelPendingSaves={cancelPendingSaves}
               actionProcessingState={actionProcessingState}
               actionName={actionName}
+              actionStartedAt={actionStartedAt}
+              actionEstimatedSeconds={actionEstimatedSeconds}
               actionPicker={
                 <ActionPicker
-                  onRunAction={async (action) => {
-                    if (!editorNote) return;
-                    const { recordingNoteId: liveNoteId, transcript: liveTranscript } =
-                      useMeetingRecordingStore.getState();
-                    const rawTranscript =
-                      (liveNoteId === activeNote?.id ? liveTranscript : "") ||
-                      activeNoteRawTranscript;
-                    const noteContent = editorNote.content;
-                    const hasNotes = !!noteContent.trim();
-                    if (!hasNotes && !rawTranscript) return;
-
-                    let formattedTranscript = "";
-                    let meetingContext = "";
-                    let isMeetingNote = false;
-                    let knownPeople: MentionPerson[] = [];
-                    if (rawTranscript) {
-                      const segments = parseTranscriptSegments(rawTranscript);
-                      if (segments.length > 0) {
-                        isMeetingNote = true;
-                        const mappingRows =
-                          (await window.electronAPI
-                            ?.getSpeakerMappings?.(editorNote.id)
-                            .catch(() => [])) || [];
-                        const speakerMappings: Record<string, string> = {};
-                        for (const m of mappingRows) speakerMappings[m.speaker_id] = m.display_name;
-
-                        const identity: MeetingIdentity = {
-                          selfName: user?.name?.trim() || null,
-                          selfEmail: user?.email?.trim() || null,
-                          participants: parseNoteParticipants(editorNote.participants),
-                        };
-                        const selfLabel = identity.selfName || t("notes.speaker.you");
-                        meetingContext = buildMeetingContext(identity, selfLabel);
-                        formattedTranscript = buildLlmTranscript(
-                          segments,
-                          speakerMappings,
-                          selfLabel,
-                          t
-                        );
-                        knownPeople = collectKnownPeople(identity, speakerMappings, segments);
-                      }
-                      if (!formattedTranscript) {
-                        formattedTranscript = rawTranscript;
-                      }
-                    }
-
-                    const parts = [
-                      hasNotes ? noteContent : "",
-                      meetingContext,
-                      formattedTranscript ? `## Meeting Transcript\n${formattedTranscript}` : "",
-                    ]
-                      .filter(Boolean)
-                      .join("\n\n");
-                    runAction(action, parts, makeContentHash(`${noteContent}\n${rawTranscript}`), {
-                      isCloudMode,
-                      modelId: effectiveModelId,
-                      isMeetingNote,
-                      knownPeople,
-                      allowTitleGeneration: isRegenerableNoteTitle(
-                        editorNote.title,
-                        [
-                          t("notes.list.untitledNote"),
-                          t("notes.list.newNote"),
-                          t("notes.sidebar.newNote"),
-                        ],
-                        calendarEventName
-                      ),
-                    });
-                  }}
+                  onRunAction={(action) => void handleRunAction(action)}
                   onManageActions={() => setShowActionManager(true)}
                   disabled={
                     (!editorNote?.content?.trim() &&
@@ -846,6 +1008,21 @@ export default function PersonalNotesView({
               }
             />
             <ActionManagerDialog open={showActionManager} onOpenChange={setShowActionManager} />
+            <PostRecordingSummaryDialog
+              open={pendingSummary != null && activeNote?.id === pendingSummary.noteId}
+              onSkip={() => setPendingSummary(null)}
+              onPick={(action) => {
+                const pending = pendingSummary;
+                setPendingSummary(null);
+                if (!pending) return;
+                const live = useMeetingRecordingStore.getState();
+                const transcript =
+                  live.recordingNoteId === pending.noteId && live.transcript.trim()
+                    ? live.transcript
+                    : pending.transcript;
+                void handleRunAction(action, transcript);
+              }}
+            />
           </>
         ) : activeContext && overviewSpace ? (
           <ContainerOverview
@@ -858,118 +1035,43 @@ export default function PersonalNotesView({
             folder={overviewFolder}
             onOpenNote={setActiveNoteId}
             onNewNote={handleNewNote}
+            onNewRecording={handleNewRecording}
             onAddExisting={activeFolderId != null ? () => setShowAddNotesDialog(true) : undefined}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center -mt-6">
-            <svg
-              className="text-foreground dark:text-white mb-5"
-              width="72"
-              height="64"
-              viewBox="0 0 72 64"
-              fill="none"
-            >
-              <rect
-                x="22"
-                y="2"
-                width="32"
-                height="42"
-                rx="3"
-                transform="rotate(6 38 23)"
-                fill="currentColor"
-                fillOpacity={0.025}
-                stroke="currentColor"
-                strokeOpacity={0.06}
-              />
-              <rect
-                x="18"
-                y="5"
-                width="32"
-                height="42"
-                rx="3"
-                transform="rotate(3 34 26)"
-                fill="currentColor"
-                fillOpacity={0.04}
-                stroke="currentColor"
-                strokeOpacity={0.08}
-              />
-              <rect
-                x="14"
-                y="8"
-                width="32"
-                height="42"
-                rx="3"
-                fill="currentColor"
-                fillOpacity={0.05}
-                stroke="currentColor"
-                strokeOpacity={0.1}
-              />
-              <rect
-                x="20"
-                y="16"
-                width="16"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.08}
-              />
-              <rect
-                x="20"
-                y="21"
-                width="20"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.06}
-              />
-              <rect
-                x="20"
-                y="26"
-                width="12"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.05}
-              />
-              <rect
-                x="20"
-                y="31"
-                width="18"
-                height="2"
-                rx="1"
-                fill="currentColor"
-                fillOpacity={0.04}
-              />
-              <circle
-                cx="54"
-                cy="50"
-                r="5"
-                fill="currentColor"
-                fillOpacity={0.03}
-                stroke="currentColor"
-                strokeOpacity={0.06}
-              />
-              <path
-                d="M51.5 50L53 51.5L56.5 48"
-                stroke="currentColor"
-                strokeOpacity={0.12}
-                strokeWidth={1.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <img
+              src={neddyMascot}
+              alt=""
+              aria-hidden="true"
+              width={104}
+              height={117}
+              draggable={false}
+              decoding="async"
+              className="mb-5 select-none drop-shadow-[0_12px_28px_rgba(58,40,20,0.20)]"
+              style={{ width: 104, height: 117 }}
+            />
             {notes.length === 0 ? (
               <>
                 <h3 className="text-xs font-semibold text-foreground/60 mb-1">
                   {t(notesEmptyTitleKey(activeFolderId != null))}
                 </h3>
-                <p className="text-xs text-foreground/50 dark:text-foreground/25 text-center max-w-55 mb-4">
+                <p className="text-xs text-foreground/60 dark:text-foreground/55 text-center max-w-55 mb-4">
                   {t("notes.empty.description")}
                 </p>
+                {/* One filled hero (recording — the product's core loop), the
+                    rest demoted to ghost so the primary action is unambiguous. */}
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={handleNewRecording}
+                    className="gloss-convex flex items-center gap-1.5 px-4 h-8 rounded-lg bg-brand-warm shadow-[var(--shadow-glow-warm)] text-xs font-semibold text-[#2a2013] hover:brightness-[1.03] active:scale-[0.99] transition-[filter,transform,box-shadow]"
+                  >
+                    <Mic size={11} />
+                    {t("notes.list.newRecording")}
+                  </button>
+                  <button
                     onClick={handleNewNote}
-                    className="flex items-center gap-1.5 px-4 h-7 rounded-md bg-primary/8 dark:bg-primary/10 border border-primary/12 dark:border-primary/15 text-xs font-medium text-primary/70 hover:bg-primary/12 hover:text-primary hover:border-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/50 hover:text-foreground/70 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
                   >
                     <Plus size={11} />
                     {t("notes.empty.createNote")}
@@ -979,7 +1081,7 @@ export default function PersonalNotesView({
                   {activeFolderId != null && (
                     <button
                       onClick={() => setShowAddNotesDialog(true)}
-                      className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/40 hover:text-foreground/60 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
+                      className="flex items-center gap-1.5 px-4 h-7 rounded-md border border-foreground/8 dark:border-white/8 text-xs text-foreground/50 hover:text-foreground/70 hover:border-foreground/15 hover:bg-foreground/3 dark:hover:bg-white/3 transition-colors"
                     >
                       {t("notes.addToFolder.addExisting")}
                     </button>
@@ -991,7 +1093,7 @@ export default function PersonalNotesView({
                 <h3 className="text-xs font-semibold text-foreground/60 mb-1">
                   {t("notes.empty.selectTitle")}
                 </h3>
-                <p className="text-xs text-foreground/50 dark:text-foreground/25 text-center max-w-50">
+                <p className="text-xs text-foreground/60 dark:text-foreground/55 text-center max-w-50">
                   {t("notes.empty.selectDescription")}
                 </p>
               </>

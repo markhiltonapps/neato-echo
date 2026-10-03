@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 50 33% 95%;
+    --foreground: 17 35% 12%;
+
+    --card: 50 25% 92%;
+    --card-foreground: 17 35% 12%;
+
+    --popover: 50 33% 95%;
+    --popover-foreground: 17 35% 12%;
+
+    --primary: 179 52% 52%;
+    --primary-foreground: 50 33% 95%;
+
+    --secondary: 17 40% 36%;
+    --secondary-foreground: 50 33% 95%;
+
+    --muted: 45 20% 88%;
+    --muted-foreground: 17 20% 40%;
+
+    --accent: 45 87% 62%;
+    --accent-foreground: 17 35% 12%;
+
+    --destructive: 12 93% 58%;
+    --destructive-foreground: 50 33% 95%;
+
+    --border: 17 15% 78%;
+    --input: 17 15% 78%;
+    --ring: 179 52% 52%;
+
+    --radius: 0.75rem;
+
+    /* Brand tokens */
+    --teal: 179 52% 52%;
+    --burnt-orange: 12 93% 58%;
+    --mustard: 45 87% 62%;
+    --retro-brown: 17 40% 36%;
+    --cream: 50 33% 95%;
+
+    --font-display: 'Space Mono', monospace;
+    --font-body: 'Outfit', sans-serif;
+
+    --sidebar-background: 50 25% 92%;
+    --sidebar-foreground: 17 35% 12%;
+    --sidebar-primary: 179 52% 52%;
+    --sidebar-primary-foreground: 50 33% 95%;
+    --sidebar-accent: 45 87% 62%;
+    --sidebar-accent-foreground: 17 35% 12%;
+    --sidebar-border: 17 15% 78%;
+    --sidebar-ring: 179 52% 52%;
+  }
+
+  .dark {
+    --background: 17 30% 8%;
+    --foreground: 50 33% 92%;
+
+    --card: 17 25% 12%;
+    --card-foreground: 50 33% 92%;
+
+    --popover: 17 30% 8%;
+    --popover-foreground: 50 33% 92%;
+
+    --primary: 179 52% 55%;
+    --primary-foreground: 17 30% 8%;
+
+    --secondary: 17 40% 36%;
+    --secondary-foreground: 50 33% 92%;
+
+    --muted: 17 20% 18%;
+    --muted-foreground: 50 15% 60%;
+
+    --accent: 45 87% 62%;
+    --accent-foreground: 17 30% 8%;
+
+    --destructive: 12 93% 58%;
+    --destructive-foreground: 50 33% 92%;
+
+    --border: 17 15% 22%;
+    --input: 17 15% 22%;
+    --ring: 179 52% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+}
+
+@layer components {
+  /* Retro-futuristic text gradient */
+  .text-gradient-retro {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--teal)) 0%,
+      hsl(var(--mustard)) 50%,
+      hsl(var(--burnt-orange)) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: neato-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes neato-glow {
+    0%, 100% {
+      filter: brightness(1) drop-shadow(0 0 8px hsl(var(--teal) / 0.3));
+    }
+    50% {
+      filter: brightness(1.25) drop-shadow(0 0 25px hsl(var(--teal) / 0.6)) drop-shadow(0 0 50px hsl(var(--mustard) / 0.3));
+    }
+  }
+
+  /* Scanline overlay for retro CRT feel */
+  .scanlines {
+    position: relative;
+  }
+
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(var(--foreground) / 0.03) 2px,
+      hsl(var(--foreground) / 0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Atomic starburst decorative background */
+  .bg-starburst {
+    background-image:
+      radial-gradient(circle at 50% 50%, hsl(var(--mustard) / 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 20% 30%, hsl(var(--teal) / 0.1) 0%, transparent 35%),
+      radial-gradient(circle at 80% 70%, hsl(var(--burnt-orange) / 0.08) 0%, transparent 35%);
+  }
+
+  /* Retro border with shadow */
+  .retro-border {
+    border: 3px solid hsl(var(--retro-brown));
+    box-shadow:
+      4px 4px 0 hsl(var(--retro-brown) / 0.4),
+      inset 0 0 0 1px hsl(var(--retro-brown) / 0.1);
+  }
+
+  /* Googie-style card */
+  .googie-card {
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: 5px 5px 0 hsl(var(--retro-brown) / 0.15);
+    transition: all 0.3s ease;
+  }
+
+  .googie-card:hover {
+    box-shadow: 8px 8px 0 hsl(var(--teal) / 0.2);
+    border-color: hsl(var(--teal));
+    transform: translate(-2px, -2px);
+  }
+
+  /* Retro glow */
+  .retro-glow {
+    box-shadow:
+      0 0 20px hsl(var(--teal) / 0.25),
+      0 0 50px hsl(var(--teal) / 0.1);
+  }
+
+  /* Atom orbit animation */
+  @keyframes orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes glitch {
+    0%, 90%, 100% { transform: translate(0); }
+    92% { transform: translate(-2px, 1px); }
+    94% { transform: translate(2px, -1px); }
+    96% { transform: translate(-1px, -1px); }
+    98% { transform: translate(1px, 1px); }
+  }
+
+  .animate-orbit {
+    animation: orbit 20s linear infinite;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.6s ease-out forwards;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .glitch-text {
+    animation: glitch 3s infinite;
+  }
+
+  /* Decorative atomic symbol (CSS-only) */
+  .atom-ring {
+    border: 2px solid hsl(var(--teal) / 0.2);
+    border-radius: 50%;
+    position: absolute;
+  }
+}

@@ -119,7 +119,7 @@ function AttendeePopover({
           <p className="text-xs font-medium leading-snug text-foreground">
             {event.summary || t("upcoming.untitledEvent")}
           </p>
-          <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">{timeRange}</p>
+          <p className="mt-0.5 font-brand text-[11px] tabular-nums text-muted-foreground">{timeRange}</p>
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {attendees.map((a) => (
@@ -189,7 +189,7 @@ function EventRow({ event, isNow }: { event: CalendarEvent; isNow: boolean }) {
             joinUrl={joinUrl}
           />
         ) : event.attendees_count > 1 ? (
-          <span className="shrink-0 pt-0.5 text-[11px] tabular-nums text-muted-foreground/70">
+          <span className="shrink-0 pt-0.5 font-brand text-[11px] tabular-nums text-muted-foreground/70">
             +{event.attendees_count - 1}
           </span>
         ) : null}
@@ -206,7 +206,7 @@ function EventRow({ event, isNow }: { event: CalendarEvent; isNow: boolean }) {
             </span>
           </span>
         ) : (
-          <span className="text-[11px] tabular-nums text-muted-foreground">{timeRange}</span>
+          <span className="font-brand text-[11px] tabular-nums text-muted-foreground">{timeRange}</span>
         )}
         <Button
           size="sm"
@@ -238,16 +238,18 @@ function DayCard({ group, isNowFn }: { group: DayGroup; isNowFn: (e: CalendarEve
 
   return (
     <div className="rounded-lg border border-border/40 bg-card/50 px-3 py-2.5 dark:border-border-subtle/60 dark:bg-surface-2/60">
-      <div className="flex items-center gap-2 pb-2">
-        <span className="text-[22px] font-semibold leading-none tabular-nums text-foreground">
+      <div className="flex items-center gap-2.5 pb-2">
+        <span className="font-brand text-[24px] font-bold leading-none tabular-nums tracking-tight text-foreground">
           {group.date.getDate()}
         </span>
         <div className="flex flex-col justify-center">
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-tight text-foreground">
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold leading-tight text-foreground">
             {group.date.toLocaleDateString(locale, { month: "long" })}
-            {group.isToday && <span className="h-1 w-1 rounded-full bg-red-500" />}
+            {group.isToday && (
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-teal shadow-[0_0_8px_var(--color-brand-teal)]" />
+            )}
           </span>
-          <span className="text-[10px] leading-tight text-muted-foreground">
+          <span className="font-brand text-[9px] font-bold uppercase leading-tight tracking-[0.14em] text-muted-foreground/70">
             {group.date.toLocaleDateString(locale, { weekday: "short" })}
           </span>
         </div>
@@ -313,8 +315,8 @@ export default function UpcomingMeetings({
     <div className="w-64 sticky top-0 self-start max-h-screen overflow-y-auto">
       {/* Header */}
       <div className="flex items-center gap-1.5 pb-2.5">
-        <Calendar size={12} className="text-muted-foreground" />
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <Calendar size={12} className="text-muted-foreground/70" />
+        <span className="font-brand text-[10.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           {t("upcoming.title")}
         </span>
       </div>
