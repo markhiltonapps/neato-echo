@@ -3295,7 +3295,10 @@
       "systemNoSignal": "未偵測到系統音訊",
       "systemReceiving": "正在接收系統音訊",
       "systemListening": "正在等待系統音訊…",
-      "systemHint": "如果一直是空的，可能有其他應用程式在阻擋系統音訊——請關閉其他錄製程式，或停止並重新開始錄製。"
+      "systemHint": "如果一直是空的，可能有其他應用程式在阻擋系統音訊——請關閉其他錄製程式，或停止並重新開始錄製。",
+      "systemSourceAuto": "自動（建議）",
+      "systemSourceScreen": "螢幕分享（擷取你聽到的聲音）",
+      "systemSourceHint": "如果系統音訊未被擷取，請選擇一個來源。即使自動擷取沒有聲音，螢幕分享仍可運作。將於你下次錄製時生效。"
     }
   },
   "dictionary": {

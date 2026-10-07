@@ -3300,7 +3300,10 @@
       "systemNoSignal": "Nenhum áudio do sistema detectado",
       "systemReceiving": "Recebendo áudio do sistema",
       "systemListening": "Aguardando áudio do sistema…",
-      "systemHint": "Se continuar vazio, outro app pode estar bloqueando o áudio do sistema — feche outros gravadores ou pare e reinicie a gravação."
+      "systemHint": "Se continuar vazio, outro app pode estar bloqueando o áudio do sistema — feche outros gravadores ou pare e reinicie a gravação.",
+      "systemSourceAuto": "Automático (recomendado)",
+      "systemSourceScreen": "Compartilhar tela (capturar o que você ouve)",
+      "systemSourceHint": "Escolha uma fonte se o áudio do sistema não for capturado. Compartilhar a tela funciona mesmo quando a captura automática fica em silêncio. Aplica-se à sua próxima gravação."
     }
   },
   "dictionary": {

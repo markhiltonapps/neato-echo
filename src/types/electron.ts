@@ -2716,6 +2716,7 @@ declare global {
         noteId?: number | null;
         sessionId: string;
         autoEndEligible: boolean;
+        systemAudioSource?: { mode: "auto" | "screen" | "device"; deviceId?: string | null };
       }) => Promise<
         {
           success: boolean;

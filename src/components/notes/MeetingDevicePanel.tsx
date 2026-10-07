@@ -3,7 +3,23 @@ import { useTranslation } from "react-i18next";
 import { Mic, Volume2, RefreshCw } from "lucide-react";
 import { useSettings } from "../../hooks/useSettings";
 import { useMeetingRecordingStore } from "../../stores/meetingRecordingStore";
+import {
+  SYSTEM_AUDIO_SOURCE_MODE_KEY,
+  SYSTEM_AUDIO_SOURCE_ID_KEY,
+  SYSTEM_AUDIO_SOURCE_LABEL_KEY,
+} from "../../helpers/systemAudioSource";
 import { cn } from "../lib/utils";
+
+function readSystemAudioSourceSetting(): { mode: string; deviceId: string } {
+  try {
+    return {
+      mode: localStorage.getItem(SYSTEM_AUDIO_SOURCE_MODE_KEY) || "auto",
+      deviceId: localStorage.getItem(SYSTEM_AUDIO_SOURCE_ID_KEY) || "",
+    };
+  } catch {
+    return { mode: "auto", deviceId: "" };
+  }
+}
 
 // A live meter bar (0–1 level). sqrt curve makes quiet speech visible, matching the pill.
 function Meter({ level }: { level: number }) {
@@ -49,6 +65,7 @@ export default function MeetingDevicePanel() {
   const systemSilent = useMeetingRecordingStore((s) => s.systemAudioSilentWarning);
 
   const [devices, setDevices] = useState<{ deviceId: string; label: string }[]>([]);
+  const [sysSource, setSysSource] = useState(() => readSystemAudioSourceSetting());
 
   const loadDevices = useCallback(async () => {
     try {
@@ -84,6 +101,28 @@ export default function MeetingDevicePanel() {
       setMicrophoneSelectionMode("specific");
       setSelectedMicDevice(value, dev?.label ?? "");
     }
+  };
+
+  const sysSourceValue = sysSource.mode === "device" ? sysSource.deviceId : sysSource.mode;
+  const onSysSourceChange = (value: string) => {
+    let mode = "auto";
+    let deviceId = "";
+    let label = "";
+    if (value === "screen") {
+      mode = "screen";
+    } else if (value !== "auto") {
+      mode = "device";
+      deviceId = value;
+      label = devices.find((d) => d.deviceId === value)?.label ?? "";
+    }
+    try {
+      localStorage.setItem(SYSTEM_AUDIO_SOURCE_MODE_KEY, mode);
+      localStorage.setItem(SYSTEM_AUDIO_SOURCE_ID_KEY, deviceId);
+      localStorage.setItem(SYSTEM_AUDIO_SOURCE_LABEL_KEY, label);
+    } catch {
+      // storage unavailable — the in-memory selection below still drives the next start
+    }
+    setSysSource({ mode, deviceId });
   };
 
   // System-audio health: latched-silent > flat > receiving.
@@ -132,6 +171,22 @@ export default function MeetingDevicePanel() {
           <Volume2 size={12} />
           {t("notes.audioPanel.systemAudio")}
         </div>
+        <select
+          value={sysSourceValue}
+          onChange={(e) => onSysSourceChange(e.target.value)}
+          className="w-full h-7 rounded-md border border-border bg-input px-2 text-[12px] text-foreground"
+        >
+          <option value="auto">{t("notes.audioPanel.systemSourceAuto")}</option>
+          <option value="screen">{t("notes.audioPanel.systemSourceScreen")}</option>
+          {devices.map((d) => (
+            <option key={d.deviceId} value={d.deviceId}>
+              {d.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-[10.5px] leading-snug text-foreground/45">
+          {t("notes.audioPanel.systemSourceHint")}
+        </p>
         <Meter level={systemLevel} />
         <p
           className={cn(

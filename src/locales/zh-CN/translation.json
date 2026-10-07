@@ -3295,7 +3295,10 @@
       "systemNoSignal": "未检测到系统音频",
       "systemReceiving": "正在接收系统音频",
       "systemListening": "正在等待系统音频…",
-      "systemHint": "如果一直为空，可能有其他应用在阻止系统音频——请关闭其他录制应用，或停止并重新开始录制。"
+      "systemHint": "如果一直为空，可能有其他应用在阻止系统音频——请关闭其他录制应用，或停止并重新开始录制。",
+      "systemSourceAuto": "自动（推荐）",
+      "systemSourceScreen": "屏幕共享（捕获你听到的声音）",
+      "systemSourceHint": "如果未捕获系统音频，请选择一个来源。即使自动捕获没有声音，屏幕共享也能工作。将在你下次录制时生效。"
     }
   },
   "dictionary": {

@@ -3300,7 +3300,10 @@
       "systemNoSignal": "Nessun audio di sistema rilevato",
       "systemReceiving": "Ricezione audio di sistema",
       "systemListening": "In ascolto dell’audio di sistema…",
-      "systemHint": "Se resta vuoto, un’altra app potrebbe bloccare l’audio di sistema: chiudi altri registratori o interrompi e riavvia la registrazione."
+      "systemHint": "Se resta vuoto, un’altra app potrebbe bloccare l’audio di sistema: chiudi altri registratori o interrompi e riavvia la registrazione.",
+      "systemSourceAuto": "Automatico (consigliato)",
+      "systemSourceScreen": "Condivisione schermo (cattura ciò che senti)",
+      "systemSourceHint": "Scegli una sorgente se l'audio di sistema non viene catturato. La condivisione schermo funziona anche quando la cattura automatica resta silenziosa. Si applica alla prossima registrazione."
     }
   },
   "dictionary": {

@@ -5,6 +5,12 @@ import { getStreamingTranscriptionProviders } from "../models/ModelRegistry";
 import { resolveMeetingTranscriptionOptions } from "../helpers/meetingTranscriptionRouting";
 import { followsSystemDefaultMic } from "../helpers/micSelectionRecovery";
 import { resolvePreferredMicrophone } from "../helpers/microphoneSelection";
+import { resolveSystemAudioSource } from "../helpers/systemAudioSource";
+
+type SystemAudioSourceResolution = {
+  mode: "auto" | "screen" | "device";
+  deviceId: string | null;
+};
 import { ActiveMicRecoveryController } from "../helpers/activeMicRecovery";
 import { getBaseLanguageCode } from "../utils/languageSupport";
 import { autoTitleRecording } from "../utils/recordingAutoTitle";
@@ -206,7 +212,64 @@ const requestSystemAudioDisplayStream = async (mode: "loopback" | "portal") => {
   }
 };
 
-const prepareMeetingSystemAudioCapture = (initialSystemAudioAccess: SystemAudioAccessResult) => {
+// Capture a chosen audio INPUT device (e.g. "Stereo Mix" or a virtual cable) as the
+// system-audio source. Raw passthrough — unlike a mic, system audio must not be run
+// through echo cancellation / noise suppression / AGC.
+const requestSystemAudioInputStream = async (deviceId: string | null) => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) {
+      stopMediaStream(stream);
+      return { stream: null, error: new Error("No audio from the selected system-audio device.") };
+    }
+    return { stream, error: null };
+  } catch (error) {
+    return { stream: null, error: error as Error };
+  }
+};
+
+// The user's meeting system-audio override, read from localStorage (see
+// src/helpers/systemAudioSource.js). "auto" keeps the platform default path unchanged.
+const readSystemAudioOverride = (): SystemAudioSourceResolution =>
+  resolveSystemAudioSource((key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  });
+
+const prepareMeetingSystemAudioCapture = (
+  initialSystemAudioAccess: SystemAudioAccessResult,
+  override: SystemAudioSourceResolution
+) => {
+  // A forced source is captured entirely in the renderer; mark it as a renderer
+  // ("loopback") strategy so ensureRendererSystemAudioCapture doesn't also run, and
+  // start the chosen capture now. Main is told to skip the native helper (see the
+  // meetingTranscriptionStart options), so there's no double capture.
+  if (override.mode === "screen") {
+    return {
+      initialSystemAudioStrategy: "loopback" as SystemAudioStrategy,
+      initialDisplayCaptureStrategy: "loopback" as const,
+      systemCapturePromise: requestSystemAudioDisplayStream("loopback"),
+    };
+  }
+  if (override.mode === "device") {
+    return {
+      initialSystemAudioStrategy: "loopback" as SystemAudioStrategy,
+      initialDisplayCaptureStrategy: "loopback" as const,
+      systemCapturePromise: requestSystemAudioInputStream(override.deviceId),
+    };
+  }
+
   const initialSystemAudioStrategy = initialSystemAudioAccess.strategy ?? "unsupported";
   const initialDisplayCaptureStrategy = isRendererSystemAudioStrategy(initialSystemAudioStrategy)
     ? initialSystemAudioStrategy
@@ -882,12 +945,14 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
         await teardownStart();
         return;
       }
+      const systemAudioOverride = readSystemAudioOverride();
       const { initialSystemAudioStrategy, initialDisplayCaptureStrategy, systemCapturePromise } =
-        prepareMeetingSystemAudioCapture(initialSystemAudioAccess);
+        prepareMeetingSystemAudioCapture(initialSystemAudioAccess, systemAudioOverride);
 
       startOperation.markMainStartAttempted();
       const mainStartPromise = window.electronAPI?.meetingTranscriptionStart?.({
         ...getMeetingTranscriptionOptions(),
+        systemAudioSource: systemAudioOverride,
         noteId: args.noteId ?? null,
         sessionId,
         autoEndEligible: args.autoEndEligible,

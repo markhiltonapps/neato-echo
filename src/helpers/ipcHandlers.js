@@ -8327,6 +8327,16 @@ class IPCHandlers {
       try {
         const systemAudioPlan = await getMeetingSystemAudioPlan({ refreshWindowsCapability: true });
         let { mode: systemAudioMode, strategy: systemAudioStrategy } = systemAudioPlan;
+
+        // The user forced a manual system-audio source captured in the renderer
+        // ("screen" = getDisplayMedia, "device" = getUserMedia on a chosen input). Skip
+        // the native helper so it can't double-capture (or capture silence); the renderer
+        // feeds PCM over meeting-transcription-send via the loopback strategy.
+        const forcedSystemAudioSource = options.systemAudioSource?.mode;
+        if (forcedSystemAudioSource === "screen" || forcedSystemAudioSource === "device") {
+          systemAudioStrategy = "loopback";
+          if (systemAudioMode === "unsupported") systemAudioMode = "loopback";
+        }
         const requestedConnectionKey = getMeetingConnectionKey(options);
         meetingEchoLeakDetector.reset();
         meetingOneOnOneAttendee = resolveOneOnOneAttendeeForNote(options.noteId);

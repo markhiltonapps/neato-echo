@@ -3558,7 +3558,10 @@
       "systemNoSignal": "No system audio detected",
       "systemReceiving": "Receiving system audio",
       "systemListening": "Listening for system audio…",
-      "systemHint": "If this stays empty, another app may be blocking system audio — close other recorders, or stop and restart the recording."
+      "systemHint": "If this stays empty, another app may be blocking system audio — close other recorders, or stop and restart the recording.",
+      "systemSourceAuto": "Automatic (recommended)",
+      "systemSourceScreen": "Screen share (capture what you hear)",
+      "systemSourceHint": "Pick a source if system audio isn't captured. Screen share works even when automatic capture stays silent. Applies to your next recording."
     }
   },
   "dictionary": {

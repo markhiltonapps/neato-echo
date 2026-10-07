@@ -3558,7 +3558,10 @@
       "systemNoSignal": "Aucun audio système détecté",
       "systemReceiving": "Réception de l’audio système",
       "systemListening": "Écoute de l’audio système…",
-      "systemHint": "Si cela reste vide, une autre app bloque peut-être l’audio système — fermez les autres enregistreurs, ou arrêtez et redémarrez l’enregistrement."
+      "systemHint": "Si cela reste vide, une autre app bloque peut-être l’audio système — fermez les autres enregistreurs, ou arrêtez et redémarrez l’enregistrement.",
+      "systemSourceAuto": "Automatique (recommandé)",
+      "systemSourceScreen": "Partage d'écran (capturer ce que vous entendez)",
+      "systemSourceHint": "Choisissez une source si l'audio système n'est pas capturé. Le partage d'écran fonctionne même quand la capture automatique reste muette. S'applique à votre prochain enregistrement."
     }
   },
   "dictionary": {

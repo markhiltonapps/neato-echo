@@ -3558,7 +3558,10 @@
       "systemNoSignal": "Kein Systemaudio erkannt",
       "systemReceiving": "Systemaudio wird empfangen",
       "systemListening": "Warte auf Systemaudio…",
-      "systemHint": "Bleibt dies leer, blockiert evtl. eine andere App das Systemaudio – schließe andere Rekorder oder stoppe und starte die Aufnahme neu."
+      "systemHint": "Bleibt dies leer, blockiert evtl. eine andere App das Systemaudio – schließe andere Rekorder oder stoppe und starte die Aufnahme neu.",
+      "systemSourceAuto": "Automatisch (empfohlen)",
+      "systemSourceScreen": "Bildschirmfreigabe (aufnehmen, was du hörst)",
+      "systemSourceHint": "Wähle eine Quelle, falls der Systemton nicht erfasst wird. Die Bildschirmfreigabe funktioniert auch, wenn die automatische Erfassung stumm bleibt. Gilt für deine nächste Aufnahme."
     }
   },
   "dictionary": {
