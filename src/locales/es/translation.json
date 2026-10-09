@@ -3337,7 +3337,8 @@
     },
     "origin": {
       "mobile": "Móvil",
-      "desktop": "Escritorio"
+      "desktop": "Escritorio",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Dispositivos de audio",

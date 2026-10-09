@@ -3212,7 +3212,8 @@
     },
     "origin": {
       "mobile": "モバイル",
-      "desktop": "デスクトップ"
+      "desktop": "デスクトップ",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "オーディオデバイス",

@@ -3284,7 +3284,8 @@
     },
     "origin": {
       "mobile": "手机",
-      "desktop": "桌面"
+      "desktop": "桌面",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "音频设备",

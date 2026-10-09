@@ -3289,7 +3289,8 @@
     },
     "origin": {
       "mobile": "Mobile",
-      "desktop": "Desktop"
+      "desktop": "Desktop",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Dispositivi audio",

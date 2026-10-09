@@ -3289,7 +3289,8 @@
     },
     "origin": {
       "mobile": "Celular",
-      "desktop": "Desktop"
+      "desktop": "Desktop",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Dispositivos de áudio",

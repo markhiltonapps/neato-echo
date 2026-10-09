@@ -3325,7 +3325,8 @@
     },
     "origin": {
       "mobile": "Телефон",
-      "desktop": "Компьютер"
+      "desktop": "Компьютер",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Аудиоустройства",

@@ -236,6 +236,34 @@ function Waveform({ color = C.teal, scale = 1 }: { color?: string; scale?: numbe
   );
 }
 
+// Small monochrome glyph showing where a recording was captured — mirrors the desktop
+// origin icon (phone / monitor / play). A recording with no explicit origin was made on
+// this device, so null/unknown falls back to the desktop monitor.
+function OriginGlyph({ origin }: { origin?: string }) {
+  const col = C.sub;
+  const kind = origin === "mobile" ? "mobile" : origin === "youtube" ? "youtube" : "desktop";
+  if (kind === "mobile") {
+    return (
+      <View style={{ width: 11, height: 16, borderRadius: 3, borderWidth: 1.5, borderColor: col, alignItems: "center", justifyContent: "flex-end", paddingBottom: 2 }}>
+        <View style={{ width: 4, height: 1.5, borderRadius: 1, backgroundColor: col }} />
+      </View>
+    );
+  }
+  if (kind === "youtube") {
+    return (
+      <View style={{ width: 18, height: 13, borderRadius: 3, borderWidth: 1.5, borderColor: col, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 0, height: 0, borderTopWidth: 3.5, borderBottomWidth: 3.5, borderLeftWidth: 6, borderTopColor: "transparent", borderBottomColor: "transparent", borderLeftColor: col, marginLeft: 1.5 }} />
+      </View>
+    );
+  }
+  return (
+    <View style={{ alignItems: "center" }}>
+      <View style={{ width: 18, height: 12, borderRadius: 2, borderWidth: 1.5, borderColor: col }} />
+      <View style={{ width: 7, height: 1.6, backgroundColor: col, marginTop: 1.5, borderRadius: 1 }} />
+    </View>
+  );
+}
+
 // Render inline **bold** spans within a line of insight text.
 function renderInline(text: string, keyPrefix: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) => {
@@ -2702,61 +2730,38 @@ export default function App() {
                   <Text style={styles.sectionCount}>{section.items.length}</Text>
                 </Pressable>
               ) : null}
-              {(() => {
-                const now = Date.now();
-                const buckets = section.items.map((r) => dateBucket(r.date.getTime(), now));
-                const multi = new Set(buckets).size > 1;
-                const rows: ReactNode[] = [];
-                let last = "";
-                section.items.forEach((r, idx) => {
-                  const b = buckets[idx];
-                  if (multi && b !== last) {
-                    rows.push(
-                      <Text key={"sh-" + section.key + "-" + b} style={styles.subHeader}>
-                        {b}
-                      </Text>
-                    );
-                    last = b;
-                  }
-                  rows.push(
-                    <Pressable
-                      key={r.uri}
-                      onPress={() => openRec(r)}
-                      onLongPress={() => confirmDelete(r)}
-                      style={({ pressed }) => [
-                        styles.card,
-                        pressed && { opacity: 0.9, transform: [{ translateY: 1 }] },
-                      ]}
-                    >
-                      <View style={styles.badge}>
-                        <Waveform />
+              {section.items.map((r) => (
+                <Pressable
+                  key={r.uri}
+                  onPress={() => openRec(r)}
+                  onLongPress={() => confirmDelete(r)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    pressed && { opacity: 0.9, transform: [{ translateY: 1 }] },
+                  ]}
+                >
+                  <View style={styles.badge}>
+                    <Waveform />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {displayName(r)}
+                    </Text>
+                    <View style={styles.cardMetaRow}>
+                      <View style={{ marginRight: 7 }}>
+                        <OriginGlyph origin={r.origin} />
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.cardTitle} numberOfLines={1}>
-                          {displayName(r)}
-                        </Text>
-                        <View style={styles.cardMetaRow}>
-                          {originBadge(r.origin) ? (
-                            <View style={[styles.originChip, { backgroundColor: originBadge(r.origin)!.bg }]}>
-                              <Text style={[styles.originChipText, { color: originBadge(r.origin)!.color }]}>
-                                {originBadge(r.origin)!.label}
-                              </Text>
-                            </View>
-                          ) : null}
-                          <Text style={styles.cardMeta}>{r.date.toLocaleString()}</Text>
-                        </View>
-                      </View>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        {r.cloudSynced ? <Text style={styles.syncedMark}>☁</Text> : null}
-                        <View style={styles.durPill}>
-                          <Text style={styles.durText}>{fmt(r.durationMillis)}</Text>
-                        </View>
-                      </View>
-                    </Pressable>
-                  );
-                });
-                return rows;
-              })()}
+                      <Text style={styles.cardMeta}>{r.date.toLocaleString()}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    {r.cloudSynced ? <Text style={styles.syncedMark}>☁</Text> : null}
+                    <View style={styles.durPill}>
+                      <Text style={styles.durText}>{fmt(r.durationMillis)}</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
             </View>
           ))}
           </>

@@ -3547,7 +3547,8 @@
     },
     "origin": {
       "mobile": "Mobil",
-      "desktop": "Desktop"
+      "desktop": "Desktop",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Audiogeräte",

@@ -3547,7 +3547,8 @@
     },
     "origin": {
       "mobile": "Mobile",
-      "desktop": "Bureau"
+      "desktop": "Bureau",
+      "youtube": "YouTube"
     },
     "audioPanel": {
       "title": "Périphériques audio",
