@@ -215,6 +215,49 @@ export async function pullNotesFromCloud(): Promise<number> {
   return added + deleted;
 }
 
+// --- Automatic pull orchestration -------------------------------------------------
+// The desktop auto-PUSHes on meeting save, but historically it only PULLED when the user
+// pressed "↓ Pull recordings" in Settings → Neato Cloud. So recordings made on the phone
+// sat in the cloud and never came down on their own. This runs the pull automatically
+// (on startup, window focus, a periodic backstop, after a meeting saves, and right after
+// signing in), mirroring the mobile app's foreground sync. It is session-gated, throttled,
+// serialized and fully best-effort — it never throws — so callers can fire it freely.
+let neatoPullInFlight = false;
+let neatoLastPullAt = 0;
+
+export async function runNeatoCloudPull(opts: { force?: boolean } = {}): Promise<void> {
+  if (neatoPullInFlight) return;
+  // Collapse bursty triggers (focus + interval + meeting-saved) into roughly one run.
+  if (!opts.force && Date.now() - neatoLastPullAt < 15000) return;
+  let session: any = null;
+  try {
+    ({
+      data: { session },
+    } = await neatoCloud.auth.getSession());
+  } catch {
+    return;
+  }
+  if (!session) return; // not signed in to Neato Cloud — nothing to pull
+  neatoPullInFlight = true;
+  try {
+    // Both pulls are additive — they never edit or remove local notes/chats — so a
+    // failure in one must not block the other.
+    try {
+      await pullNotesFromCloud();
+    } catch {
+      // offline / transient — a later trigger retries
+    }
+    try {
+      await pullConversationsFromCloud();
+    } catch {
+      // best-effort; notes pull above may still have succeeded
+    }
+    neatoLastPullAt = Date.now();
+  } finally {
+    neatoPullInFlight = false;
+  }
+}
+
 // Push desktop Ask-Neddy conversations up to echo_conversations so they appear in
 // the mobile app. Uses each conversation's stable client_conversation_id as the cloud
 // id (idempotent, no map). Cloud->desktop merge is a later step. Returns count pushed.

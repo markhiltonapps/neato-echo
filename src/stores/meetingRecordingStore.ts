@@ -1749,11 +1749,28 @@ if (typeof window !== "undefined") {
   // result merges on top of the earlier one's persisted transcript.
   const enqueueDiarizationCompletion = createSerialQueue();
 
-  // Neato Cloud auto-push: when a meeting recording is saved, upload it (and any
+  // Neato Cloud auto-PULL: the desktop used to pull recordings made on OTHER devices
+  // (e.g. the phone) only when the user pressed "↓ Pull recordings" in Settings, so they
+  // never showed up on their own. Mirror the mobile app and pull automatically — on
+  // startup, on window focus, on a periodic backstop, after a meeting saves, and right
+  // after signing in. runNeatoCloudPull is session-gated, throttled and best-effort, so
+  // these can all fire freely. Pulled notes arrive via the normal "note-added" broadcast,
+  // so the notes list refreshes itself.
+  const triggerNeatoPull = (force = false) => {
+    void import("../services/neatoCloud")
+      .then(({ runNeatoCloudPull }) => runNeatoCloudPull({ force }))
+      .catch(() => {
+        // Supabase unavailable / offline — manual Pull in Settings still works
+      });
+  };
+
+  // Neato Cloud auto-PUSH: when a meeting recording is saved, upload it (and any
   // other pending notes) automatically so the user never has to press Push. Gated
   // by a setting (default on) and silently skipped when not signed in / offline.
   let neatoAutoPushInFlight = false;
   window.electronAPI?.onNeatoMeetingSaved?.(() => {
+    // A finished meeting is also a natural moment to pull anything waiting from the phone.
+    triggerNeatoPull(true);
     try {
       if (localStorage.getItem("neato.autoPush.v1") === "off") return;
     } catch {
@@ -1770,6 +1787,27 @@ if (typeof window !== "undefined") {
         neatoAutoPushInFlight = false;
       });
   });
+
+  // Coming back to the window is a good moment to reconcile with other devices.
+  window.addEventListener("focus", () => triggerNeatoPull(false));
+
+  // Defer the first pull and the auth listener so Supabase isn't loaded on the critical
+  // startup path; then pull on launch and whenever a fresh Neato Cloud sign-in happens.
+  setTimeout(() => {
+    triggerNeatoPull(true);
+    void import("../services/neatoCloud")
+      .then(({ neatoCloud }) => {
+        neatoCloud.auth.onAuthStateChange((e) => {
+          if (e === "SIGNED_IN") triggerNeatoPull(true);
+        });
+      })
+      .catch(() => {
+        // focus / interval triggers still retry later
+      });
+  }, 4000);
+
+  // Periodic backstop so a long-open window keeps picking up new phone recordings.
+  setInterval(() => triggerNeatoPull(false), 5 * 60 * 1000);
 
   window.electronAPI?.onMeetingDiarizationComplete?.((data) => {
     enqueueDiarizationCompletion(async () => {
