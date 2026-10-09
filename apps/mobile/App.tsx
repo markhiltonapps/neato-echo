@@ -61,6 +61,7 @@ import {
   type SummaryStyle,
 } from "@neato/core";
 import { supabase, SUPABASE_URL, AUDIO_BUCKET } from "./supabase";
+import { downloadAndInstallApk, canInstallInApp } from "./appUpdate";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import * as Crypto from "expo-crypto";
 import * as Clipboard from "expo-clipboard";
@@ -472,7 +473,7 @@ const DBX_REFRESH_STORE = "dropboxRefresh"; // long-lived OAuth refresh token (S
 // In-app update check. Bump APP_VERSION every mobile build and name the mobile-latest
 // GitHub release the same version; the app compares and shows a banner when a newer build
 // is out (sideloaded APKs have no auto-update, so testers would otherwise run stale builds).
-const APP_VERSION = "1.1.56";
+const APP_VERSION = "1.1.57";
 const MOBILE_RELEASE_API =
   "https://api.github.com/repos/markhiltonapps/neato-echo/releases/tags/mobile-latest";
 const APK_DOWNLOAD_URL =
@@ -648,6 +649,8 @@ export default function App() {
   // In-app update banner + Neato Cloud sync status (last success / last error).
   const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null);
   const [updateDismissed, setUpdateDismissed] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [autoCloud, setAutoCloud] = useState(false);
@@ -2148,6 +2151,28 @@ export default function App() {
     AsyncStorage.setItem(UPDATE_DISMISS_STORE, updateInfo.version).catch(() => {});
   }
 
+  // One-tap update: download the latest APK and launch Android's installer in-app (like
+  // the Windows updater). Falls back to opening the APK in the browser if anything goes
+  // wrong or we're not on Android, so the user is never left stuck.
+  async function startUpdate() {
+    if (updating) return;
+    if (!canInstallInApp()) {
+      Linking.openURL(APK_DOWNLOAD_URL).catch(() => {});
+      return;
+    }
+    setUpdating(true);
+    setUpdateProgress(0);
+    try {
+      await downloadAndInstallApk(APK_DOWNLOAD_URL, setUpdateProgress);
+    } catch {
+      // Network / installer hiccup — hand off to the browser so they can still update.
+      Linking.openURL(APK_DOWNLOAD_URL).catch(() => {});
+    } finally {
+      setUpdating(false);
+      setUpdateProgress(0);
+    }
+  }
+
   function relSyncTime(ts: number): string {
     const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
     if (s < 60) return "just now";
@@ -2578,14 +2603,22 @@ export default function App() {
           </Text>
           <View style={styles.updateActions}>
             <Pressable
-              onPress={() => Linking.openURL(APK_DOWNLOAD_URL)}
-              style={({ pressed }) => [styles.updateBtn, pressed && { opacity: 0.85 }]}
+              onPress={startUpdate}
+              disabled={updating}
+              style={({ pressed }) => [
+                styles.updateBtn,
+                (pressed || updating) && { opacity: 0.85 },
+              ]}
             >
-              <Text style={styles.updateBtnText}>Download</Text>
+              <Text style={styles.updateBtnText}>
+                {updating ? `Updating… ${Math.round(updateProgress * 100)}%` : "Update"}
+              </Text>
             </Pressable>
-            <Pressable onPress={dismissUpdate} hitSlop={10}>
-              <Text style={styles.updateDismiss}>✕</Text>
-            </Pressable>
+            {!updating ? (
+              <Pressable onPress={dismissUpdate} hitSlop={10}>
+                <Text style={styles.updateDismiss}>✕</Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       ) : null}

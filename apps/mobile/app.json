@@ -2,7 +2,7 @@
   "expo": {
     "name": "Neato Echo",
     "slug": "neato-echo",
-    "version": "1.1.56",
+    "version": "1.1.57",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -21,10 +21,11 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "package": "com.anonymous.neatomobile",
-      "versionCode": 10156
+      "versionCode": 10157
     },
     "web": {
       "favicon": "./assets/favicon.png"
