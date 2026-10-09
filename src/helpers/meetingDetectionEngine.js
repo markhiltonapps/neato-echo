@@ -11,6 +11,7 @@ const AUTO_RECORD_PROCESS_KEYS = new Set(["zoom", "teams", "webex"]);
 const createMeetingAutoEndController = require("./meetingAutoEndController");
 const { createMeetingAudioActivityMonitor } = require("./meetingAudioActivityMonitor");
 const { broadcastToWindows } = require("./windowBroadcast");
+const { shouldIgnoreMeetingStart } = require("./meetingStartGuard");
 
 const IMMINENT_THRESHOLD_MS = 5 * 60 * 1000;
 const MEETING_MODE_START_GRACE_MS = 90 * 1000;
@@ -74,6 +75,9 @@ class MeetingDetectionEngine {
     this._userRecording = false;
     this._meetingModeActive = false;
     this._meetingModeWatchdog = null;
+    // Epoch ms of the last accepted meeting start — debounces the double hotkey dispatch
+    // (globalShortcut + native key-listener) and quick double-presses into one note.
+    this._lastMeetingStartAt = 0;
     this._notificationQueue = [];
     this._postRecordingCooldown = null;
     this._recordingSession = null;
@@ -807,6 +811,14 @@ class MeetingDetectionEngine {
   }
 
   async startManualMeeting() {
+    // The meeting hotkey is dispatched from two sources (globalShortcut + native key
+    // listener); without this a single press creates two empty "New note" shells.
+    // Join from the UI is already duplicate-safe via _resumeExistingEventNote.
+    if (shouldIgnoreMeetingStart(Date.now(), this._lastMeetingStartAt)) {
+      debugLogger.info("Ignoring duplicate meeting start (debounced)", {}, "meeting");
+      return;
+    }
+    this._lastMeetingStartAt = Date.now();
     debugLogger.info("Starting manual meeting", {}, "meeting");
 
     const activeEvents = this.databaseManager.getActiveEvents();

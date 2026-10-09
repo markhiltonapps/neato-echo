@@ -8824,6 +8824,24 @@ class IPCHandlers {
           }
         });
 
+        // If this recording produced nothing, remove the speculatively-created note so
+        // it doesn't linger as an empty "Meetings" shell. Delayed 2 min so any late
+        // background diarization has written first; targeted to THIS note only and gated
+        // on reconcileEmptyNote (deletes only if still a true empty shell), so it can
+        // never touch a note the user is composing or one that got a transcript.
+        if (noteIdSnapshot != null) {
+          const reconcileNoteId = noteIdSnapshot;
+          setTimeout(() => {
+            try {
+              if (this.databaseManager?.reconcileEmptyNote(reconcileNoteId)) {
+                broadcastToWindows("note-deleted", { id: reconcileNoteId });
+              }
+            } catch {
+              // cleanup is best-effort; the startup sweep is the backstop
+            }
+          }, 120000);
+        }
+
         return { success: true, transcript, diarizationSessionId };
       } catch (error) {
         debugLogger.error("Meeting transcription stop error", { error: error.message });

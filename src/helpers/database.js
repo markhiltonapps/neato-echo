@@ -8,6 +8,7 @@ const { buildNoteSearchQuery } = require("./noteSearch");
 const { normalizeStoredSpeakerCount } = require("./speakerCount");
 const { parseEventTime } = require("./calendarAvailability");
 const { ANALYTICS_COUNTER_VERSION, summarizeAnalyticsDays } = require("./analytics");
+const { isEmptyShellNote } = require("./emptyNoteShell");
 const { app } = require("electron");
 
 // Server-enforced trigger cap (openwhispr-api); enforced here so one oversized
@@ -3845,6 +3846,83 @@ class DatabaseManager {
     } catch (error) {
       debugLogger.error("Error deleting note", { error: error.message }, "notes");
       throw error;
+    }
+  }
+
+  // Remove abandoned empty-shell notes: created speculatively (meeting Join / auto-record,
+  // "New note" / "New recording") and never given a recording or any text. Synced shells
+  // are soft-deleted (tombstoned so the deletion reaches the cloud); never-synced ones are
+  // hard-deleted. `graceMinutes` protects a note a user may still be composing. The
+  // `isEmptyShellNote` filter is the single source of truth (see emptyNoteShell.js).
+  // Returns the array of removed note ids so callers can broadcast "note-deleted".
+  sweepEmptyShellNotes(graceMinutes = 2) {
+    if (!this.db) return [];
+    try {
+      const cutoff = `-${Math.max(0, Number(graceMinutes) || 0)} minutes`;
+      const candidates = this.db
+        .prepare(
+          `SELECT * FROM notes
+           WHERE deleted_at IS NULL
+             AND source_file IS NULL
+             AND (is_shared IS NULL OR is_shared = 0)
+             AND note_type IN ('meeting','personal')
+             AND (transcript IS NULL OR trim(transcript) = '')
+             AND (content IS NULL OR trim(content) = '')
+             AND (enhanced_content IS NULL OR trim(enhanced_content) = '')
+             AND created_at < datetime('now', ?)`
+        )
+        .all(cutoff);
+      const shells = candidates.filter(isEmptyShellNote);
+      if (shells.length === 0) return [];
+      const softDelete = this.db.prepare(
+        `UPDATE notes SET deleted_at = datetime('now'), sync_status = 'pending', updated_at = datetime('now') WHERE id = ?`
+      );
+      const hardDelete = this.db.prepare("DELETE FROM notes WHERE id = ?");
+      const removed = this.db.transaction((rows) => {
+        const ids = [];
+        for (const n of rows) {
+          if (n.cloud_id) softDelete.run(n.id);
+          else hardDelete.run(n.id);
+          ids.push(n.id);
+        }
+        return ids;
+      })(shells);
+      if (removed.length) {
+        debugLogger.info(
+          "Swept empty shell notes",
+          { count: removed.length, ids: removed },
+          "notes"
+        );
+      }
+      return removed;
+    } catch (error) {
+      debugLogger.error("Failed to sweep empty shell notes", { error: error.message }, "notes");
+      return [];
+    }
+  }
+
+  // Reconcile a single note right after its recording ended: if it is an empty shell,
+  // remove it (targeted, no grace — we know this note's recording just finished). Returns
+  // true when the note was removed.
+  reconcileEmptyNote(id) {
+    if (!this.db || id == null) return false;
+    try {
+      const note = this.db.prepare("SELECT * FROM notes WHERE id = ?").get(id);
+      if (!isEmptyShellNote(note)) return false;
+      if (note.cloud_id) {
+        this.db
+          .prepare(
+            `UPDATE notes SET deleted_at = datetime('now'), sync_status = 'pending', updated_at = datetime('now') WHERE id = ?`
+          )
+          .run(id);
+      } else {
+        this.db.prepare("DELETE FROM notes WHERE id = ?").run(id);
+      }
+      debugLogger.info("Reconciled empty note after recording", { id }, "notes");
+      return true;
+    } catch (error) {
+      debugLogger.error("Failed to reconcile empty note", { id, error: error.message }, "notes");
+      return false;
     }
   }
 

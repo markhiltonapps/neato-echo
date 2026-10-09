@@ -441,6 +441,15 @@ function initializeCoreManagers() {
     binding: accountScopeBinding.read(),
   });
   if (bootAccountId) databaseManager.setActiveAccountId(bootAccountId);
+  // Clean up abandoned empty-shell notes left by prior sessions — notes created
+  // speculatively (meeting Join / auto-record, "New note" / "New recording") that never
+  // received a recording or any text. No window exists yet, so no broadcast is needed;
+  // the notes list simply loads without them. (Investigation 2026-10-09.)
+  try {
+    databaseManager.sweepEmptyShellNotes(2);
+  } catch {
+    // never block startup on cleanup
+  }
   clipboardManager = new ClipboardManager();
   whisperManager = new WhisperManager();
   if (process.platform !== "darwin") {
