@@ -3,13 +3,20 @@ import { useChatPersistence } from "../components/chat/useChatPersistence";
 import { useChatStreaming } from "../components/chat/useChatStreaming";
 import { useChatMessageSender } from "../components/chat/useChatMessageSender";
 import type { Message, AgentState } from "../components/chat/types";
+import { buildNoteChatContext } from "../utils/noteChatContext";
 
 interface UseEmbeddedChatOptions {
   noteId: number | null;
   folderId: number | null;
   noteTitle: string;
   noteContent: string;
+  /**
+   * Readable, speaker-labeled transcript text — NOT the raw JSON segments.
+   * NoteEditor passes the same paragraphed transcript the reader sees.
+   */
   noteTranscript?: string;
+  noteCreatedAt?: string | null;
+  noteType?: string | null;
 }
 
 interface NoteConversationItem {
@@ -37,6 +44,8 @@ export function useEmbeddedChat({
   noteTitle,
   noteContent,
   noteTranscript,
+  noteCreatedAt,
+  noteType,
 }: UseEmbeddedChatOptions): UseEmbeddedChatReturn {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [noteConversations, setNoteConversations] = useState<NoteConversationItem[]>([]);
@@ -52,16 +61,16 @@ export function useEmbeddedChat({
 
   const noteContext = useMemo(
     () =>
-      [
-        `Note ID: ${noteId}`,
-        folderId != null ? `Folder ID: ${folderId}` : "",
-        `Title: ${noteTitle}`,
-        `Content:\n${noteContent}`,
-        noteTranscript ? `\nTranscript:\n${noteTranscript}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    [folderId, noteContent, noteId, noteTitle, noteTranscript]
+      buildNoteChatContext({
+        noteId,
+        folderId,
+        title: noteTitle,
+        createdAt: noteCreatedAt,
+        noteType,
+        content: noteContent,
+        transcript: noteTranscript,
+      }),
+    [folderId, noteContent, noteId, noteTitle, noteTranscript, noteCreatedAt, noteType]
   );
 
   const streaming = useChatStreaming({

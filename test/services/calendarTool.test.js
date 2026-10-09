@@ -31,15 +31,17 @@ test("events map the real DB columns and survive serialization", async () => {
   const result = await calendarTool.execute({ timeRange: "today" });
 
   assert.equal(result.success, true);
-  const roundTripped = JSON.parse(JSON.stringify(result.data));
-  assert.deepEqual(roundTripped, [
-    {
-      summary: "Standup",
-      start: "2026-08-12 16:00:00",
-      end: "2026-08-12 16:15:00",
-      joinUrl: "https://meet.google.com/abc-defg-hij",
-    },
-  ]);
+  const [event] = JSON.parse(JSON.stringify(result.data));
+  // Stable fields (zone-independent): raw timestamps, join link, all-day flag.
+  assert.equal(event.summary, "Standup");
+  assert.equal(event.start, "2026-08-12 16:00:00");
+  assert.equal(event.end, "2026-08-12 16:15:00");
+  assert.equal(event.joinUrl, "https://meet.google.com/abc-defg-hij");
+  assert.equal(event.allDay, false);
+  // Pre-formatted local time is present so the model never does TZ math; the
+  // exact string depends on the test runner's zone, so just assert it's filled.
+  assert.equal(typeof event.startLocal, "string");
+  assert.ok(event.startLocal.length > 0);
 });
 
 test("the join link falls back to conference_data when hangout_link is empty", async () => {

@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { downloadFile, parseArgs, setExecutable } = require("./lib/download-utils");
 
-const YT_DLP_VERSION = "2026.07.04";
+const YT_DLP_VERSION = "2026.08.19";
 const GITHUB_RELEASE_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}`;
 
 // yt-dlp ships single self-contained PyInstaller binaries (no archive to extract).
@@ -14,22 +14,22 @@ const BINARIES = {
   "darwin-arm64": {
     assetName: "yt-dlp_macos",
     outputName: "yt-dlp-darwin-arm64",
-    sha256: "498bd0dae17855c599d371d68ec5bafc439a9d8640e838be25c765a9792f261b",
+    sha256: "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
   },
   "darwin-x64": {
     assetName: "yt-dlp_macos",
     outputName: "yt-dlp-darwin-x64",
-    sha256: "498bd0dae17855c599d371d68ec5bafc439a9d8640e838be25c765a9792f261b",
+    sha256: "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202",
   },
   "win32-x64": {
     assetName: "yt-dlp.exe",
     outputName: "yt-dlp-win32-x64.exe",
-    sha256: "52fe3c26dcf71fbdc85b528589020bb0b8e383155cfa81b64dd447bbe35e24b8",
+    sha256: "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
   },
   "linux-x64": {
     assetName: "yt-dlp_linux",
     outputName: "yt-dlp-linux-x64",
-    sha256: "6bbb3d314cde4febe36e5fa1d55462e29c974f63444e707871834f6d8cc210ae",
+    sha256: "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
   },
 };
 

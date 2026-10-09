@@ -350,3 +350,68 @@ test("the tray suppression predicate matches only an active required-models sess
     false
   );
 });
+
+test("autoLocalSetup replaces the two local pickers with one automatic step", async () => {
+  const { getOnboardingRoute } = await load();
+  assert.deepEqual(
+    getOnboardingRoute({
+      authPath: "guest",
+      setupMode: "local",
+      agentAllowed: true,
+      autoLocalSetup: true,
+    }).slice(-2),
+    ["setup-choice", "local-auto"]
+  );
+  // Only the local route is affected; BYOK keeps its pair.
+  assert.deepEqual(
+    getOnboardingRoute({
+      authPath: "guest",
+      setupMode: "byok",
+      agentAllowed: true,
+      autoLocalSetup: true,
+    }).slice(-2),
+    ["byok-dictation", "byok-assistant"]
+  );
+});
+
+test("pickAutoLocalModels: language picks the speech model, memory the summary model", async () => {
+  const { pickAutoLocalModels } = await import(
+    "../../src/components/onboarding/autoLocalModels.ts"
+  );
+  assert.equal(
+    pickAutoLocalModels({ language: "en-US", memoryGb: 16 }).speechModelId,
+    "parakeet-tdt-0.6b-v3"
+  );
+  assert.equal(
+    pickAutoLocalModels({ language: "es", memoryGb: 16 }).speechModelId,
+    "parakeet-tdt-0.6b-v3"
+  );
+  // 2B is the fast default for everyone, regardless of memory.
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 16 }).summaryModelId, "qwen3.5-2b-q4_k_m");
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: 7.8 }).summaryModelId, "qwen3.5-2b-q4_k_m");
+  assert.equal(pickAutoLocalModels({ language: "en", memoryGb: null }).summaryModelId, "qwen3.5-2b-q4_k_m");
+});
+
+test("meetingHotkeyStep follows activation-mode on both routes", async () => {
+  const { getOnboardingRoute } = await load();
+  const guest = getOnboardingRoute({
+    authPath: "guest",
+    setupMode: null,
+    agentAllowed: true,
+    meetingHotkeyStep: true,
+  });
+  assert.equal(guest[guest.indexOf("activation-mode") + 1], "meeting-hotkey");
+  const account = getOnboardingRoute({
+    authPath: "account",
+    setupMode: null,
+    agentAllowed: true,
+    meetingHotkeyStep: true,
+  });
+  assert.equal(account[account.indexOf("activation-mode") + 1], "meeting-hotkey");
+  assert.equal(
+    getOnboardingRoute({ authPath: "guest", setupMode: null, agentAllowed: true }).includes(
+      "meeting-hotkey"
+    ),
+    false
+  );
+});

@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import type { OnboardingDemoEvent, OnboardingDemoKind } from "../../types/electron";
 import founderAvatar from "../../assets/onboarding-founder.webp";
 import emailSenderAvatar from "../../assets/onboarding-email-sender.webp";
-import assistantAvatar from "../../assets/onboarding-assistant-dog.webp";
+import assistantAvatar from "../../assets/neddy-head.webp";
 
 /**
  * The dictation success celebration: canvas-confetti's "school pride" effect —

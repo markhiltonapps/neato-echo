@@ -3,58 +3,106 @@ const assert = require("node:assert/strict");
 
 const {
   DEFAULT_CLUSTER_THRESHOLD,
-  LONG_AUDIO_CLUSTER_THRESHOLD,
-  THRESHOLD_RAMP_START_SECONDS,
-  THRESHOLD_RAMP_END_SECONDS,
+  OVERSPLIT_CLUSTER_THRESHOLD,
+  OVERSPLIT_RETRY_MIN_SECONDS,
+  OVERSPLIT_SUBSTANTIAL_CLUSTER_CEILING,
   MIN_CLUSTER_TOTAL_SECONDS,
-  clusterThresholdForDuration,
   resolveClusterThreshold,
+  countSubstantialClusters,
+  shouldRetryForOversplit,
   dropNegligibleClusters,
 } = require("../../src/helpers/diarizationPolicy");
 
-// 0.55 is tuned for short clean audio; on a 73-minute single-mic voice memo one
-// speaker's embeddings spread past it and clustering stopped merging at 46
-// "speakers". The threshold must grow with duration.
-test("short audio keeps the sherpa default threshold", () => {
-  assert.equal(clusterThresholdForDuration(0), DEFAULT_CLUSTER_THRESHOLD);
+// Merges are unrecoverable while over-splitting is cleaned up downstream, so the
+// base threshold is biased low (splits readily) and the higher threshold is only
+// a fallback for the one-speaker-drifting case.
+test("thresholds are ordered so the retry merges more than the base", () => {
+  assert.ok(DEFAULT_CLUSTER_THRESHOLD > 0 && DEFAULT_CLUSTER_THRESHOLD < 1);
+  assert.ok(OVERSPLIT_CLUSTER_THRESHOLD > DEFAULT_CLUSTER_THRESHOLD);
+  assert.ok(OVERSPLIT_CLUSTER_THRESHOLD <= 1);
+});
+
+test("resolveClusterThreshold defaults, clamps bounds, and rejects non-finite values", () => {
+  assert.equal(resolveClusterThreshold(null), DEFAULT_CLUSTER_THRESHOLD);
+  assert.equal(resolveClusterThreshold(""), DEFAULT_CLUSTER_THRESHOLD);
+  assert.equal(resolveClusterThreshold("not-a-number"), DEFAULT_CLUSTER_THRESHOLD);
+  assert.equal(resolveClusterThreshold(Infinity), DEFAULT_CLUSTER_THRESHOLD);
+  assert.equal(resolveClusterThreshold(0), 0);
+  assert.equal(resolveClusterThreshold(2), 1);
+  assert.equal(resolveClusterThreshold(-1), 0);
+  assert.equal(resolveClusterThreshold(0.42), 0.42);
+});
+
+test("countSubstantialClusters ignores sub-second embedding noise", () => {
+  const segments = [
+    { start: 0, end: 30, speaker: "speaker_0" },
+    { start: 31, end: 61, speaker: "speaker_1" },
+    { start: 61, end: 61.3, speaker: "speaker_2" }, // 0.3s — noise, not a person
+  ];
+  assert.equal(countSubstantialClusters(segments), 2);
+  assert.equal(countSubstantialClusters([]), 0);
+  assert.equal(countSubstantialClusters(null), 0);
+});
+
+// The over-split retry must NOT fire for a normal multi-speaker meeting, or it
+// would raise the threshold and merge the very voices the user wants separated.
+test("a handful of speakers on long audio does not trigger the over-split retry", () => {
+  const meeting = Array.from({ length: OVERSPLIT_SUBSTANTIAL_CLUSTER_CEILING }, (_, i) => ({
+    start: i * 60,
+    end: i * 60 + 55,
+    speaker: `speaker_${i}`,
+  }));
   assert.equal(
-    clusterThresholdForDuration(THRESHOLD_RAMP_START_SECONDS),
-    DEFAULT_CLUSTER_THRESHOLD
+    shouldRetryForOversplit({
+      segments: meeting,
+      durationSeconds: OVERSPLIT_RETRY_MIN_SECONDS + 600,
+      hasExplicitCount: false,
+    }),
+    false
   );
 });
 
-test("threshold ramps between the boundaries and is monotonic", () => {
-  const mid = clusterThresholdForDuration(
-    (THRESHOLD_RAMP_START_SECONDS + THRESHOLD_RAMP_END_SECONDS) / 2
-  );
-  assert.ok(mid > DEFAULT_CLUSTER_THRESHOLD && mid < LONG_AUDIO_CLUSTER_THRESHOLD);
-  assert.ok(
-    clusterThresholdForDuration(THRESHOLD_RAMP_START_SECONDS + 60) <= mid,
-    "threshold must not decrease with duration"
-  );
-});
-
-test("hour-plus audio is clamped to the long-audio threshold", () => {
+test("implausibly many speakers on long audio triggers the over-split retry", () => {
+  const drifted = Array.from({ length: OVERSPLIT_SUBSTANTIAL_CLUSTER_CEILING + 4 }, (_, i) => ({
+    start: i * 60,
+    end: i * 60 + 55,
+    speaker: `speaker_${i}`,
+  }));
   assert.equal(
-    clusterThresholdForDuration(THRESHOLD_RAMP_END_SECONDS),
-    LONG_AUDIO_CLUSTER_THRESHOLD
+    shouldRetryForOversplit({
+      segments: drifted,
+      durationSeconds: OVERSPLIT_RETRY_MIN_SECONDS + 600,
+      hasExplicitCount: false,
+    }),
+    true
   );
-  assert.equal(clusterThresholdForDuration(3 * 3600), LONG_AUDIO_CLUSTER_THRESHOLD);
 });
 
-test("unknown duration falls back to the default threshold", () => {
-  assert.equal(clusterThresholdForDuration(NaN), DEFAULT_CLUSTER_THRESHOLD);
-  assert.equal(clusterThresholdForDuration(undefined), DEFAULT_CLUSTER_THRESHOLD);
-  assert.equal(clusterThresholdForDuration(-5), DEFAULT_CLUSTER_THRESHOLD);
-});
-
-test("explicit thresholds accept zero, clamp bounds, and reject non-finite values", () => {
-  assert.equal(resolveClusterThreshold(3600, 0), 0);
-  assert.equal(resolveClusterThreshold(3600, 2), 1);
-  assert.equal(resolveClusterThreshold(3600, -1), 0);
-  assert.equal(resolveClusterThreshold(3600, ""), clusterThresholdForDuration(3600));
-  assert.equal(resolveClusterThreshold(3600, "not-a-number"), clusterThresholdForDuration(3600));
-  assert.equal(resolveClusterThreshold(3600, Infinity), clusterThresholdForDuration(3600));
+test("the over-split retry never fires on short audio or with a pinned count", () => {
+  const many = Array.from({ length: OVERSPLIT_SUBSTANTIAL_CLUSTER_CEILING + 4 }, (_, i) => ({
+    start: i * 60,
+    end: i * 60 + 55,
+    speaker: `speaker_${i}`,
+  }));
+  // Short recording: speakers do not drift, so a high count is real.
+  assert.equal(
+    shouldRetryForOversplit({ segments: many, durationSeconds: 300, hasExplicitCount: false }),
+    false
+  );
+  // Explicit count already forces the right number of clusters.
+  assert.equal(
+    shouldRetryForOversplit({
+      segments: many,
+      durationSeconds: OVERSPLIT_RETRY_MIN_SECONDS + 600,
+      hasExplicitCount: true,
+    }),
+    false
+  );
+  // Unknown duration cannot be judged as drift.
+  assert.equal(
+    shouldRetryForOversplit({ segments: many, durationSeconds: NaN, hasExplicitCount: false }),
+    false
+  );
 });
 
 // Every cluster — however tiny — wins at least one sentence in the character-

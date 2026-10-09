@@ -163,11 +163,11 @@ export default function SidebarModal<T extends string>({
                               data-section-id={item.id}
                               onClick={() => onSectionChange(item.id)}
                               title={isCompact ? item.label : undefined}
-                              className={`group relative w-full flex items-center text-left text-xs rounded-md transition-colors duration-100 outline-none ${
+                              className={`group relative w-full flex items-center text-left text-xs rounded-lg border border-transparent transition-colors duration-100 outline-none ${
                                 isCompact ? "justify-center px-0 py-2" : "gap-2 px-2 py-1.5"
                               } ${
                                 isActive
-                                  ? "text-foreground bg-muted dark:bg-surface-raised"
+                                  ? "text-foreground gloss-convex bg-brand-teal-soft border-brand-teal/25 shadow-[0_2px_8px_-4px_var(--color-brand-teal)]"
                                   : "text-muted-foreground dark:text-foreground/75 hover:text-foreground hover:bg-muted/50 dark:hover:bg-surface-2"
                               }`}
                             >
@@ -224,7 +224,7 @@ export default function SidebarModal<T extends string>({
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 overflow-y-auto bg-background dark:bg-surface-1">
+              <div className="canvas-glow flex-1 overflow-y-auto bg-background dark:bg-surface-1">
                 <SettingsLayoutProvider value={{ isCompact }}>
                   <div className={isCompact ? "p-4" : "p-6"}>{children}</div>
                 </SettingsLayoutProvider>

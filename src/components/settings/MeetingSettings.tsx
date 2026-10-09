@@ -30,6 +30,21 @@ export function MeetingSpeakerDetectionRow() {
   );
 }
 
+export function MeetingLiveTranscriptRow() {
+  const { t } = useTranslation();
+  const enabled = useSettingsStore((s) => s.meetingLiveTranscription);
+  const setEnabled = useSettingsStore((s) => s.setMeetingLiveTranscription);
+
+  return (
+    <SettingsRow
+      label={t("settings.meeting.liveTranscript.title")}
+      description={t("settings.meeting.liveTranscript.description")}
+    >
+      <Toggle checked={enabled} onChange={setEnabled} />
+    </SettingsRow>
+  );
+}
+
 const noop = () => {};
 
 export function MeetingTranscriptionPanel() {
@@ -165,6 +180,7 @@ export function MeetingTranscriptionPanel() {
 
       {effectiveTranscriptionMode === "providers" && renderTranscriptionPicker("cloud")}
       {effectiveTranscriptionMode === "local" && renderTranscriptionPicker("local")}
+      <MeetingLiveTranscriptRow />
       <MeetingSpeakerDetectionRow />
     </div>
   );

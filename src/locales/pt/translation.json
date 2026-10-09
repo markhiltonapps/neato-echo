@@ -1,10 +1,40 @@
 {
+  "dateGroup": {
+    "today": "Hoje",
+    "week": "Esta semana",
+    "month": "Este mês",
+    "earlier": "Anteriores"
+  },
+  "notesCalendar": {
+    "viewList": "Lista",
+    "viewCalendar": "Calendário",
+    "today": "Hoje",
+    "prevMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "empty": "Sem gravações neste dia",
+    "count_one": "{{count}} gravação",
+    "count_other": "{{count}} gravações"
+  },
+  "filter": {
+    "all": "Todas",
+    "today": "Hoje",
+    "week": "Esta semana",
+    "month": "Este mês"
+  },
+  "home": {
+    "briefing": {
+      "title": "Prepare-se para o seu dia",
+      "meetingCount": "{{count}} hoje",
+      "next": "Próxima",
+      "join": "Entrar"
+    }
+  },
   "settings": {
     "language": {
       "sectionTitle": "Idioma",
       "sectionDescription": "Defina separadamente os idiomas da interface e da transcrição",
       "uiLabel": "Idioma da interface",
-      "uiDescription": "Escolha o idioma usado na interface do OpenWhispr",
+      "uiDescription": "Escolha o idioma usado na interface do Neato Echo",
       "transcriptionLabel": "Idioma de transcrição",
       "transcriptionDescription": "Escolha o idioma que você fala para maior precisão",
       "chineseScriptLabel": "Escrita chinesa (ditado)",
@@ -51,6 +81,15 @@
       }
     },
     "meeting": {
+      "liveTranscript": {
+        "title": "Live transcript while recording",
+        "description": "With the Nemotron Speech Streaming model selected, words appear as they are spoken. Turn off on an older or slower PC to save CPU. With other models the transcript updates every few seconds regardless."
+      },
+      "sectionTitle": "Reuniões",
+      "autoRecord": {
+        "title": "Gravar reuniões automaticamente",
+        "description": "Inicia e encerra a gravação de chamadas do Zoom, Teams, Webex e Google Meet agendadas, sem começar ou parar manualmente."
+      },
       "speakerDetection": {
         "title": "Identificar e rotular participantes",
         "description": "Quando desativado, as transcrições mostram \"Você\" e \"Outros\""
@@ -64,12 +103,12 @@
     },
     "openControlPanel": "Abrir painel de controle",
     "hideControlPanel": "Ocultar painel de controle",
-    "quit": "Sair do OpenWhispr",
-    "tooltip": "OpenWhispr - Ditado por voz"
+    "quit": "Sair do Neato Echo",
+    "tooltip": "Neato Echo - Ditado por voz"
   },
   "menu": {
-    "appLabel": "OpenWhispr",
-    "quit": "Sair do OpenWhispr",
+    "appLabel": "Neato Echo",
+    "quit": "Sair do Neato Echo",
     "speech": "Fala",
     "settings": "Configurações...",
     "help": "Ajuda",
@@ -87,8 +126,8 @@
       "message": "Falha ao abrir o link no navegador:\n{{url}}\n\nErro: {{error}}"
     },
     "loadFailure": {
-      "title": "OpenWhispr falhou ao carregar",
-      "message": "OpenWhispr não conseguiu carregar a interface.",
+      "title": "Neato Echo falhou ao carregar",
+      "message": "Neato Echo não conseguiu carregar a interface.",
       "detail": {
         "window": "Janela: {{windowName}}",
         "error": "Erro {{errorCode}}: {{errorDescription}}",
@@ -99,17 +138,17 @@
   },
   "startup": {
     "error": {
-      "title": "Erro de inicialização do OpenWhispr",
+      "title": "Erro de inicialização do Neato Echo",
       "message": "Falha ao iniciar o aplicativo:\n\n{{error}}\n\nPor favor, reporte este problema."
     },
     "globeHotkey": {
       "title": "Atalho Globe indisponível",
-      "message": "OpenWhispr não conseguiu ativar o atalho da tecla Globe.",
+      "message": "Neato Echo não conseguiu ativar o atalho da tecla Globe.",
       "details": {
         "unknown": "Erro desconhecido ao iniciar o listener da tecla Globe.",
         "fallback": "O atalho Globe permanecerá desativado; os atalhos existentes continuarão funcionando.",
         "devHint": "Execute `npm run compile:globe` e reconstrua o app para regenerar o binário.",
-        "reinstallHint": "Reinstale o OpenWhispr ou contate o suporte se o problema persistir."
+        "reinstallHint": "Reinstale o Neato Echo ou contate o suporte se o problema persistir."
       }
     }
   },
@@ -185,7 +224,7 @@
   "onboarding": {
     "rehaul": {
       "permissions": {
-        "title": "Configure o OpenWhispr em 3 minutos",
+        "title": "Configure o Neato Echo em 3 minutos",
         "microphoneDescription": "Transforma voz em texto.",
         "accessibilityDescription": "Cola o texto no app ativo.",
         "systemAudioTitle": "Áudio do Sistema",
@@ -198,7 +237,7 @@
         "title": "Quais idiomas você fala?",
         "titleLineOne": "Quais idiomas",
         "titleLineTwo": "você fala?",
-        "description": "Selecione todas as opções aplicáveis. Isso ajuda o OpenWhispr a reconhecer trocas de idioma com mais precisão."
+        "description": "Selecione todas as opções aplicáveis. Isso ajuda o Neato Echo a reconhecer trocas de idioma com mais precisão."
       },
       "dictationHotkey": {
         "title": "Configure seu atalho de teclado",
@@ -207,31 +246,32 @@
         "description": "Escolha um atalho de teclado para iniciar e parar o ditado de qualquer lugar."
       },
       "assistantHotkey": {
-        "title": "Configure o OpenWhispr Assistant",
+        "title": "Configure o Neato Echo Assistant",
         "titleLineOne": "Configure o",
-        "titleLineTwo": "OpenWhispr Assistant",
-        "description": "Fale um pedido e o OpenWhispr Assistant escreve o resultado para você."
+        "titleLineTwo": "Neato Echo Assistant",
+        "description": "Fale um pedido e o Neato Echo Assistant escreve o resultado para você."
       },
       "hotkey": {
         "capture": "Pressione as teclas que você quer usar",
         "chooseAnother": "Escolher outro atalho",
         "inUse": "Esse atalho já está em uso. Escolha outro.",
-        "holding": "Continue pressionando ou pressione outra tecla"
+        "holding": "Continue pressionando ou pressione outra tecla",
+        "useRecommended": "Use {{hotkey}}"
       },
       "dictationDemo": {
         "title": "Experimente seu primeiro ditado",
         "titleLineOne": "Experimente seu",
         "titleLineTwo": "primeiro ditado",
-        "description": "Pressione {{hotkey}} e comece a falar. O OpenWhispr vai transformar sua voz em texto.",
-        "founder": "Olá, sou o Gabe, fundador do OpenWhispr",
+        "description": "Pressione {{hotkey}} e comece a falar. O Neato Echo vai transformar sua voz em texto.",
+        "founder": "Olá, sou o Gabe, fundador do Neato Echo",
         "prompt": "Tente dizer: “Estou testando o ditado pela primeira vez.”",
         "placeholder": "Seu ditado vai aparecer aqui…"
       },
       "assistantDemo": {
-        "title": "Conheça o OpenWhispr Assistant",
+        "title": "Conheça o Neato Echo Assistant",
         "titleLineOne": "Conheça o",
-        "titleLineTwo": "OpenWhispr Assistant",
-        "description": "Fale um pedido e o OpenWhispr Assistant escreve o resultado para você.",
+        "titleLineTwo": "Neato Echo Assistant",
+        "description": "Fale um pedido e o Neato Echo Assistant escreve o resultado para você.",
         "senderName": "Eren Lauren",
         "senderEmail": "eren32@gmail.com",
         "recipientLabel": "para John Doe",
@@ -246,16 +286,20 @@
         "typing": "Digitando…"
       },
       "notes": {
-        "title": "Grave reuniões sem bot com o OpenWhispr Notes",
+        "title": "Grave reuniões sem bot com o Neato Echo Notes",
         "titleLineOne": "Grave reuniões sem um bot",
-        "titleLineTwoPrefix": "com o OpenWhispr",
+        "titleLineTwoPrefix": "com o Neato Echo",
         "titleLineTwoBrand": "Notes",
-        "description": "O OpenWhispr transforma sua conversa em notas claras. Nenhum bot de reunião entra na sua chamada.",
+        "description": "O Neato Echo transforma sua conversa em notas claras. Nenhum bot de reunião entra na sua chamada.",
         "hero": {
-          "description": "Grave sua reunião e deixe o OpenWhispr transformar a conversa em notas claras e organizadas.",
+          "description": "Grave sua reunião e deixe o Neato Echo transformar a conversa em notas claras e organizadas.",
           "chat": "Converse com as notas da reunião",
           "transcript": "Revise a transcrição completa",
           "speakers": "Veja quem disse o quê"
+        },
+        "autoRecord": {
+          "title": "Gravar reuniões automaticamente",
+          "description": "Grava automaticamente chamadas do Zoom, Teams, Webex e Google Meet agendadas. Você pode alterar isso quando quiser nas Configurações."
         },
         "connectors": {
           "connect": "Conectar",
@@ -268,16 +312,16 @@
         }
       },
       "setupChoice": {
-        "title": "Escolha sua configuração do OpenWhispr",
+        "title": "Escolha sua configuração do Neato Echo",
         "titleLineOne": "Escolha sua configuração",
-        "titleLineTwo": "do OpenWhispr",
+        "titleLineTwo": "do Neato Echo",
         "description": "Escolha a opção que combina com o seu jeito de trabalhar.",
         "unavailable": {
           "title": "Nenhuma opção de configuração disponível",
           "description": "A política do seu espaço de trabalho não permite uma configuração completa de transcrição e IA. Entre em contato com o administrador."
         },
         "cloud": {
-          "title": "OpenWhispr Cloud",
+          "title": "Neato Echo Cloud",
           "description": "Receba 2.000 palavras grátis por semana. Suas configurações ficam sincronizadas entre dispositivos.",
           "continue": "Continuar de graça",
           "signIn": "Entre para usar a Nuvem",
@@ -396,7 +440,43 @@
         "cancelDownload": "Cancelar o download de {{model}}",
         "downloads": "Downloads de modelos",
         "downloading": "Baixando… {{progress}}%",
-        "installing": "Instalando o modelo…"
+        "installing": "Instalando o modelo…",
+        "otherModelsNoteSpeech": "The marked model is the most accurate one and understands many languages. The others each trade something for that: Nemotron Speech Streaming shows your words while you are still talking (English only) but punctuates less well, Parakeet Unified is tuned for English accuracy, and Whisper models are slower but cover the most languages. You can switch any time in Settings, Speech-to-Text.",
+        "otherModelsNoteAssistant": "The marked model balances quality and speed on a typical PC. Smaller models run on less memory; larger ones write better summaries but need a strong graphics card. You can switch any time in Settings, Language Models.",
+        "stepOf": "Etapa {{step}} de {{total}}"
+      },
+      "localAuto": {
+        "title": "Getting your PC ready",
+        "description": "Neato Echo is downloading the two models it needs. You can keep this window open or come back later.",
+        "descriptionLineOne": "Neato Echo is downloading the two models it needs.",
+        "descriptionLineTwo": "This is the long part. After it, everything works offline.",
+        "speechLabel": "Speech",
+        "speechDetail": "Turns what you say into text, with punctuation.",
+        "summaryLabel": "Summaries",
+        "summaryDetail": "Writes meeting summaries and answers the assistant.",
+        "statusWaiting": "Waiting",
+        "statusDownloading": "{{percent}}%",
+        "statusInstalling": "Installing",
+        "statusReady": "Ready",
+        "statusFailed": "Failed",
+        "overall": "{{done}} of {{total}} models ready",
+        "allReady": "All set. Your PC is ready to dictate.",
+        "finish": "Start using Neato Echo",
+        "continueInBackground": "Continue now; finish downloading in the background",
+        "retry": "Try again",
+        "advanced": "Advanced: choose different models",
+        "memoryNote": "This PC has {{gb}} GB of memory, so the smaller summary model was chosen. You can change it later in Settings, Language Models.",
+        "downloadingButton": "Downloading… {{percent}}%"
+      },
+      "meetingHotkey": {
+        "title": "Set up your meeting shortcut",
+        "titleLineOne": "Set up your",
+        "titleLineTwo": "meeting shortcut",
+        "description": "Press this during any call to start taking notes, without opening the app. Ctrl + Alt + M is free in Zoom, Teams, and Meet."
+      },
+      "help": {
+        "label": "Help",
+        "tooltip": "Open the step-by-step setup guide with pictures"
       }
     },
     "steps": {
@@ -427,14 +507,14 @@
       "accessibilityTitle": "Acessibilidade",
       "accessibilityDescription": "Digita o texto final diretamente no aplicativo em que você estiver — documentos, e-mail, chat.",
       "testAndGrant": "Testar e conceder",
-      "requiredForApp": "Necessário para o OpenWhispr funcionar",
+      "requiredForApp": "Necessário para o Neato Echo funcionar",
       "microphoneRequired": "Acesso ao microfone necessário",
       "openSystemSettings": "Abrir Configurações do Sistema",
       "systemAudioTitle": "Áudio do Sistema",
       "systemAudioDescription": "Permite que o gravador de reuniões ouça o outro lado das suas chamadas — reuniões, aulas, podcasts. Você pode ativar depois nas Configurações.",
       "optional": "Opcional",
       "recommended": "Recomendado",
-      "accessibilityTroubleshooting": "Em Configurações do Sistema → Acessibilidade, desative o interruptor do OpenWhispr e ative-o novamente. Se o OpenWhispr não aparecer na lista, clique em + e adicione-o a partir da pasta Aplicativos. Ainda com problemas? Envie um e-mail para support@openwhispr.com."
+      "accessibilityTroubleshooting": "Em Configurações do Sistema → Acessibilidade, desative o interruptor do Neato Echo e ative-o novamente. Se o Neato Echo não aparecer na lista, clique em + e adicione-o a partir da pasta Aplicativos. Ainda com problemas? Envie um e-mail para support@openwhispr.com."
     },
     "transcription": {
       "title": "Configuração de transcrição",
@@ -470,18 +550,18 @@
       "optionalNote": "Opcional — você pode definir ou alterar a qualquer momento nas configurações."
     },
     "connectivity": {
-      "title": "Não conseguimos acessar o OpenWhispr Cloud nesta rede",
+      "title": "Não conseguimos acessar o Neato Echo Cloud nesta rede",
       "body": "{{cause}} Você pode mudar para o motor local ou continuar e tentar de novo depois.",
       "useLocal": "Usar motor local",
       "continue": "Continuar mesmo assim"
     },
     "useCase": {
-      "title": "Como você vai usar o OpenWhispr?",
+      "title": "Como você vai usar o Neato Echo?",
       "titleLineOne": "Como você usará",
-      "titleLineTwo": "o OpenWhispr?",
+      "titleLineTwo": "o Neato Echo?",
       "description": "Escolha todas as opções que se aplicam. Vamos adaptar sua configuração.",
       "noteLabel": "Algo mais que gostaria de nos contar?",
-      "notePlaceholder": "Conte como você pretende usar o OpenWhispr (opcional)",
+      "notePlaceholder": "Conte como você pretende usar o Neato Echo (opcional)",
       "proceedToSetup": "Continuar a configuração",
       "options": {
         "dictation": {
@@ -514,13 +594,13 @@
     "meeting": {
       "title": "Notas de reunião",
       "description": "Capture e resuma suas reuniões",
-      "autoDetect": "O OpenWhispr detecta automaticamente quando você está em uma reunião e oferece iniciar notas — nada é gravado sem você.",
+      "autoDetect": "O Neato Echo detecta automaticamente quando você está em uma reunião e oferece iniciar notas — nada é gravado sem você.",
       "hotkeyLabel": "Atalho de reunião",
       "hotkeyHint": "Opcional — pressione-o em qualquer reunião para iniciar uma nota na hora."
     },
     "finish": {
       "title": "Tudo pronto",
-      "cloudDescription": "Você está no OpenWhispr Cloud — rápido, preciso, zero retenção de dados e 2.000 palavras grátis por semana. Prefere tudo no seu dispositivo? Mude para o processamento local nas Configurações.",
+      "cloudDescription": "Você está no Neato Echo Cloud — rápido, preciso, zero retenção de dados e 2.000 palavras grátis por semana. Prefere tudo no seu dispositivo? Mude para o processamento local nas Configurações.",
       "localDescription": "Você está configurado com processamento local ou sua própria chave. Ajuste como seu áudio é processado a qualquer momento nas Configurações.",
       "cleanupNote": "A limpeza de texto por IA usa padrões sensatos. Você pode ajustá-la a qualquer momento nas Configurações.",
       "openSettings": "Abrir Configurações",
@@ -554,7 +634,7 @@
   "streaming": {
     "errors": {
       "cloudUnreachable": {
-        "title": "Não foi possível acessar o OpenWhispr Cloud",
+        "title": "Não foi possível acessar o Neato Echo Cloud",
         "generic": "A solicitação de rede falhou. Verifique sua conexão.",
         "dnsBlocked": "O DNS não está resolvendo openwhispr.com — pode ser um bloqueador de anúncios ou filtro.",
         "refused": "A conexão foi recusada — provavelmente um firewall ou VPN.",
@@ -567,7 +647,7 @@
   "controlPanel": {
     "updateRequiredByOrg": {
       "title": "Atualização obrigatória",
-      "description": "Sua organização exige o OpenWhispr {{version}} ou mais recente. Atualize o aplicativo."
+      "description": "Sua organização exige o Neato Echo {{version}} ou mais recente. Atualize o aplicativo."
     },
     "update": {
       "readyTitle": "Atualização pronta para instalar",
@@ -575,14 +655,17 @@
       "problemTitle": "Houve um problema na atualização",
       "problemDescription": "Não foi possível concluir a atualização. Tente novamente mais tarde.",
       "installTitle": "Instalar atualização",
-      "installDescription": "O OpenWhispr será reiniciado para aplicar a atualização. O trabalho em andamento será salvo.",
+      "installDescription": "O Neato Echo será fechado, mostrará brevemente uma janela de instalação e reabrirá automaticamente quando a atualização terminar. O trabalho em andamento é salvo.",
       "couldNotInstallTitle": "Não foi possível instalar a atualização",
       "couldNotInstallDescription": "Algo deu errado. Tente novamente.",
       "couldNotDownloadTitle": "Não foi possível baixar a atualização",
       "couldNotDownloadDescription": "Verifique sua conexão e tente novamente.",
       "installing": "Instalando...",
       "installButton": "Instalar atualização",
-      "availableButton": "Atualização disponível"
+      "availableButton": "Atualização disponível",
+      "availableTitle": "Update available",
+      "availableBannerDescription": "Neato Echo {{version}} is ready to download and install.",
+      "later": "Mais tarde"
     },
     "limit": {
       "weeklyTitle": "Limite semanal atingido",
@@ -590,7 +673,7 @@
     },
     "accessibilityMissing": {
       "title": "Permissões de acessibilidade necessárias",
-      "description": "Detectamos que o OpenWhispr precisa de permissões de acessibilidade para funcionar corretamente. Ative-as abaixo."
+      "description": "Detectamos que o Neato Echo precisa de permissões de acessibilidade para funcionar corretamente. Ative-as abaixo."
     },
     "billing": {
       "pastDueTitle": "Não foi possível processar seu pagamento",
@@ -657,8 +740,8 @@
       "retryTranslationMode": "Modo de Tradução"
     },
     "cloudMigration": {
-      "title": "Boas-vindas ao OpenWhispr Cloud",
-      "description": "Mudamos sua transcrição para o OpenWhispr Cloud para resultados mais rápidos e precisos. Suas configurações anteriores foram salvas — volte quando quiser em Configurações.",
+      "title": "Boas-vindas ao Neato Echo Cloud",
+      "description": "Mudamos sua transcrição para o Neato Echo Cloud para resultados mais rápidos e precisos. Suas configurações anteriores foram salvas — volte quando quiser em Configurações.",
       "viewSettings": "Ver configurações"
     },
     "aiCta": {
@@ -769,7 +852,7 @@
           "modelNotFound": "O AWS Bedrock não encontrou o modelo selecionado na região {{region}}. Verifique o ID do modelo e se ele está disponível nessa região.",
           "configurationRejected": "O AWS Bedrock rejeitou a configuração do modelo para a região {{region}}. Verifique o ID do modelo, o perfil de inferência e a região.",
           "notConfigured": "O AWS Bedrock não está configurado corretamente. Verifique a região e as credenciais da AWS.",
-          "serviceUnavailable": "O AWS Bedrock está temporariamente indisponível devido à alta demanda. Este é um problema do serviço da AWS, não uma indisponibilidade do OpenWhispr. Tente novamente em alguns minutos.",
+          "serviceUnavailable": "O AWS Bedrock está temporariamente indisponível devido à alta demanda. Este é um problema do serviço da AWS, não uma indisponibilidade do Neato Echo. Tente novamente em alguns minutos.",
           "throttled": "O AWS Bedrock está limitando temporariamente as solicitações porque está recebendo muitas. Aguarde um momento e tente novamente. Se continuar, peça ao administrador da AWS para verificar o uso e as cotas do Bedrock.",
           "timeout": "O AWS Bedrock não respondeu a tempo. Tente novamente. Se continuar, verifique sua conexão com a internet e o status do serviço AWS Bedrock.",
           "network": "Não foi possível acessar o AWS Bedrock. Verifique sua conexão com a internet e tente novamente.",
@@ -875,7 +958,7 @@
         "description": "Não foi possível transcrever parte da gravação."
       },
       "errorDescriptions": {
-        "sessionExpired": "Sua sessão do OpenWhispr Cloud está indisponível. Entre novamente nas Configurações.",
+        "sessionExpired": "Sua sessão do Neato Echo Cloud está indisponível. Entre novamente nas Configurações.",
         "offline": "Você está offline. A transcrição na nuvem exige conexão com a internet.",
         "dailyLimitReached": "Você atingiu o limite de transcrições de hoje. Tente novamente amanhã ou faça upgrade do seu plano.",
         "providerRateLimited": "Seu provedor de transcrição limitou a solicitação. Aguarde um momento e tente novamente.",
@@ -894,8 +977,8 @@
         "notAppliedTitle": "Edição da seleção não aplicada",
         "changed": "O texto selecionado ou o aplicativo de destino mudou durante o processamento. Nada foi substituído.",
         "expired": "A edição expirou. Selecione o texto novamente e tente de novo.",
-        "pasteFailed": "O OpenWhispr gerou a edição, mas não conseguiu substituir o texto selecionado.",
-        "unavailable": "O OpenWhispr não conseguiu ler o texto selecionado com segurança. Verifique as permissões de acessibilidade ou automação.",
+        "pasteFailed": "O Neato Echo gerou a edição, mas não conseguiu substituir o texto selecionado.",
+        "unavailable": "O Neato Echo não conseguiu ler o texto selecionado com segurança. Verifique as permissões de acessibilidade ou automação.",
         "tooLarge": "A seleção é muito grande. Selecione no máximo 6.000 caracteres.",
         "reasoningFailed": "A IA não conseguiu concluir a edição. O texto original não foi alterado."
       }
@@ -970,7 +1053,7 @@
       "micErrors": {
         "accessFailed": "Falha no acesso ao microfone. Tente novamente.",
         "noMicrophones": "Nenhum microfone detectado. Conecte ou selecione um microfone em {{settingsPath}}.",
-        "permissionDenied": "Permissão negada. Abra {{privacyPath}} e permita o OpenWhispr.",
+        "permissionDenied": "Permissão negada. Abra {{privacyPath}} e permita o Neato Echo.",
         "couldNotStart": "Não foi possível iniciar o microfone selecionado. Escolha um dispositivo em {{settingsPath}} e teste novamente.",
         "noActiveInput": "Nenhuma entrada de áudio ativa encontrada. Escolha um microfone em {{settingsPath}}.",
         "unknown": "Falha no acesso ao microfone: {{error}}. Selecione outro dispositivo e tente novamente.",
@@ -999,8 +1082,8 @@
         "accessibilityNeeded": "Conceda permissões de acessibilidade nas configurações do sistema para habilitar colagem automática.",
         "windowsReady": "O Windows não exige permissões especiais para colagem automática. Tudo pronto!",
         "linuxReadyWithMethod": "A colagem automática está disponível usando {{method}}. Tudo pronto!",
-        "waylandClipboardMode": "A colagem automática não está disponível nesta sessão Wayland. O OpenWhispr copiará o texto para a área de transferência e você poderá colar com Ctrl+V.",
-        "optionalPasteTool": "Para colagem automática, instale {{tool}}:\n\n{{installCmd}}{{waylandNote}}\n\nSem isso, você ainda pode usar o OpenWhispr — o texto será copiado para a área de transferência e você poderá colar com Ctrl+V."
+        "waylandClipboardMode": "A colagem automática não está disponível nesta sessão Wayland. O Neato Echo copiará o texto para a área de transferência e você poderá colar com Ctrl+V.",
+        "optionalPasteTool": "Para colagem automática, instale {{tool}}:\n\n{{installCmd}}{{waylandNote}}\n\nSem isso, você ainda pode usar o Neato Echo — o texto será copiado para a área de transferência e você poderá colar com Ctrl+V."
       },
       "alerts": {
         "accessibilityNeeded": "Permissões de acessibilidade necessárias! Conceda nas configurações do sistema."
@@ -1013,7 +1096,7 @@
         "defaultPasteTool": "xdotool",
         "xdotoolXwayland": "xdotool (apps XWayland)"
       },
-      "accessibilityTestText": "teste de acessibilidade do OpenWhispr",
+      "accessibilityTestText": "teste de acessibilidade do Neato Echo",
       "warning": {
         "messages": {
           "macos": "Verifique as configurações de Som para selecionar o dispositivo de entrada",
@@ -1089,7 +1172,7 @@
       "emailRequired": "Insira seu e-mail corporativo para usar o SSO.",
       "failed": "Falha no logon único. Tente novamente.",
       "companySignInTitle": "Usar o login da sua empresa",
-      "requiredDescription": "{{domain}} exige SSO para o OpenWhispr.",
+      "requiredDescription": "{{domain}} exige SSO para o Neato Echo.",
       "availableDescription": "A sua conta {{domain}} está pronta para o SSO da empresa.",
       "useEmailInstead": "Usar e-mail e senha em vez disso"
     },
@@ -1101,7 +1184,7 @@
       "protocolUnavailable": "Login pelo navegador indisponível — registre novamente o protocolo openwhispr:// nas configurações de Aplicativos Padrão do sistema."
     },
     "welcomeSubtitle": "Use sua voz para tudo",
-    "welcomeTitle": "Boas-vindas ao OpenWhispr"
+    "welcomeTitle": "Boas-vindas ao Neato Echo"
   },
   "cleanupPrompt": "Limpeza",
   "developerSection": {
@@ -1324,10 +1407,10 @@
     "recheckChecking": "Verificando...",
     "title": "Colagem automática",
     "usingMethodPrefix": "Usando",
-    "waylandClipboardDescription": "A colagem automática não está disponível nesta sessão Wayland. O OpenWhispr copiará o texto para a área de transferência para que você cole manualmente com Ctrl+V.",
+    "waylandClipboardDescription": "A colagem automática não está disponível nesta sessão Wayland. O Neato Echo copiará o texto para a área de transferência para que você cole manualmente com Ctrl+V.",
     "waylandClipboardTitle": "Modo área de transferência no Wayland",
     "windowsReady": "O Windows suporta colagem automática nativamente. Nenhuma configuração necessária!",
-    "withoutToolPrefix": "Sem essa ferramenta, o OpenWhispr copiará o texto para a área de transferência. Você poderá colar manualmente com Ctrl+V.",
+    "withoutToolPrefix": "Sem essa ferramenta, o Neato Echo copiará o texto para a área de transferência. Você poderá colar manualmente com Ctrl+V.",
     "wtypeFallbackDescription": "O wtype é o método de colagem automática preferido para este compositor wlroots. Há uma alternativa disponível, mas ela pode ser menos confiável.",
     "xwaylandAppsOnly": "a colagem automática funciona apenas para apps XWayland"
   },
@@ -1378,7 +1461,7 @@
       "none": "Nenhum",
       "outputLabel": "Saída",
       "processing": "Processando...",
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Neato Echo Cloud",
       "providerLabel": "Provedor",
       "run": "Executar teste",
       "customEndpoint": "Endpoint personalizado",
@@ -1440,6 +1523,10 @@
       "workspace": {
         "description": "Membros, espaços de equipe e chaves de API",
         "label": "Espaço de trabalho"
+      },
+      "neatoCloud": {
+        "label": "Neato Cloud",
+        "description": "Sincronize notas com o app móvel"
       }
     },
     "title": "Configurações"
@@ -1542,7 +1629,7 @@
           "price": "$0",
           "period": "para sempre",
           "features": [
-            "## OpenWhispr Cloud",
+            "## Neato Echo Cloud",
             "2.000 palavras/semana de transcrição",
             "5 horas de gravação de reuniões/mês",
             "## Sempre gratuito",
@@ -1641,7 +1728,7 @@
         "button": "Excluir minha conta",
         "deleting": "Excluindo...",
         "title": "Excluir sua conta?",
-        "description": "Isso exclui permanentemente sua conta OpenWhispr e seus dados pessoais. Conteúdos dos espaços de trabalho e dados de outros usuários locais permanecem neste dispositivo.",
+        "description": "Isso exclui permanentemente sua conta Neato Echo e seus dados pessoais. Conteúdos dos espaços de trabalho e dados de outros usuários locais permanecem neste dispositivo.",
         "confirmText": "Excluir conta",
         "eraseDeviceLabel": "Também apagar todos os dados deste dispositivo",
         "eraseDeviceDescription": "Exclui notas e caches de espaços de todos os usuários locais, modelos baixados, configurações, calendários, credenciais e gravações.",
@@ -1719,7 +1806,7 @@
       "enableTextCleanup": "Ativar limpeza de texto",
       "enableTextCleanupDescription": "A IA remove palavras de preenchimento, corrige gramática e pontuação",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Neato Echo Cloud",
         "providers": "Provedores na nuvem",
         "local": "Local",
         "selfHosted": "Auto-hospedado",
@@ -1730,13 +1817,13 @@
         "enterprise": "Corporativo",
         "enterpriseDesc": "Use a conta de nuvem da sua organização (AWS, Azure, GCP)."
       },
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Neato Echo Cloud",
       "openwhisprCloudDescription": "Resultados confiáveis. Sem configuração.",
       "title": "Melhoria de texto com IA",
       "toasts": {
         "switchedCloud": {
-          "description": "A melhoria de texto usará o serviço de nuvem do OpenWhispr.",
-          "title": "Mudou para OpenWhispr Cloud"
+          "description": "A melhoria de texto usará o serviço de nuvem do Neato Echo.",
+          "title": "Mudou para Neato Echo Cloud"
         },
         "switchedCustom": {
           "description": "Configure seu próprio provedor e chave API.",
@@ -1824,7 +1911,7 @@
       "appearance": {
         "auto": "Auto",
         "dark": "Escuro",
-        "description": "Controle a aparência do OpenWhispr",
+        "description": "Controle a aparência do Neato Echo",
         "light": "Claro",
         "theme": "Tema",
         "themeDescription": "Escolha claro, escuro ou acompanhe o sistema",
@@ -1852,8 +1939,8 @@
         "linuxPttSetupDescription": "O seu utilizador precisa de acesso aos dispositivos de entrada do teclado.",
         "linuxPttSetupNote": "Depois de executar o comando, termine e reinicie a sessão.",
         "hyprlandConfigWriteWarningTitle": "Os atalhos do Hyprland não serão mantidos",
-        "hyprlandConfigWriteWarningDescription": "O OpenWhispr não consegue escrever em {{path}}, por isso os atalhos não serão mantidos após recarregar a configuração do Hyprland. Verifique se o ficheiro existe e permite escrita.",
-        "hyprlandUnbindDescription": "No Hyprland, o OpenWhispr reserva o atalho selecionado. Qualquer atalho existente do Hyprland que use a mesma combinação de teclas será desvinculado quando o OpenWhispr registar o atalho."
+        "hyprlandConfigWriteWarningDescription": "O Neato Echo não consegue escrever em {{path}}, por isso os atalhos não serão mantidos após recarregar a configuração do Hyprland. Verifique se o ficheiro existe e permite escrita.",
+        "hyprlandUnbindDescription": "No Hyprland, o Neato Echo reserva o atalho selecionado. Qualquer atalho existente do Hyprland que use a mesma combinação de teclas será desvinculado quando o Neato Echo registar o atalho."
       },
       "meetingHotkey": {
         "title": "Atalho modo reunião",
@@ -1879,7 +1966,7 @@
       },
       "notifications": {
         "title": "Notificações",
-        "description": "Controle quais notificações o OpenWhispr pode mostrar",
+        "description": "Controle quais notificações o Neato Echo pode mostrar",
         "disableAll": "Desativar todas as notificações",
         "disableAllDescription": "Silenciar tudo exceto mensagens de erro",
         "meetingDetection": "Detecção de reuniões",
@@ -1898,14 +1985,14 @@
       },
       "startup": {
         "launchAtLogin": "Iniciar ao fazer login",
-        "launchAtLoginDescription": "Iniciar o OpenWhispr em segundo plano ao fazer login",
+        "launchAtLoginDescription": "Iniciar o Neato Echo em segundo plano ao fazer login",
         "title": "Inicialização",
-        "description": "Controle o comportamento do OpenWhispr ao iniciar",
+        "description": "Controle o comportamento do Neato Echo ao iniciar",
         "startMinimized": "Iniciar minimizado",
         "startMinimizedDescription": "Iniciar sem mostrar a janela do painel de controle",
         "needsApproval": {
           "title": "Aprovação necessária nas Configurações do Sistema",
-          "description": "O macOS registrou o OpenWhispr como item de início, mas está aguardando que você o permita em Itens de Início.",
+          "description": "O macOS registrou o Neato Echo como item de início, mas está aguardando que você o permita em Itens de Início.",
           "action": "Abrir Itens de Início"
         }
       },
@@ -1957,7 +2044,7 @@
           "group": {
             "step1Title": "Adicionar o seu utilizador ao grupo input",
             "step2Title": "Terminar sessão e voltar a entrar",
-            "step2Desc": "As alterações de grupo só têm efeito após uma nova sessão. Termine sessão no ambiente de trabalho, inicie sessão novamente e reabra o OpenWhispr."
+            "step2Desc": "As alterações de grupo só têm efeito após uma nova sessão. Termine sessão no ambiente de trabalho, inicie sessão novamente e reabra o Neato Echo."
           },
           "service": {
             "step1Title": "Criar o diretório do serviço",
@@ -1981,7 +2068,7 @@
           "manualTitle": "Adicione isto à sua configuração",
           "manualDesc": "Configure manualmente e depois reconstrua.",
           "flakeTitle": "A instalar pelo nosso flake?",
-          "flakeDesc": "Se instalar o OpenWhispr pelo flake, programs.openwhispr.enable ativa o ydotool, o módulo uinput e as associações de grupo por si.",
+          "flakeDesc": "Se instalar o Neato Echo pelo flake, programs.openwhispr.enable ativa o ydotool, o módulo uinput e as associações de grupo por si.",
           "rebuildNote": "Execute sudo nixos-rebuild switch, depois termine a sessão e volte a entrar para que a alteração de grupo e a regra /dev/uinput entrem em vigor. Substitua <you> pelo seu nome de utilizador."
         }
       },
@@ -2014,7 +2101,7 @@
           },
           "installUpdate": {
             "confirmText": "Instalar e reiniciar",
-            "description": "O OpenWhispr será reiniciado para aplicar a atualização.",
+            "description": "O Neato Echo será reiniciado para aplicar a atualização.",
             "title": "Instalar atualização"
           },
           "noUpdates": {
@@ -2049,13 +2136,13 @@
     "permissions": {
       "accessibilityDescription": "Necessário para colagem automática após a transcrição",
       "accessibilityTitle": "Acessibilidade",
-      "description": "Teste e gerencie as permissões do sistema necessárias para o OpenWhispr funcionar corretamente",
+      "description": "Teste e gerencie as permissões do sistema necessárias para o Neato Echo funcionar corretamente",
       "microphoneDescription": "Captura a sua voz para ditado e transcrição",
       "microphoneTitle": "Microfone",
       "resetAccessibility": {
-        "description": "Isso removerá o OpenWhispr das permissões de acessibilidade. Você precisará conceder novamente em Configurações do Sistema > Privacidade e Segurança > Acessibilidade.",
+        "description": "Isso removerá o Neato Echo das permissões de acessibilidade. Você precisará conceder novamente em Configurações do Sistema > Privacidade e Segurança > Acessibilidade.",
         "label": "Redefinir permissões de acessibilidade",
-        "rowDescription": "Corrija problemas após reinstalar ou recompilar o app removendo e readicionando o OpenWhispr nas Configurações do Sistema",
+        "rowDescription": "Corrija problemas após reinstalar ou recompilar o app removendo e readicionando o Neato Echo nas Configurações do Sistema",
         "title": "Redefinir permissões de acessibilidade"
       },
       "optional": "Opcional",
@@ -2081,7 +2168,7 @@
       "insightsSyncRequiresAccount": "Entre na sua conta para sincronizar dados de Estatísticas sem conteúdo entre seus dispositivos.",
       "insightsSyncRequiresHistory": "Ative a retenção de dados para registrar as Estatísticas antes de sincronizá-las entre seus dispositivos.",
       "usageAnalytics": "Análise de uso",
-      "usageAnalyticsDescription": "Ajude-nos a melhorar o OpenWhispr compartilhando métricas anônimas de desempenho. Nunca enviamos conteúdo de transcrição — apenas dados de tempo e erros.",
+      "usageAnalyticsDescription": "Ajude-nos a melhorar o Neato Echo compartilhando métricas anônimas de desempenho. Nunca enviamos conteúdo de transcrição — apenas dados de tempo e erros.",
       "dataRetention": "Retenção de dados",
       "dataRetentionDescription": "Armazenar transcrições e áudio localmente no seu histórico. Quando desativado, as transcrições são coladas mas não salvas.",
       "transcriptRetention": "Retenção de transcrições",
@@ -2128,7 +2215,9 @@
         "noteFormatting": "Formatação de notas",
         "chatIntelligence": "Chat",
         "dictationTranslation": "Tradução"
-      }
+      },
+      "applyToAll": "Usar este modelo em todos os recursos",
+      "appliedToAll": "Aplicado a todos os recursos"
     },
     "noteFormatting": {
       "autoGenerateTitle": "Gerar títulos de notas automaticamente",
@@ -2137,9 +2226,9 @@
     "transcription": {
       "customSetup": "Configuração personalizada",
       "customSetupDescription": "Use seu próprio provedor e chave API.",
-      "description": "Escolha como o OpenWhispr transcreve sua voz",
+      "description": "Escolha como o Neato Echo transcreve sua voz",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Neato Echo Cloud",
         "providers": "Provedores na nuvem",
         "local": "Local",
         "selfHosted": "Auto-hospedado",
@@ -2148,13 +2237,13 @@
         "localDesc": "Modelos no dispositivo. Privado.",
         "selfHostedDesc": "Seu servidor na sua rede."
       },
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Neato Echo Cloud",
       "openwhisprCloudDescription": "Resultados confiáveis. Sem configuração.",
       "title": "Fala para texto",
       "toasts": {
         "switchedCloud": {
-          "description": "A transcrição usará o serviço de nuvem do OpenWhispr.",
-          "title": "Mudou para OpenWhispr Cloud"
+          "description": "A transcrição usará o serviço de nuvem do Neato Echo.",
+          "title": "Mudou para Neato Echo Cloud"
         },
         "switchedCustom": {
           "description": "Configure seu próprio provedor e chave API.",
@@ -2185,6 +2274,8 @@
       },
       "transcriptionPreview": "Pré-visualização ao vivo",
       "transcriptionPreviewDescription": "Mostrar transcrição em janela flutuante antes da limpeza",
+      "polishLivePreview": "Polish live preview",
+      "polishLivePreviewDescription": "Clean up each finished sentence as you speak so the preview reads like the final text. Uses your cleanup model; the sentence you're still speaking stays raw.",
       "vad": {
         "title": "Detecção de atividade de voz",
         "description": "Configure como o Silero VAD detecta e segmenta a fala na transcrição local do Whisper",
@@ -2680,7 +2771,7 @@
     },
     "tryAgain": "Tentar novamente",
     "card": {
-      "brand": "OpenWhispr",
+      "brand": "Neato Echo",
       "signalId": "Signal ID",
       "audioSignature": "Sua assinatura de áudio",
       "stop": "Parar",
@@ -2693,6 +2784,16 @@
     }
   },
   "notes": {
+    "bulk": {
+      "select": "Selecionar",
+      "selectedCount": "{{count}} selecionadas",
+      "moveTo": "Mover para…",
+      "noFolders": "Sem pastas",
+      "deleteTitle": "Excluir notas?",
+      "shortRecording": "Gravação curta (menos de 5 min) — verifique se foi acidental",
+      "deleteConfirm_one": "Excluir esta nota permanentemente? Isso não pode ser desfeito.",
+      "deleteConfirm_other": "Excluir {{count}} notas permanentemente? Isso não pode ser desfeito."
+    },
     "mutationErrors": {
       "folderNameRequired": "Insira um nome para a pasta.",
       "folderAlreadyExists": "Já existe uma pasta com esse nome.",
@@ -2735,7 +2836,7 @@
       "deleted": "{{space}} excluído",
       "moveTo": "Mover para",
       "moveToSpace": "Mover para espaço…",
-      "searchSpaces": "Pesquisar espaços...",
+      "searchSpaces": "Pesquisar espaços…",
       "noSpacesFound": "Nenhum espaço encontrado",
       "spaceRoot": "Raiz do espaço",
       "moveConfirm": "Mover",
@@ -2812,7 +2913,7 @@
     },
     "structureIntro": {
       "title": "Onde ficam suas notas",
-      "description": "O OpenWhispr separa pensamentos privados do trabalho compartilhado para que as pessoas certas vejam as notas certas.",
+      "description": "O Neato Echo separa pensamentos privados do trabalho compartilhado para que as pessoas certas vejam as notas certas.",
       "personal": {
         "title": "Espaço pessoal",
         "description": "Somente você pode ver as pastas e notas deste espaço."
@@ -2837,28 +2938,35 @@
       "couldNotRename": "Não foi possível renomear a pasta",
       "couldNotDelete": "Não foi possível excluir a pasta",
       "deleteTitle": "Excluir pasta?",
-      "deleteDescription": "Isso excluirá permanentemente \"{{name}}\" e suas {{count}} nota(s). Esta ação não pode ser desfeita.",
       "deleteDescriptionEmpty": "Isso excluirá permanentemente \"{{name}}\". Esta ação não pode ser desfeita.",
-      "deleteConfirm": "Excluir pasta e notas"
+      "deleteConfirm": "Excluir pasta e notas",
+      "deleteDescription_one": "Isso excluirá permanentemente \"{{name}}\" e sua {{count}} nota. Isso não pode ser desfeito.",
+      "deleteDescription_other": "Isso excluirá permanentemente \"{{name}}\" e suas {{count}} notas. Isso não pode ser desfeito."
     },
     "list": {
       "title": "Notas",
       "newNote": "Nova nota",
+      "searchPlaceholder": "Buscar notas",
+      "noResults": "Nenhuma nota correspondente",
+      "newRecording": "Nova gravação",
       "untitled": "Sem título",
       "untitledNote": "Nota sem título",
       "shared": "Compartilhada",
       "timeNow": "Agora",
       "minutesAgo": "{{count}}m",
       "hoursAgo": "{{count}}h",
-      "daysAgo": "{{count}}d"
+      "daysAgo": "{{count}}d",
+      "filterByDate": "Filtrar por data",
+      "resize": "Redimensionar lista de notas"
     },
     "editor": {
       "untitled": "Sem título",
       "noteTitle": "Título da nota",
       "stop": "Parar",
       "transcribe": "Transcrever",
-      "processing": "Processando...",
+      "processing": "Processando…",
       "export": "Exportar",
+      "copy": "Copy",
       "asMarkdown": "Como Markdown",
       "asPlainText": "Como texto simples",
       "asTranscriptText": "Como texto simples (.txt)",
@@ -2876,15 +2984,18 @@
       "conversationWillAppear": "A conversa aparecerá aqui...",
       "linkedEvent": "Evento vinculado",
       "noFolder": "Sem pasta",
-      "participants": "Participantes"
+      "participants": "Participantes",
+      "record": "Iniciar gravação"
     },
     "participants": {
       "attendee": "participante",
       "attendees": "participantes",
       "addAttendees": "Adicionar participantes",
-      "addPlaceholder": "Adicionar participantes...",
+      "addPlaceholder": "Adicionar participantes…",
       "typeEmail": "Digite um e-mail para adicionar...",
-      "me": "(eu)"
+      "me": "(eu)",
+      "count_one": "{{count}} participante",
+      "count_other": "{{count}} participantes"
     },
     "upload": {
       "title": "Enviar áudio",
@@ -2910,7 +3021,7 @@
       "newFolder": "Nova pasta",
       "folderName": "Nome da pasta",
       "create": "Criar",
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Neato Echo Cloud",
       "custom": "Personalizado",
       "selectFolder": "Selecionar pasta",
       "transcriptionFailed": "Falha na transcrição",
@@ -2922,15 +3033,23 @@
       "fileTooLarge": "Este arquivo excede o limite de 500 MB.",
       "largeFileNote": "Arquivos grandes são divididos e transcritos em paralelo.",
       "chunkProgress": "Transcrevendo parte {{completed}} de {{total}}...",
-      "paidPlanRequired": "A transcrição na nuvem para arquivos acima de 25 MB requer um plano pago. Arquivos grandes são processados com o OpenWhispr Cloud para resultados confiáveis e de alta qualidade.",
+      "etaMinutes": "~{{minutes}} min restantes",
+      "etaSeconds": "~{{seconds}} s restantes",
+      "saveFailed": "Não foi possível salvar a nota.",
+      "indicator": {
+        "transcribing": "Transcrevendo…",
+        "ready": "Transcrição pronta",
+        "openNote": "Abrir nota"
+      },
+      "paidPlanRequired": "A transcrição na nuvem para arquivos acima de 25 MB requer um plano pago. Arquivos grandes são processados com o Neato Echo Cloud para resultados confiáveis e de alta qualidade.",
       "byokTooLarge": "Chaves API de terceiros suportam apenas arquivos de até {{size}} MB.",
-      "byokTooLargeDetail": "Para arquivos acima de {{size}} MB, o OpenWhispr Cloud cuida da divisão, processamento paralelo e remontagem — para resultados confiáveis sem depender dos limites de provedores de terceiros.",
-      "byokTooLargeNeedsAccount": "Crie uma conta e mude para um plano pago para transcrever arquivos maiores com o OpenWhispr Cloud.",
-      "byokTooLargeNeedsUpgrade": "Mude para um plano pago para transcrever arquivos maiores com o OpenWhispr Cloud.",
-      "switchToCloudForLargeFiles": "Mude para o OpenWhispr Cloud para transcrever este arquivo.",
+      "byokTooLargeDetail": "Para arquivos acima de {{size}} MB, o Neato Echo Cloud cuida da divisão, processamento paralelo e remontagem — para resultados confiáveis sem depender dos limites de provedores de terceiros.",
+      "byokTooLargeNeedsAccount": "Crie uma conta e mude para um plano pago para transcrever arquivos maiores com o Neato Echo Cloud.",
+      "byokTooLargeNeedsUpgrade": "Mude para um plano pago para transcrever arquivos maiores com o Neato Echo Cloud.",
+      "switchToCloudForLargeFiles": "Mude para o Neato Echo Cloud para transcrever este arquivo.",
       "createAccount": "Criar conta",
       "upgrade": "Fazer upgrade",
-      "switchToCloud": "OpenWhispr Cloud",
+      "switchToCloud": "Neato Echo Cloud",
       "orDivider": "ou",
       "urlPlaceholder": "Cole uma URL do YouTube ou de áudio",
       "urlDownloading": "Baixando áudio...",
@@ -2966,7 +3085,11 @@
       "queueFailed": "{{n}} com falha",
       "urlFileTooLarge": "O arquivo é grande demais para baixar. O tamanho máximo é 500 MB.",
       "urlYoutubeBlocked": "O YouTube está bloqueando temporariamente downloads da sua rede. Tente novamente em instantes.",
-      "customEndpointInvalid": "O endpoint de transcrição personalizado não está configurado ou é inválido. Atualize-o nas Configurações."
+      "customEndpointInvalid": "O endpoint de transcrição personalizado não está configurado ou é inválido. Atualize-o nas Configurações.",
+      "leaveWhileProcessing": {
+        "title": "Transcrição em andamento",
+        "description": "Sair desta aba cancelará o upload atual e sua transcrição, e o resultado será perdido. Sair mesmo assim?"
+      }
     },
     "meeting": {
       "title": "Notas de reunião",
@@ -2977,7 +3100,8 @@
       "restartFailed": "Não foi possível reiniciar a gravação da reunião.",
       "systemAudioSilent": {
         "title": "Nenhum áudio da reunião detectado até agora",
-        "description": "Até agora, apenas o seu microfone captou som. Está em uma videochamada? Verifique se o áudio da reunião está sendo reproduzido neste computador e não está silenciado. Está gravando presencialmente? Você pode ignorar este aviso: seu microfone capta o ambiente."
+        "description": "Até agora só o seu microfone captou som. Em uma videochamada? Verifique se o áudio da reunião está sendo reproduzido neste computador e não está mudo; e, se houver outro gravador de reuniões ou app de áudio aberto, feche-o (ou desative o “controle exclusivo” das suas caixas de som nas configurações de Som), pois ele pode bloquear a captura do áudio do sistema. Gravando presencialmente? Pode ignorar isto — o seu microfone capta a sala.",
+        "openSettings": "Abrir configurações de som"
       }
     },
     "meetingPill": {
@@ -2988,7 +3112,7 @@
       "moveToFolder": "Mover para pasta",
       "delete": "Excluir",
       "rename": "Renomear",
-      "searchFolders": "Pesquisar pastas...",
+      "searchFolders": "Pesquisar pastas…",
       "noResults": "Nenhuma pasta encontrada",
       "newFolder": "Nova pasta",
       "showInFileManager": "Mostrar no {{manager}}"
@@ -3022,6 +3146,12 @@
         "noModel": "Nenhum modelo de IA selecionado. Configure um nas Configurações.",
         "actionFailed": "A ação falhou",
         "noEndpoint": "Nenhum URL de servidor auto-hospedado definido. Configure um nas Configurações."
+      },
+      "summaryPrompt": {
+        "title": "Resumir esta gravação?",
+        "description": "Escolha um estilo de resumo para a nota que você acabou de gravar. Você pode executar outro depois pelo menu Ações.",
+        "skip": "Agora não",
+        "dontAsk": "Não perguntar novamente"
       }
     },
     "empty": {
@@ -3036,9 +3166,10 @@
       "title": "Adicionar notas",
       "searchPlaceholder": "Pesquisar notas para adicionar...",
       "addExisting": "Adicionar existentes",
-      "addCount": "Adicionar {{count}} notas",
       "noResults": "Nenhuma nota encontrada",
-      "noNotesAvailable": "Nenhuma outra nota disponível"
+      "noNotesAvailable": "Nenhuma outra nota disponível",
+      "addCount_one": "Adicionar {{count}} nota",
+      "addCount_other": "Adicionar {{count}} notas"
     },
     "onboarding": {
       "llm": {
@@ -3067,7 +3198,12 @@
       "upgrade": "Fazer upgrade"
     },
     "enhance": {
-      "title": "Erro de aprimoramento"
+      "title": "Erro de aprimoramento",
+      "working": "Aprimorando a nota",
+      "inProgress": "Trabalhando em segundo plano…",
+      "viewNote": "Ver nota",
+      "almostDone": "Finalizando…",
+      "safeToLeave": "Você pode trocar de aba — isto continua."
     },
     "speaker": {
       "you": "Você",
@@ -3104,7 +3240,7 @@
         "notLabeled": "Participantes sem rótulo",
         "finalizing": "Finalizando participantes…",
         "justYou": "Só você",
-        "assumedHint": "assumindo 2 — ajuste se houver mais",
+        "assumedHint": "assumindo 2 — defina o número para rótulos mais precisos",
         "speakersLabel": "Participantes",
         "labelToggle": "Rotular participantes",
         "toggleAria": "Alternar identificação de participantes para esta gravação",
@@ -3136,7 +3272,7 @@
         "dismiss": "Dispensar"
       },
       "ask": {
-        "placeholder": "Pergunte qualquer coisa",
+        "placeholder": "Pergunte algo…",
         "chips": {
           "catchUp": "Me atualize",
           "keyDecisions": "Liste as decisões principais",
@@ -3150,6 +3286,25 @@
       "author": {
         "you": "Você"
       }
+    },
+    "origin": {
+      "mobile": "Celular",
+      "desktop": "Desktop",
+      "youtube": "YouTube"
+    },
+    "audioPanel": {
+      "title": "Dispositivos de áudio",
+      "microphone": "Microfone",
+      "systemAudio": "Áudio do sistema",
+      "systemDefaultMic": "Padrão do sistema",
+      "refresh": "Atualizar dispositivos",
+      "systemNoSignal": "Nenhum áudio do sistema detectado",
+      "systemReceiving": "Recebendo áudio do sistema",
+      "systemListening": "Aguardando áudio do sistema…",
+      "systemHint": "Se continuar vazio, outro app pode estar bloqueando o áudio do sistema — feche outros gravadores ou pare e reinicie a gravação.",
+      "systemSourceAuto": "Automático (recomendado)",
+      "systemSourceScreen": "Compartilhar tela (capturar o que você ouve)",
+      "systemSourceHint": "Escolha uma fonte se o áudio do sistema não for capturado. Compartilhar a tela funciona mesmo quando a captura automática fica em silêncio. Aplica-se à sua próxima gravação."
     }
   },
   "dictionary": {
@@ -3158,7 +3313,7 @@
     "clearAll": "Limpar tudo",
     "clearTitle": "Limpar o dicionário?",
     "clearDescription": "Isso removerá todas as palavras do seu dicionário personalizado. Esta ação não pode ser desfeita.",
-    "addPlaceholder": "Adicione palavras separadas por vírgulas — OpenWhispr, Supabase, John Snow, ARR",
+    "addPlaceholder": "Adicione palavras separadas por vírgulas — Neato Echo, Supabase, John Snow, ARR",
     "add": "Adicionar",
     "importWords": "Importar palavras",
     "importPlaceholder": "Cole palavras separadas por vírgulas ou novas linhas...",
@@ -3187,7 +3342,7 @@
       "duplicate": "Já existe um snippet com esse gatilho",
       "emptyTitle": "O que você não deveria ter que dizer",
       "emptyTitleAccent": "duas vezes",
-      "emptyDescription": "Fale um gatilho e o OpenWhispr o substitui pelo que você salvou: URLs, introduções, assinaturas, prompts.",
+      "emptyDescription": "Fale um gatilho e o Neato Echo o substitui pelo que você salvou: URLs, introduções, assinaturas, prompts.",
       "new": "Novo snippet",
       "examples": {
         "linkedinTrigger": "Meu LinkedIn",
@@ -3249,7 +3404,7 @@
   "sidebar": {
     "insights": "Estatísticas",
     "home": "Início",
-    "notes": "Notas",
+    "notes": "Notas/Reuniões",
     "upload": "Enviar",
     "dictionary": "Dicionário",
     "referral": "Ganhe um mês grátis",
@@ -3269,7 +3424,8 @@
     "notSignedIn": "Não conectado",
     "chat": "Chat",
     "collapse": "Recolher barra lateral",
-    "expand": "Expandir barra lateral"
+    "expand": "Expandir barra lateral",
+    "resize": "Redimensionar barra lateral"
   },
   "chat": {
     "newChat": "Novo chat",
@@ -3291,7 +3447,13 @@
     "searchChats": "Pesquisar chats",
     "searchTitle": "Pesquisar conversas",
     "searchDescription": "Pesquisar em todas as conversas",
-    "newChatEmpty": "Pergunte sobre suas notas, transcrições ou qualquer coisa"
+    "newChatEmpty": "Pergunte sobre suas notas, transcrições ou qualquer coisa",
+    "select": "Selecionar",
+    "selectAll": "Selecionar tudo",
+    "deselectAll": "Desmarcar tudo",
+    "selectedCount": "{{count}} selecionados",
+    "deleteSelected": "Excluir {{count}}",
+    "deleteSelectedConfirm": "Excluir permanentemente {{count}} conversa(s)? Isso não pode ser desfeito."
   },
   "support": {
     "documentation": "Documentação",
@@ -3300,7 +3462,7 @@
     "submitBug": "Reportar um bug"
   },
   "postMigration": {
-    "title": "Bem-vindo de volta ao OpenWhispr",
+    "title": "Bem-vindo de volta ao Neato Echo",
     "description": "Suas notas e configurações foram mantidas da versão anterior. No entanto, o macOS trata isto como um novo app, então algumas permissões precisam ser concedidas novamente.",
     "done": "Concluído",
     "remindLater": "Lembrar-me mais tarde"
@@ -3323,12 +3485,14 @@
     "ready": "Aceleração GPU pronta",
     "activating": "Ativando GPU...",
     "activationFailed": "Aceleração GPU indisponível",
-    "activationFailedDescription": "OpenWhispr mudou para a transcrição por CPU.",
-    "reasoningActivationFailedDescription": "OpenWhispr mudou para o processamento por CPU.",
+    "activationFailedDescription": "Neato Echo mudou para a transcrição por CPU.",
+    "reasoningActivationFailedDescription": "Neato Echo mudou para o processamento por CPU.",
     "retryActivation": "Tentar aceleração por GPU novamente",
     "remove": "Remover",
     "dismiss": "Agora não",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "runningOnCpu": "Executando na CPU — GPU ociosa",
+    "runningOnCpuDescription": "O pacote de GPU está instalado, mas o modelo está sendo executado na CPU, que é muito mais lenta. Tente a aceleração por GPU novamente."
   },
   "app": {
     "toasts": {
@@ -3344,11 +3508,11 @@
       "undo": "Desfazer",
       "accessibilityMissing": {
         "title": "Permissões de acessibilidade necessárias",
-        "description": "O OpenWhispr precisa de permissões de acessibilidade para detectar seu atalho e colar texto. Ative-as no Painel de Controle."
+        "description": "O Neato Echo precisa de permissões de acessibilidade para detectar seu atalho e colar texto. Ative-as no Painel de Controle."
       },
       "gpuFallback": {
         "title": "Aceleração GPU indisponível",
-        "description": "OpenWhispr mudou para a transcrição por CPU.",
+        "description": "Neato Echo mudou para a transcrição por CPU.",
         "retry": "Tentar GPU novamente"
       },
       "gpuPackMigration": {
@@ -3391,11 +3555,11 @@
       "visionModelDescription": "Encaminha comandos que incluem captura de tela para outro modelo com visão.",
       "permissionTitle": "Gravação de tela",
       "permissionDescription": "O macOS exige permissão de gravação de tela para capturar sua tela.",
-      "relaunchHint": "A permissão de gravação de tela foi concedida enquanto o OpenWhispr estava em execução. Feche e reabra o OpenWhispr para começar a capturar a tela."
+      "relaunchHint": "A permissão de gravação de tela foi concedida enquanto o Neato Echo estava em execução. Feche e reabra o Neato Echo para começar a capturar a tela."
     },
     "modes": {
-      "openwhispr": "OpenWhispr Cloud",
-      "openwhisprDesc": "Use o agente gerenciado pelo OpenWhispr, sem precisar de chave API.",
+      "openwhispr": "Neato Echo Cloud",
+      "openwhisprDesc": "Use o agente gerenciado pelo Neato Echo, sem precisar de chave API.",
       "providers": "Use sua própria chave",
       "providersDesc": "Conecte-se à OpenAI, Anthropic, Gemini ou Groq com sua própria chave API.",
       "local": "Local",
@@ -3416,7 +3580,7 @@
       "systemPromptDescription": "Instruções personalizadas para o agente",
       "systemPromptPlaceholder": "Digite um prompt de sistema personalizado...",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Neato Echo Cloud",
         "providers": "Provedores Cloud",
         "local": "Local",
         "selfHosted": "Auto-hospedado",
@@ -3460,7 +3624,9 @@
       "copiedToClipboard": "Copiado para a área de transferência",
       "openNote": "Abrir nota",
       "unknownTool": "Ferramenta desconhecida: {{name}}",
-      "invalidArgs": "Argumentos de ferramenta inválidos para {{name}}"
+      "invalidArgs": "Argumentos de ferramenta inválidos para {{name}}",
+      "list_recorded_meetingsName": "Listar reuniões",
+      "list_recorded_meetingsStatus": "Procurando reuniões..."
     }
   },
   "assistant": {
@@ -3502,7 +3668,7 @@
       "disconnectConfirm": "Desconectar {{email}}?",
       "disconnectDescription": "As notas de reunião não serão mais gravadas deste calendário.",
       "systemAudioRequired": "Permissão de Áudio do Sistema Necessária",
-      "systemAudioDescription": "Para transcrever reuniões, o OpenWhispr precisa da permissão de Áudio do Sistema para capturar o áudio dos outros participantes. Nunca gravamos a sua tela. Você será levado às Configurações do Sistema para ativá-la.",
+      "systemAudioDescription": "Para transcrever reuniões, o Neato Echo precisa da permissão de Áudio do Sistema para capturar o áudio dos outros participantes. Nunca gravamos a sua tela. Você será levado às Configurações do Sistema para ativá-la.",
       "openSettings": "Abrir Configurações do Sistema",
       "connectFailed": "Falha na conexão",
       "connectFailedDescription": "Ocorreu um erro ao conectar ao Google Calendar. Tente novamente."
@@ -3532,10 +3698,10 @@
       "disconnectConfirm": "Desconectar o Calendário da Apple?",
       "disconnectDescription": "As notas de reunião não serão mais gravadas do seu Calendário da Apple.",
       "permissionDenied": "Acesso ao calendário necessário",
-      "permissionDeniedDescription": "O OpenWhispr precisa de acesso ao calendário para detectar reuniões. Ative o OpenWhispr em Configurações do Sistema, em Privacidade e Segurança → Calendários.",
+      "permissionDeniedDescription": "O Neato Echo precisa de acesso ao calendário para detectar reuniões. Ative o Neato Echo em Configurações do Sistema, em Privacidade e Segurança → Calendários.",
       "openSettings": "Abrir Configurações do Sistema",
       "connectFailed": "Falha na conexão",
-      "connectFailedDescription": "Ocorreu um erro ao conectar ao Calendar.app. Reinicie o OpenWhispr e tente novamente."
+      "connectFailedDescription": "Ocorreu um erro ao conectar ao Calendar.app. Reinicie o Neato Echo e tente novamente."
     },
     "sections": {
       "calendar": "Calendário",
@@ -3554,13 +3720,13 @@
     "mcp": {
       "title": "Leve suas notas para suas ferramentas de IA",
       "description": "Converse, pesquise e trabalhe com suas notas no Claude, ChatGPT e Cursor.",
-      "step1": "Na sua ferramenta de IA, adicione OpenWhispr MCP usando a URL pública",
+      "step1": "Na sua ferramenta de IA, adicione Neato Echo MCP usando a URL pública",
       "step2": "Crie uma chave de API acima com os escopos necessários.",
       "step3": "Cole a chave como cabeçalho Authorization para conectar.",
       "learnMore": "Saiba mais",
       "viewPlans": "Ver planos",
       "copyUrl": "Copiar URL do MCP",
-      "proRequired": "Atualize para um plano pago para conectar o OpenWhispr ao Claude, ChatGPT e Cursor.",
+      "proRequired": "Atualize para um plano pago para conectar o Neato Echo ao Claude, ChatGPT e Cursor.",
       "copied": "Copiado"
     },
     "cli": {
@@ -3574,7 +3740,7 @@
       "local": {
         "label": "Local",
         "freeBadge": "Grátis",
-        "description": "Leia suas notas locais diretamente. Sem login ou chave de API — funciona enquanto o OpenWhispr estiver aberto."
+        "description": "Leia suas notas locais diretamente. Sem login ou chave de API — funciona enquanto o Neato Echo estiver aberto."
       },
       "cloud": {
         "label": "Nuvem",
@@ -3594,8 +3760,8 @@
       "upgrade": "Atualizar"
     },
     "notABot": {
-      "title": "O OpenWhispr é um gravador de reuniões, não um bot",
-      "description": "O OpenWhispr captura áudio diretamente do seu sistema — ele nunca entra nas suas reuniões como participante. Basta conectar seu calendário e fazer anotações normalmente."
+      "title": "O Neato Echo é um gravador de reuniões, não um bot",
+      "description": "O Neato Echo captura áudio diretamente do seu sistema — ele nunca entra nas suas reuniões como participante. Basta conectar seu calendário e fazer anotações normalmente."
     }
   },
   "calendar": {
@@ -3636,7 +3802,7 @@
     "systemAudioRequired": "A permissão de Áudio do Sistema é necessária para capturar o áudio dos outros participantes.",
     "openSettings": "Abrir Configurações do Sistema",
     "connectCalendar": "Conecte seu calendário",
-    "connectCalendarDescription": "Veja suas reuniões e entre nelas sem sair do OpenWhispr.",
+    "connectCalendarDescription": "Veja suas reuniões e entre nelas sem sair do Neato Echo.",
     "connectCalendarButton": "Conectar calendário"
   },
   "notesView": {
@@ -3685,7 +3851,7 @@
         "invitationActions": "Ações do convite",
         "resendSent": "Convite enviado",
         "resendThrottled": "Convite enviado há pouco. Tente novamente em um minuto.",
-        "syncPrompt": "O compartilhamento mantém uma cópia desta nota na sua nuvem OpenWhispr. Só você pode vê-la até escolher com quem compartilhá-la.",
+        "syncPrompt": "O compartilhamento mantém uma cópia desta nota na sua nuvem Neato Echo. Só você pode vê-la até escolher com quem compartilhá-la.",
         "syncAndShare": "Sincronizar nota",
         "visibility": {
           "label": "Visibilidade",
@@ -3730,18 +3896,18 @@
     }
   },
   "updateNotification": {
-    "title": "Atualização do OpenWhispr disponível",
+    "title": "Atualização do Neato Echo disponível",
     "body": "A versão {{version}} está pronta para download",
     "cta": "Atualizar agora"
   },
   "permissionsGate": {
     "title": "Permissões necessárias",
-    "description": "O OpenWhispr precisa de algumas permissões para funcionar neste computador.",
+    "description": "O Neato Echo precisa de algumas permissões para funcionar neste computador.",
     "continue": "Continuar"
   },
   "apiKeysSection": {
     "title": "Chaves API",
-    "description": "Crie chaves para acessar a API do OpenWhispr programaticamente.",
+    "description": "Crie chaves para acessar a API do Neato Echo programaticamente.",
     "docsLink": "Docs da API",
     "empty": "Nenhuma chave API ainda",
     "createButton": "Criar chave API",
@@ -3788,7 +3954,7 @@
     }
   },
   "embeddedChat": {
-    "askPlaceholder": "Pergunte algo...",
+    "askPlaceholder": "Pergunte algo…",
     "send": "Enviar",
     "title": "Chat",
     "emptyState": "Faça uma pergunta sobre esta nota",
@@ -3806,7 +3972,8 @@
     "copy": "Copiar",
     "copied": "Copiado",
     "collapse": "Recolher transcrição",
-    "waitingForInput": "Diga algo..."
+    "waitingForInput": "Diga algo...",
+    "accuracyNote": "Prévia ao vivo — seu texto final será mais preciso."
   },
   "transcript": {
     "speaker": {
@@ -3859,7 +4026,7 @@
     },
     "join": {
       "title": "Entre na sua equipe",
-      "domainTitle": "Sua equipe já está no OpenWhispr",
+      "domainTitle": "Sua equipe já está no Neato Echo",
       "description": "Estes workspaces têm alguém do domínio do seu e-mail.",
       "invitedDescription": "Você foi convidado para um workspace.",
       "invitedBy": "Convidado por {{inviter}} como {{role}}",

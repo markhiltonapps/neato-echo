@@ -52,11 +52,10 @@ export default function ActionPicker({
   return (
     <div
       className={cn(
-        "flex items-center shrink-0 rounded-full overflow-hidden",
-        "bg-white/60 dark:bg-white/8",
-        "backdrop-blur-lg transform-gpu",
-        "border border-black/10 dark:border-white/14",
-        "shadow-(--shadow-glass)",
+        "gloss-convex relative flex items-center shrink-0 rounded-full overflow-hidden",
+        "bg-primary text-primary-foreground",
+        "border border-primary/50",
+        "shadow-[var(--shadow-glow-teal)]",
         disabled && "opacity-40 pointer-events-none"
       )}
     >
@@ -66,10 +65,9 @@ export default function ActionPicker({
         aria-label={t("notes.actions.runAction", { name: getActionName(activeAction, t) })}
         className={cn(
           "flex items-center gap-1.5 h-7 pl-3 pr-1.5",
-          "text-accent/70 dark:text-accent/60",
+          "text-primary-foreground/90",
           "transition-colors duration-150",
-          "hover:bg-accent/8 dark:hover:bg-accent/12",
-          "hover:text-accent/90 dark:hover:text-accent/80"
+          "hover:bg-white/10 hover:text-primary-foreground"
         )}
       >
         <Sparkles size={11} />
@@ -85,11 +83,10 @@ export default function ActionPicker({
             aria-label={t("notes.actions.selectAction")}
             className={cn(
               "flex items-center justify-center h-7 w-6 pr-0.5",
-              "border-l border-black/6 dark:border-white/8",
-              "text-accent/40 dark:text-accent/30",
+              "border-l border-white/20",
+              "text-primary-foreground/70",
               "transition-colors duration-150",
-              "hover:bg-accent/8 dark:hover:bg-accent/12",
-              "hover:text-accent/70"
+              "hover:bg-white/10 hover:text-primary-foreground"
             )}
           >
             <ChevronDown size={10} />

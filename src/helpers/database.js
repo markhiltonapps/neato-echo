@@ -1,4 +1,5 @@
 const Database = require("better-sqlite3");
+const { SUMMARY_PRESETS, SUMMARY_PRESETS_SEED_KEY } = require("../config/summaryPresets");
 const path = require("path");
 const fs = require("fs");
 const { randomUUID } = require("crypto");
@@ -7,6 +8,7 @@ const { buildNoteSearchQuery } = require("./noteSearch");
 const { normalizeStoredSpeakerCount } = require("./speakerCount");
 const { parseEventTime } = require("./calendarAvailability");
 const { ANALYTICS_COUNTER_VERSION, summarizeAnalyticsDays } = require("./analytics");
+const { isEmptyShellNote } = require("./emptyNoteShell");
 const { app } = require("electron");
 
 // Server-enforced trigger cap (openwhispr-api); enforced here so one oversized
@@ -536,6 +538,9 @@ class DatabaseManager {
           "notes.actions.builtin.generateNotes",
           "notes.actions.builtin.generateNotes"
         );
+
+      // Neato Echo: seed the editable summary presets once (see summaryPresets.js).
+      this.seedSummaryPresets();
 
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS google_calendar_tokens (
@@ -1234,6 +1239,13 @@ class DatabaseManager {
       }
       try {
         this.db.exec("ALTER TABLE notes ADD COLUMN created_by_user_id TEXT");
+      } catch (err) {
+        if (!err.message.includes("duplicate column")) throw err;
+      }
+      // Device a note originated on ('mobile' | 'desktop'), from the Neato Cloud sync, so
+      // the UI can badge phone-made recordings. NULL for local-only notes (shown as desktop).
+      try {
+        this.db.exec("ALTER TABLE notes ADD COLUMN origin TEXT");
       } catch (err) {
         if (!err.message.includes("duplicate column")) throw err;
       }
@@ -2639,6 +2651,35 @@ class DatabaseManager {
     }
   }
 
+  seedSummaryPresets() {
+    try {
+      this.db.exec(
+        "CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+      );
+      const seeded = this.db
+        .prepare("SELECT value FROM app_meta WHERE key = ?")
+        .get(SUMMARY_PRESETS_SEED_KEY);
+      if (seeded) return;
+
+      const maxOrder = this.db.prepare("SELECT MAX(sort_order) as max_order FROM actions").get();
+      let sortOrder = (maxOrder?.max_order ?? 0) + 1;
+      const insert = this.db.prepare(
+        "INSERT INTO actions (name, description, prompt, icon, is_builtin, sort_order) VALUES (?, ?, ?, ?, 0, ?)"
+      );
+      const markSeeded = this.db.prepare("INSERT INTO app_meta (key, value) VALUES (?, ?)");
+      this.db.transaction(() => {
+        for (const preset of SUMMARY_PRESETS) {
+          insert.run(preset.name, preset.description, preset.prompt, preset.icon, sortOrder++);
+        }
+        markSeeded.run(SUMMARY_PRESETS_SEED_KEY, new Date().toISOString());
+      })();
+      debugLogger.info("Seeded summary presets", { count: SUMMARY_PRESETS.length }, "notes");
+    } catch (error) {
+      // Presets are a convenience; never block database startup on them.
+      debugLogger.error("Failed to seed summary presets", { error: error.message }, "notes");
+    }
+  }
+
   getNotes(noteType = null, limit = 100, folderId = null, spaceId = null) {
     try {
       if (!this.db) {
@@ -2824,6 +2865,24 @@ class DatabaseManager {
     }
   }
 
+  // Set a note's origin device ('mobile' | 'desktop') for the UI badge, WITHOUT touching
+  // sync_status or updated_at — this is sync metadata from the cloud pull, not a user edit,
+  // so it must not re-queue the note for cloud backup or bump its edit time.
+  setNoteOrigin(id, origin) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!origin) return false;
+      const accountScope = this._accountScopeCondition("notes");
+      const result = this.db
+        .prepare(`UPDATE notes SET origin = ? WHERE id = ? AND ${accountScope.sql}`)
+        .run(origin, id, ...accountScope.params);
+      return result.changes > 0;
+    } catch (error) {
+      debugLogger.error("Error setting note origin", { error: error.message }, "notes");
+      return false;
+    }
+  }
+
   getFolders(spaceId = null) {
     try {
       if (!this.db) throw new Error("Database not initialized");
@@ -2883,6 +2942,47 @@ class DatabaseManager {
     } catch (error) {
       debugLogger.error("Error creating folder", { error: error.message }, "notes");
       throw error;
+    }
+  }
+
+  // Create (or revive) a local folder that originated on another device, keyed by the
+  // SHARED client_folder_id so recordings pointing at that folder map correctly. Idempotent:
+  // if the folder already exists (by client_folder_id) it's returned/undeleted unchanged —
+  // a desktop rename is never clobbered. Used by the cloud pull so mobile-made folders appear.
+  createFolderFromCloud(clientFolderId, name, sortOrder = 0) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!clientFolderId) return { success: false, error: "client_folder_id required" };
+      const trimmed = (name || "Folder").trim() || "Folder";
+      const spaceId = this.getPrivateSpaceId();
+      const existing = this.db
+        .prepare("SELECT * FROM folders WHERE client_folder_id = ?")
+        .get(clientFolderId);
+      if (existing) {
+        if (existing.deleted_at) {
+          this.db
+            .prepare("UPDATE folders SET deleted_at = NULL WHERE id = ?")
+            .run(existing.id);
+        }
+        return {
+          success: true,
+          created: false,
+          folder: this.db.prepare("SELECT * FROM folders WHERE id = ?").get(existing.id),
+        };
+      }
+      const accountId = this._accountIdForSpace(spaceId);
+      const result = this.db
+        .prepare(
+          "INSERT INTO folders (name, sort_order, space_id, client_folder_id, account_id) VALUES (?, ?, ?, ?, ?)"
+        )
+        .run(trimmed, sortOrder || 0, spaceId, clientFolderId, accountId);
+      const folder = this.db
+        .prepare("SELECT * FROM folders WHERE id = ?")
+        .get(result.lastInsertRowid);
+      return { success: true, created: true, folder };
+    } catch (error) {
+      debugLogger.error("Error creating folder from cloud", { error: error.message }, "notes");
+      return { success: false, error: error.message };
     }
   }
 
@@ -3749,6 +3849,83 @@ class DatabaseManager {
     }
   }
 
+  // Remove abandoned empty-shell notes: created speculatively (meeting Join / auto-record,
+  // "New note" / "New recording") and never given a recording or any text. Synced shells
+  // are soft-deleted (tombstoned so the deletion reaches the cloud); never-synced ones are
+  // hard-deleted. `graceMinutes` protects a note a user may still be composing. The
+  // `isEmptyShellNote` filter is the single source of truth (see emptyNoteShell.js).
+  // Returns the array of removed note ids so callers can broadcast "note-deleted".
+  sweepEmptyShellNotes(graceMinutes = 2) {
+    if (!this.db) return [];
+    try {
+      const cutoff = `-${Math.max(0, Number(graceMinutes) || 0)} minutes`;
+      const candidates = this.db
+        .prepare(
+          `SELECT * FROM notes
+           WHERE deleted_at IS NULL
+             AND source_file IS NULL
+             AND (is_shared IS NULL OR is_shared = 0)
+             AND note_type IN ('meeting','personal')
+             AND (transcript IS NULL OR trim(transcript) = '')
+             AND (content IS NULL OR trim(content) = '')
+             AND (enhanced_content IS NULL OR trim(enhanced_content) = '')
+             AND created_at < datetime('now', ?)`
+        )
+        .all(cutoff);
+      const shells = candidates.filter(isEmptyShellNote);
+      if (shells.length === 0) return [];
+      const softDelete = this.db.prepare(
+        `UPDATE notes SET deleted_at = datetime('now'), sync_status = 'pending', updated_at = datetime('now') WHERE id = ?`
+      );
+      const hardDelete = this.db.prepare("DELETE FROM notes WHERE id = ?");
+      const removed = this.db.transaction((rows) => {
+        const ids = [];
+        for (const n of rows) {
+          if (n.cloud_id) softDelete.run(n.id);
+          else hardDelete.run(n.id);
+          ids.push(n.id);
+        }
+        return ids;
+      })(shells);
+      if (removed.length) {
+        debugLogger.info(
+          "Swept empty shell notes",
+          { count: removed.length, ids: removed },
+          "notes"
+        );
+      }
+      return removed;
+    } catch (error) {
+      debugLogger.error("Failed to sweep empty shell notes", { error: error.message }, "notes");
+      return [];
+    }
+  }
+
+  // Reconcile a single note right after its recording ended: if it is an empty shell,
+  // remove it (targeted, no grace — we know this note's recording just finished). Returns
+  // true when the note was removed.
+  reconcileEmptyNote(id) {
+    if (!this.db || id == null) return false;
+    try {
+      const note = this.db.prepare("SELECT * FROM notes WHERE id = ?").get(id);
+      if (!isEmptyShellNote(note)) return false;
+      if (note.cloud_id) {
+        this.db
+          .prepare(
+            `UPDATE notes SET deleted_at = datetime('now'), sync_status = 'pending', updated_at = datetime('now') WHERE id = ?`
+          )
+          .run(id);
+      } else {
+        this.db.prepare("DELETE FROM notes WHERE id = ?").run(id);
+      }
+      debugLogger.info("Reconciled empty note after recording", { id }, "notes");
+      return true;
+    } catch (error) {
+      debugLogger.error("Failed to reconcile empty note", { id, error: error.message }, "notes");
+      return false;
+    }
+  }
+
   createAgentConversation(title = "Untitled", noteId = null, spaceId = null, folderId = null) {
     try {
       if (!this.db) throw new Error("Database not initialized");
@@ -3862,12 +4039,48 @@ class DatabaseManager {
       if (!this.db) throw new Error("Database not initialized");
       return this.db
         .prepare(
-          "SELECT * FROM agent_conversations WHERE deleted_at IS NULL AND space_id IS NULL AND folder_id IS NULL ORDER BY updated_at DESC LIMIT ?"
+          "SELECT * FROM agent_conversations WHERE deleted_at IS NULL AND note_id IS NULL AND space_id IS NULL AND folder_id IS NULL ORDER BY updated_at DESC LIMIT ?"
         )
         .all(limit);
     } catch (error) {
       debugLogger.error("Error getting agent conversations", { error: error.message }, "database");
       throw error;
+    }
+  }
+
+  // Standalone (non-scoped) chats deleted locally but not yet pushed to the cloud, so the
+  // cloud sync can propagate the tombstone to other devices. Scoped chats never sync.
+  getStandaloneConversationTombstones() {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      return this.db
+        .prepare(
+          `SELECT id, client_conversation_id, updated_at FROM agent_conversations
+           WHERE deleted_at IS NOT NULL AND client_conversation_id IS NOT NULL
+             AND note_id IS NULL AND space_id IS NULL AND folder_id IS NULL
+             AND (sync_status IS NULL OR sync_status != 'synced')`
+        )
+        .all();
+    } catch (error) {
+      debugLogger.error(
+        "Error getting conversation tombstones",
+        { error: error.message },
+        "database"
+      );
+      throw error;
+    }
+  }
+
+  markConversationSynced(id) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      this.db
+        .prepare("UPDATE agent_conversations SET sync_status = 'synced' WHERE id = ?")
+        .run(id);
+      return true;
+    } catch (error) {
+      debugLogger.error("Error marking conversation synced", { error: error.message }, "database");
+      return false;
     }
   }
 
@@ -3998,6 +4211,100 @@ class DatabaseManager {
       })();
     } catch (error) {
       debugLogger.error("Error adding agent message", { error: error.message }, "database");
+      throw error;
+    }
+  }
+
+  // Merge a conversation pulled from Neato Cloud (echo_conversations) into the local
+  // agent_conversations, keyed by the shared client_conversation_id. Last-write-wins by
+  // updated_at: a newer cloud copy replaces title + messages, an older/equal one is left
+  // alone, and a conversation the user deleted locally is never resurrected. Messages
+  // arrive as [{ role, content }] (no per-message ids), so the whole message set is
+  // replaced when the cloud copy wins. Returns { status } for pull accounting.
+  upsertConversationFromCloud(clientConversationId, title, messages, updatedAtIso, deletedAtIso) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      if (!clientConversationId) return { status: "skipped-no-id" };
+      const msgs = Array.isArray(messages) ? messages : [];
+      const validRoles = new Set(["user", "assistant", "system"]);
+      // Cloud updated_at (ISO) -> the 'YYYY-MM-DD HH:MM:SS' UTC form the table uses, so
+      // ordering by updated_at keeps working after a merge.
+      const cloudMs = updatedAtIso ? Date.parse(updatedAtIso) : Date.now();
+      const sqlTime = new Date(Number.isNaN(cloudMs) ? Date.now() : cloudMs)
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+      const safeTitle = (title || "Chat").toString().slice(0, 500);
+
+      return this.db.transaction(() => {
+        const existing = this.db
+          .prepare("SELECT * FROM agent_conversations WHERE client_conversation_id = ?")
+          .get(clientConversationId);
+
+        // Sync only ever manages STANDALONE Ask-Neddy chats. Note/space/folder-scoped
+        // conversations live with their container and must never be created, updated, or
+        // deleted by the cloud merge — so a matching local row that is scoped is left alone.
+        const isScoped = (row) =>
+          row && (row.note_id != null || row.space_id != null || row.folder_id != null);
+
+        // Cloud tombstone: the chat was deleted on another device. Soft-delete the local
+        // standalone copy so it disappears here too; never resurrect and never create.
+        if (deletedAtIso) {
+          if (existing && !isScoped(existing) && !existing.deleted_at) {
+            this.db
+              .prepare(
+                "UPDATE agent_conversations SET deleted_at = ?, sync_status = 'synced', updated_at = ? WHERE id = ?"
+              )
+              .run(sqlTime, sqlTime, existing.id);
+            return { status: "deleted" };
+          }
+          return { status: "skipped-deleted" };
+        }
+
+        const insMsg = this.db.prepare(
+          "INSERT INTO agent_messages (conversation_id, role, content) VALUES (?, ?, ?)"
+        );
+        const writeMessages = (conversationId) => {
+          for (const m of msgs) {
+            const role = m && validRoles.has(m.role) ? m.role : null;
+            if (!role) continue;
+            insMsg.run(conversationId, role, String(m.content ?? ""));
+          }
+        };
+
+        if (existing) {
+          if (isScoped(existing)) return { status: "skipped-scoped" };
+          if (existing.deleted_at) return { status: "skipped-deleted" };
+          const localMs = existing.updated_at
+            ? Date.parse(existing.updated_at.replace(" ", "T") + "Z")
+            : 0;
+          if (localMs >= cloudMs) return { status: "up-to-date" };
+          this.db
+            .prepare("DELETE FROM agent_messages WHERE conversation_id = ?")
+            .run(existing.id);
+          writeMessages(existing.id);
+          this.db
+            .prepare(
+              "UPDATE agent_conversations SET title = ?, updated_at = ?, cloud_id = COALESCE(cloud_id, ?), sync_status = 'synced' WHERE id = ?"
+            )
+            .run(safeTitle, sqlTime, clientConversationId, existing.id);
+          return { status: "updated" };
+        }
+
+        const res = this.db
+          .prepare(
+            "INSERT INTO agent_conversations (title, client_conversation_id, cloud_id, sync_status, updated_at) VALUES (?, ?, ?, 'synced', ?)"
+          )
+          .run(safeTitle, clientConversationId, clientConversationId, sqlTime);
+        writeMessages(res.lastInsertRowid);
+        return { status: "created" };
+      })();
+    } catch (error) {
+      debugLogger.error(
+        "Error upserting conversation from cloud",
+        { error: error.message },
+        "database"
+      );
       throw error;
     }
   }
@@ -4245,6 +4552,44 @@ class DatabaseManager {
         .all(...params);
     } catch (error) {
       debugLogger.error("Error searching notes", { error: error.message }, "database");
+      throw error;
+    }
+  }
+
+  // Recorded meetings (notes that carry a transcript) whose created_at falls in
+  // an inclusive [startDate, endDate] day range. Powers the chat agent's
+  // date-range meeting questions ("summarize my meetings yesterday"). Either
+  // bound may be null/omitted. Dates are compared by calendar day in local
+  // time so "yesterday" matches how the user thinks about it.
+  getMeetingsInDateRange(startDate = null, endDate = null, limit = 25) {
+    try {
+      if (!this.db) throw new Error("Database not initialized");
+      const accountScope = this._accountScopeCondition("n");
+      const params = [...accountScope.params];
+      let dateFilter = "";
+      if (startDate) {
+        dateFilter += " AND date(n.created_at, 'localtime') >= date(?)";
+        params.push(startDate);
+      }
+      if (endDate) {
+        dateFilter += " AND date(n.created_at, 'localtime') <= date(?)";
+        params.push(endDate);
+      }
+      params.push(Math.max(1, Math.min(100, limit || 25)));
+      return this.db
+        .prepare(
+          `
+        SELECT n.*
+        FROM notes n
+        WHERE n.transcript IS NOT NULL AND TRIM(n.transcript) != ''
+          AND n.deleted_at IS NULL AND ${accountScope.sql}${dateFilter}
+        ORDER BY datetime(n.created_at) DESC
+        LIMIT ?
+      `
+        )
+        .all(...params);
+    } catch (error) {
+      debugLogger.error("Error listing meetings in range", { error: error.message }, "database");
       throw error;
     }
   }
@@ -4817,8 +5162,8 @@ class DatabaseManager {
     try {
       if (!this.db) throw new Error("Database not initialized");
       const archiveFilter = includeArchived
-        ? "WHERE c.archived_at IS NOT NULL AND c.deleted_at IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL"
-        : "WHERE c.archived_at IS NULL AND c.deleted_at IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL";
+        ? "WHERE c.archived_at IS NOT NULL AND c.deleted_at IS NULL AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL"
+        : "WHERE c.archived_at IS NULL AND c.deleted_at IS NULL AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL";
       return this.db
         .prepare(
           `SELECT c.id, c.title, c.created_at, c.updated_at, c.archived_at, c.cloud_id,
@@ -4857,7 +5202,7 @@ class DatabaseManager {
           LEFT JOIN agent_messages m ON m.conversation_id = c.id
           LEFT JOIN agent_messages ms ON ms.conversation_id = c.id
           WHERE c.archived_at IS NULL AND c.deleted_at IS NULL
-            AND c.space_id IS NULL AND c.folder_id IS NULL
+            AND c.note_id IS NULL AND c.space_id IS NULL AND c.folder_id IS NULL
             AND (c.title LIKE ? OR ms.content LIKE ?)
           GROUP BY c.id
           ORDER BY c.updated_at DESC

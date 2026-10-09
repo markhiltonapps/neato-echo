@@ -113,6 +113,29 @@ export default function ChatView() {
     [activeConversationId, handleNewChat, showConfirmDialog, t]
   );
 
+  const handleBulkDelete = useCallback(
+    (ids: number[]) => {
+      if (ids.length === 0) return;
+      showConfirmDialog({
+        title: t("chat.deleteSelected", { count: ids.length }),
+        description: t("chat.deleteSelectedConfirm", { count: ids.length }),
+        onConfirm: async () => {
+          // Sequential: better-sqlite3 handles each IPC synchronously; a loop
+          // keeps it simple and avoids a separate bulk IPC surface.
+          for (const id of ids) {
+            await window.electronAPI?.deleteAgentConversation?.(id);
+          }
+          if (activeConversationId !== null && ids.includes(activeConversationId)) {
+            handleNewChat();
+          }
+          setRefreshKey((k) => k + 1);
+        },
+        variant: "destructive",
+      });
+    },
+    [activeConversationId, handleNewChat, showConfirmDialog, t]
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const mod = platform === "darwin" ? e.metaKey : e.ctrlKey;
@@ -157,6 +180,7 @@ export default function ChatView() {
             onOpenSearch={() => setShowSearch(true)}
             onArchive={handleArchive}
             onDelete={handleDelete}
+            onBulkDelete={handleBulkDelete}
             refreshKey={refreshKey}
           />
         </div>

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T00:00:00Z",
+  "title": "Design System: Neato Ventures",
+  "extensions": {
+    "colorMeta": {
+      "cream": { "role": "neutral", "displayName": "Cream", "canonical": "hsl(50 33% 95%)", "hexApprox": "#f6f5ee", "tonalRamp": ["oklch(20% 0.02 95)", "oklch(32% 0.025 95)", "oklch(45% 0.03 95)", "oklch(58% 0.03 95)", "oklch(70% 0.03 95)", "oklch(82% 0.025 95)", "oklch(90% 0.02 95)", "oklch(96.5% 0.012 95)"] },
+      "card-cream": { "role": "neutral", "displayName": "Card Cream", "canonical": "hsl(50 25% 92%)", "hexApprox": "#f0eee6", "tonalRamp": ["oklch(20% 0.02 95)", "oklch(32% 0.025 95)", "oklch(45% 0.03 95)", "oklch(58% 0.03 95)", "oklch(70% 0.03 95)", "oklch(82% 0.025 95)", "oklch(89% 0.02 95)", "oklch(94.5% 0.014 95)"] },
+      "muted-cream": { "role": "neutral", "displayName": "Muted Cream", "canonical": "hsl(45 20% 88%)", "hexApprox": "#e7e3da", "tonalRamp": ["oklch(20% 0.02 90)", "oklch(32% 0.025 90)", "oklch(45% 0.03 90)", "oklch(58% 0.03 90)", "oklch(70% 0.03 90)", "oklch(80% 0.025 90)", "oklch(86% 0.02 90)", "oklch(91.5% 0.015 90)"] },
+      "deep-brown": { "role": "neutral", "displayName": "Deep Brown (ink)", "canonical": "hsl(17 35% 12%)", "hexApprox": "#291a14", "tonalRamp": ["oklch(15% 0.03 45)", "oklch(22% 0.04 45)", "oklch(32% 0.05 45)", "oklch(45% 0.06 45)", "oklch(58% 0.06 45)", "oklch(72% 0.05 45)", "oklch(85% 0.03 45)", "oklch(95% 0.015 45)"] },
+      "retro-brown": { "role": "neutral", "displayName": "Retro Brown", "canonical": "hsl(17 40% 36%)", "hexApprox": "#804c37", "tonalRamp": ["oklch(15% 0.03 45)", "oklch(25% 0.05 45)", "oklch(35% 0.07 45)", "oklch(45% 0.08 45)", "oklch(58% 0.08 45)", "oklch(72% 0.06 45)", "oklch(85% 0.04 45)", "oklch(95% 0.015 45)"] },
+      "muted-brown": { "role": "neutral", "displayName": "Muted Brown", "canonical": "hsl(17 20% 40%)", "hexApprox": "#7a5d52", "tonalRamp": ["oklch(15% 0.02 45)", "oklch(25% 0.03 45)", "oklch(35% 0.04 45)", "oklch(48% 0.045 45)", "oklch(60% 0.04 45)", "oklch(72% 0.035 45)", "oklch(85% 0.025 45)", "oklch(95% 0.01 45)"] },
+      "border-taupe": { "role": "neutral", "displayName": "Border Taupe", "canonical": "hsl(17 15% 78%)", "hexApprox": "#cfc3be", "tonalRamp": ["oklch(15% 0.015 45)", "oklch(28% 0.02 45)", "oklch(40% 0.025 45)", "oklch(52% 0.025 45)", "oklch(65% 0.025 45)", "oklch(76% 0.02 45)", "oklch(82% 0.015 45)", "oklch(94% 0.008 45)"] },
+      "teal": { "role": "primary", "displayName": "Turquoise Teal", "canonical": "hsl(179 52% 52%)", "hexApprox": "#45c4c2", "tonalRamp": ["oklch(18% 0.04 190)", "oklch(30% 0.07 190)", "oklch(42% 0.09 190)", "oklch(55% 0.11 190)", "oklch(68% 0.12 190)", "oklch(75% 0.11 190)", "oklch(86% 0.07 190)", "oklch(95% 0.03 190)"] },
+      "burnt-orange": { "role": "secondary", "displayName": "Burnt Orange", "canonical": "hsl(12 93% 58%)", "hexApprox": "#f75830", "tonalRamp": ["oklch(18% 0.06 35)", "oklch(30% 0.1 35)", "oklch(42% 0.14 35)", "oklch(55% 0.18 35)", "oklch(66% 0.2 35)", "oklch(76% 0.15 35)", "oklch(86% 0.09 35)", "oklch(95% 0.03 35)"] },
+      "mustard": { "role": "tertiary", "displayName": "Mustard", "canonical": "hsl(45 87% 62%)", "hexApprox": "#f2c84a", "tonalRamp": ["oklch(18% 0.04 85)", "oklch(30% 0.07 85)", "oklch(45% 0.1 85)", "oklch(60% 0.13 85)", "oklch(72% 0.15 85)", "oklch(84% 0.15 85)", "oklch(90% 0.1 85)", "oklch(96% 0.04 85)"] },
+      "showroom-teal-ink": { "role": "primary", "displayName": "Showroom Teal Ink", "canonical": "#3eabab", "tonalRamp": ["oklch(18% 0.04 190)", "oklch(30% 0.07 190)", "oklch(42% 0.09 190)", "oklch(55% 0.1 190)", "oklch(67% 0.1 190)", "oklch(76% 0.09 190)", "oklch(86% 0.06 190)", "oklch(95% 0.03 190)"] },
+      "showroom-ink-soft": { "role": "neutral", "displayName": "Showroom Ink Soft", "canonical": "#5f493b", "tonalRamp": ["oklch(15% 0.02 50)", "oklch(25% 0.03 50)", "oklch(38% 0.04 50)", "oklch(48% 0.04 50)", "oklch(60% 0.04 50)", "oklch(72% 0.035 50)", "oklch(85% 0.025 50)", "oklch(95% 0.01 50)"] },
+      "showroom-ink-mute": { "role": "neutral", "displayName": "Showroom Ink Mute", "canonical": "#796553", "tonalRamp": ["oklch(15% 0.02 60)", "oklch(25% 0.03 60)", "oklch(38% 0.04 60)", "oklch(50% 0.04 60)", "oklch(62% 0.04 60)", "oklch(74% 0.035 60)", "oklch(86% 0.025 60)", "oklch(95% 0.01 60)"] },
+      "showroom-ink-edge": { "role": "neutral", "displayName": "Showroom Ink Edge", "canonical": "#4a3629", "tonalRamp": ["oklch(15% 0.02 50)", "oklch(25% 0.035 50)", "oklch(33% 0.04 50)", "oklch(45% 0.045 50)", "oklch(58% 0.045 50)", "oklch(72% 0.035 50)", "oklch(85% 0.025 50)", "oklch(95% 0.01 50)"] },
+      "device-ring-glow": { "role": "primary", "displayName": "Device Ring Glow", "canonical": "#5ecebc", "tonalRamp": ["oklch(18% 0.04 180)", "oklch(30% 0.07 180)", "oklch(42% 0.09 180)", "oklch(55% 0.11 180)", "oklch(68% 0.12 180)", "oklch(78% 0.11 180)", "oklch(87% 0.07 180)", "oklch(95% 0.03 180)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page H1 only. Space Mono bold uppercase; the home wordmark alone carries the retro gradient; the showroom headline is measured in cqw." },
+      "headline": { "displayName": "Headline", "purpose": "Section H2, centered over a 34 to 40rem lede." },
+      "title": { "displayName": "Title", "purpose": "Card and panel H3; teal on band-section cards." },
+      "body": { "displayName": "Body", "purpose": "Outfit reading text; muted brown inside cards; capped at max-w-lg to max-w-2xl." },
+      "label": { "displayName": "Label", "purpose": "Nav links, eyebrows, buttons, footer heads, table headers; uppercase with 0.15em to 0.35em tracking." },
+      "micro": { "displayName": "Micro", "purpose": "Spec labels, status pills, stamps, legend, orbit labels; 0.58rem to 0.7rem at 0.18em to 0.25em." }
+    },
+    "shadows": [
+      { "name": "googie-card", "value": "5px 5px 0 hsl(var(--retro-brown) / 0.15)", "purpose": "Every card, plate, panel, trim sheet, worn strip, and configurator at rest." },
+      { "name": "googie-card-hover", "value": "8px 8px 0 hsl(var(--teal) / 0.2)", "purpose": "Card hover, paired with a teal border and translate(-2px, -2px)." },
+      { "name": "cta-lift", "value": "4px 4px 0 hsl(var(--retro-brown) / 0.3)", "purpose": "cta and hero buttons at rest; 6px 6px 0 on hover." },
+      { "name": "retro-button", "value": "3px 3px 0 hsl(var(--retro-brown) / 0.3)", "purpose": "The retro button variant." },
+      { "name": "retro-border", "value": "4px 4px 0 hsl(var(--retro-brown) / 0.4), inset 0 0 0 1px hsl(var(--retro-brown) / 0.1)", "purpose": "Heavy framed blocks on a 3px brown border." },
+      { "name": "device-drop", "value": "drop-shadow(0 18px 24px hsl(var(--retro-brown) / 0.25))", "purpose": "The device render sitting on a card (0 24px 30px / 0.3 on the home feature)." },
+      { "name": "teal-glow", "value": "0 0 20px hsl(var(--teal) / 0.25), 0 0 50px hsl(var(--teal) / 0.1)", "purpose": "Light from the device; never a UI surface." },
+      { "name": "halo-ring", "value": "0 0 0 6px hsl(var(--card))", "purpose": "Step numbers and electrons cut a gap into the line they sit on (4px cream on electrons)." },
+      { "name": "tagline-glow", "value": "0 2px 6px rgba(247, 90, 51, 0.4)", "purpose": "Text shadow under burnt-orange taglines on heroes and closing bands." }
+    ],
+    "motion": [
+      { "name": "reveal", "value": "opacity 0->1, y 22px->0, 600ms cubic-bezier(0.16, 1, 0.3, 1), once, -8% viewport margin", "purpose": "The single entrance for sections on the wearables page; stagger 0.1s to 0.12s." },
+      { "name": "fade-up", "value": "opacity 0->1, y 30px->0, 600ms ease-out, stagger 0.12s", "purpose": "Incumbent page entrance (framer-motion variant and the fade-up keyframe)." },
+      { "name": "orbit", "value": "rotate 360deg linear 15s to 28s; sr-ring-turn 40s", "purpose": "Atom rings behind heroes and the model line." },
+      { "name": "float", "value": "translateY -12px, 3s ease-in-out infinite", "purpose": "The atom mark on heroes and closing bands." },
+      { "name": "card-hover", "value": "all 0.3s ease", "purpose": "Googie card lift." },
+      { "name": "button-hover", "value": "all 200ms", "purpose": "Button variants; showroom CTAs use transform and box-shadow 180ms ease-out." },
+      { "name": "panel-swap", "value": "opacity + y 10px + blur 4px, 280ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Model-line shape panel content swap." },
+      { "name": "poster-fade", "value": "opacity 600ms ease-out", "purpose": "Device poster hides once the 3D canvas is ready." },
+      { "name": "device-spin", "value": "0.45 rad/s about y; ring emissive 1.4 +/- 0.3 at 1.6Hz", "purpose": "Showroom puck; stopped and poster-only under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "showroom-collapse", "value": "900px (container query on .showroom; also chassis, process, and trim table)" },
+      { "name": "orbit", "value": "1000px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "container-max", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "CTA Button",
+      "kind": "button",
+      "refersTo": "button-cta",
+      "description": "The primary action on every page and in the nav: burnt orange with a hard brown offset that lengthens on hover.",
+      "html": "<a class=\"ds-btn-cta\" href=\"#\">Talk to us about a run</a>",
+      "css": ".ds-btn-cta { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.5rem; padding: 0.5rem 1.25rem; border-radius: 0.75rem; background: hsl(var(--burnt-orange, 12 93% 58%)); color: hsl(var(--cream, 50 33% 95%)); font-family: Outfit, sans-serif; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; box-shadow: 4px 4px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.3); transition: all 200ms; } .ds-btn-cta:hover { background: hsl(var(--burnt-orange, 12 93% 58%) / 0.9); box-shadow: 6px 6px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.3); transform: translate(-2px, -2px); } .ds-btn-cta:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--cream, 50 33% 95%)), 0 0 0 4px hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The secondary next to a CTA: 2px retro-brown border on cream.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">See the shapes</a>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 2.5rem; padding: 0.5rem 1.25rem; border-radius: 0.75rem; border: 2px solid hsl(var(--retro-brown, 17 40% 36%)); background: hsl(var(--cream, 50 33% 95%)); color: hsl(var(--foreground, 17 35% 12%)); font-family: Outfit, sans-serif; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; transition: all 200ms; } .ds-btn-outline:hover { background: hsl(var(--card, 50 25% 92%)); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--cream, 50 33% 95%)), 0 0 0 4px hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Hero Button",
+      "kind": "button",
+      "refersTo": "button-hero",
+      "description": "Page-hero primary: teal fill, Space Mono, hard brown offset.",
+      "html": "<a class=\"ds-btn-hero\" href=\"#\">Request a Demo</a>",
+      "css": ".ds-btn-hero { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 2rem; border-radius: 0.75rem; background: hsl(var(--teal, 179 52% 52%)); color: hsl(var(--cream, 50 33% 95%)); font-family: 'Space Mono', monospace; font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; box-shadow: 4px 4px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.3); transition: all 200ms; } .ds-btn-hero:hover { background: hsl(var(--teal, 179 52% 52%) / 0.9); } .ds-btn-hero:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--cream, 50 33% 95%)), 0 0 0 4px hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Hero Outline Button",
+      "kind": "button",
+      "refersTo": "button-hero-outline",
+      "description": "Page-hero secondary: teal 2px outline that fills teal on hover; recolored cream on brown bands.",
+      "html": "<a class=\"ds-btn-hero-outline\" href=\"#\">Explore Products</a>",
+      "css": ".ds-btn-hero-outline { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 2rem; border-radius: 0.75rem; border: 2px solid hsl(var(--teal, 179 52% 52%)); background: transparent; color: hsl(var(--teal, 179 52% 52%)); font-family: 'Space Mono', monospace; font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; transition: all 200ms; } .ds-btn-hero-outline:hover { background: hsl(var(--teal, 179 52% 52%)); color: hsl(var(--cream, 50 33% 95%)); } .ds-btn-hero-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px hsl(var(--cream, 50 33% 95%)), 0 0 0 4px hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Googie Card",
+      "kind": "card",
+      "refersTo": "card-googie",
+      "description": "The site's container: 2px taupe border, card cream, hard 5px brown offset; teal lift on hover.",
+      "html": "<a class=\"ds-card\" href=\"#\"><span class=\"ds-card__icon\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><path d=\"M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z\"/><path d=\"M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z\"/></svg></span><h3 class=\"ds-card__title\">AI Wearables</h3><p class=\"ds-card__body\">A clip-on AI device, shipping today. Put your name on it and your software inside it.</p><span class=\"ds-card__more\">Learn more &rarr;</span></a>",
+      "css": ".ds-card { display: flex; flex-direction: column; max-width: 18rem; padding: 1.5rem; border: 2px solid hsl(var(--border, 17 15% 78%)); border-radius: 0.75rem; background: hsl(var(--card, 50 25% 92%)); color: hsl(var(--foreground, 17 35% 12%)); text-decoration: none; box-shadow: 5px 5px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.15); transition: all 0.3s ease; } .ds-card:hover { border-color: hsl(var(--teal, 179 52% 52%)); box-shadow: 8px 8px 0 hsl(var(--teal, 179 52% 52%) / 0.2); transform: translate(-2px, -2px); } .ds-card:focus-visible { outline: 2px solid hsl(var(--teal, 179 52% 52%)); outline-offset: 2px; } .ds-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background: hsl(var(--teal, 179 52% 52%) / 0.1); color: hsl(var(--teal, 179 52% 52%)); } .ds-card__title { margin: 1rem 0 0; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; } .ds-card__body { margin: 0.5rem 0 0; flex: 1; font-family: Outfit, sans-serif; font-size: 0.875rem; line-height: 1.6; color: hsl(var(--muted-foreground, 17 20% 40%)); } .ds-card__more { margin-top: 1rem; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sticky cream bar with the atom mark and NEATO_VENTURES wordmark, four Space Mono links, and a CTA.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav__brand\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"28\" height=\"28\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><path d=\"M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z\"/><path d=\"M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z\"/></svg><span class=\"ds-nav__word\">Neato<em>_</em>Ventures</span></a><div class=\"ds-nav__links\"><a class=\"ds-nav__link\" href=\"#\">Home</a><a class=\"ds-nav__link\" href=\"#\">About</a><a class=\"ds-nav__link ds-nav__link--active\" href=\"#\">Products</a><a class=\"ds-nav__link\" href=\"#\">Contact</a><a class=\"ds-nav__cta\" href=\"#\">Get Started</a></div></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; height: 4rem; padding: 0 2rem; border-bottom: 2px solid hsl(var(--border, 17 15% 78%)); background: hsl(var(--cream, 50 33% 95%) / 0.9); backdrop-filter: blur(8px); } .ds-nav__brand { display: flex; align-items: center; gap: 0.5rem; color: hsl(var(--teal, 179 52% 52%)); text-decoration: none; } .ds-nav__brand svg { transition: transform 700ms; } .ds-nav__brand:hover svg { transform: rotate(180deg); } .ds-nav__word { font-family: 'Space Mono', monospace; font-size: 1.125rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: hsl(var(--foreground, 17 35% 12%)); } .ds-nav__word em { font-style: normal; color: hsl(var(--burnt-orange, 12 93% 58%)); } .ds-nav__links { display: flex; align-items: center; gap: 2rem; } .ds-nav__link { font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: hsl(var(--muted-foreground, 17 20% 40%)); text-decoration: none; transition: color 200ms; } .ds-nav__link:hover, .ds-nav__link--active { color: hsl(var(--teal, 179 52% 52%)); } .ds-nav__link:focus-visible { outline: 2px solid hsl(var(--teal, 179 52% 52%)); outline-offset: 2px; } .ds-nav__cta { display: inline-flex; align-items: center; height: 2.25rem; padding: 0 1rem; border-radius: 0.625rem; background: hsl(var(--burnt-orange, 12 93% 58%)); color: hsl(var(--cream, 50 33% 95%)); font-family: Outfit, sans-serif; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; box-shadow: 4px 4px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.3); transition: all 200ms; } .ds-nav__cta:hover { box-shadow: 6px 6px 0 hsl(var(--retro-brown, 17 40% 36%) / 0.3); transform: translate(-2px, -2px); }"
+    },
+    {
+      "name": "Configurator Input",
+      "kind": "input",
+      "refersTo": "input-configurator",
+      "description": "The 'Your name on it' field: cream fill, teal border, Space Mono uppercase, teal caret and focus outline.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field__label\">Company name to print on the device and box</span><input class=\"ds-input\" type=\"text\" value=\"Acme Dental\" maxlength=\"24\" placeholder=\"Your company\"></label>",
+      "css": ".ds-field { display: block; max-width: 20rem; } .ds-field__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .ds-input { width: 100%; height: 3rem; padding: 0 1rem; border: 2px solid #229b9b; border-radius: 0.5rem; background: #fbf8ee; color: #2a1a13; font-family: 'Space Mono', monospace; font-size: 1rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; caret-color: #3eabab; box-shadow: inset 0 2px 6px rgba(41, 26, 20, 0.08); } .ds-input::placeholder { color: #a09484; text-transform: uppercase; } .ds-input:focus-visible { outline: 3px solid #3eabab; outline-offset: 2px; } .ds-input::selection { background: hsl(var(--teal, 179 52% 52%) / 0.35); }"
+    },
+    {
+      "name": "Eyebrow",
+      "kind": "chip",
+      "refersTo": "label",
+      "description": "The starred eyebrow above page-hero H1s and incumbent section openers; teal, or burnt orange with glow on the home hero.",
+      "html": "<p class=\"ds-eyebrow\">&#9733; AI Hardware &#9733;</p>",
+      "css": ".ds-eyebrow { margin: 0; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase; color: hsl(var(--teal, 179 52% 52%)); }"
+    },
+    {
+      "name": "Status Pill and Stamp",
+      "kind": "chip",
+      "refersTo": "micro",
+      "description": "Micro-label status (dot + text, colored by status) and the rotated brown-outlined stamp from the data plate.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-status ds-status--shipping\"><i></i>Shipping now</span><span class=\"ds-status ds-status--development\"><i></i>In development</span><span class=\"ds-status ds-status--concept\"><i></i>Concept</span><span class=\"ds-stamp\">Reference build &middot; shipping</span></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; } .ds-status { display: inline-flex; align-items: center; gap: 0.45rem; font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: hsl(var(--teal, 179 52% 52%)); } .ds-status i { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: hsl(var(--teal, 179 52% 52%)); } .ds-status--shipping { color: hsl(var(--burnt-orange, 12 93% 58%)); } .ds-status--shipping i { background: hsl(var(--burnt-orange, 12 93% 58%)); } .ds-status--development { color: #8a6a12; } .ds-status--development i { background: hsl(var(--mustard, 45 87% 62%)); } .ds-status--concept i { background: hsl(var(--cream, 50 33% 95%)); border: 2px solid hsl(var(--teal, 179 52% 52%)); } .ds-stamp { display: inline-flex; align-items: center; padding: 0.45rem 0.8rem; border: 2px solid hsl(var(--retro-brown, 17 40% 36%)); border-radius: 4px; color: hsl(var(--retro-brown, 17 40% 36%)); font-family: 'Space Mono', monospace; font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; transform: rotate(-2deg); }"
+    },
+    {
+      "name": "Process Step",
+      "kind": "custom",
+      "refersTo": "micro",
+      "description": "A numbered step on the dashed teal timeline: zero-padded teal circle with a card-colored halo, Space Mono title, capped description.",
+      "html": "<ol class=\"ds-process\"><li class=\"ds-step\"><span class=\"ds-step__num\">01</span><h3>Talk</h3><p>A short call on what your software needs from a device, and which shape fits.</p></li><li class=\"ds-step\"><span class=\"ds-step__num\">02</span><h3>Spec</h3><p>We confirm the build, the integration points, and the run size.</p></li><li class=\"ds-step\"><span class=\"ds-step__num\">03</span><h3>Brand</h3><p>Artwork proof for the device face and the box.</p></li></ol>",
+      "css": ".ds-process { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 0; padding: 0; list-style: none; background: hsl(var(--card, 50 25% 92%)); } .ds-process::before { content: ''; position: absolute; left: 12%; right: 12%; top: 1.35rem; height: 2px; background: repeating-linear-gradient(90deg, hsl(var(--teal, 179 52% 52%)) 0 8px, transparent 8px 14px); } .ds-step { position: relative; display: grid; justify-items: center; text-align: center; } .ds-step__num { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: hsl(var(--cream, 50 33% 95%)); border: 2px solid hsl(var(--teal, 179 52% 52%)); color: hsl(var(--teal, 179 52% 52%)); font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.8rem; box-shadow: 0 0 0 6px hsl(var(--card, 50 25% 92%)); } .ds-step h3 { margin: 0.5rem 0 0; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; color: hsl(var(--foreground, 17 35% 12%)); } .ds-step p { margin: 0.4rem 0 0; max-width: 16rem; font-family: Outfit, sans-serif; font-size: 0.92rem; line-height: 1.55; color: hsl(var(--muted-foreground, 17 20% 40%)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Tomorrowland Dealer Showroom",
+    "overview": "Neato's world is 1950s/60s Googie optimism made into a working website: a warm cream ground, chrome and teal glow, burnt-orange signage, and the atom mark turning slowly behind everything. It is a print-era world (brochures, dealer trim sheets, data plates, stamped labels) rendered with a CRT scanline over the imagery. The tone is confident and lightly playful; the density is generous, with sections breathing at 5rem and cards holding their content in 2rem of padding.\n\nThe wearables build extended this world into a physical showroom. The device sits on a chrome plinth like a car on a turntable, the buyer's company is the trim level, and every lower section is a brochure page: a spec sheet on a data plate, an atom-diagram model line, a trim-sheet table, a numbered order process. Nothing in the extension introduced a new palette or face; it hard-measured the incumbent language into a composition that scales as one object.\n\nConfirmed rejections: the icon-grid feature list (the wearables page refuses it), glass or blur surfaces, soft ambient drop shadows on cards (the card language is a hard offset), and system or generic display faces.",
+    "keyCharacteristics": [
+      "Cream paper ground with a slightly deeper cream for cards and bands; brown is the ink, never gray.",
+      "Two signals: teal for structure and status, burnt orange for the action and the tagline. Mustard is a third, rarer warmth.",
+      "Space Mono uppercase for every heading, label, nav item, and stamp; Outfit for reading text.",
+      "Googie cards: 2px border, hard 5px offset brown shadow, lift toward the top-left on hover.",
+      "Scanlines over imagery, starburst radial washes behind bands, atom rings as the recurring diagram and ornament.",
+      "Motion is one gesture: fade-up on first view, plus slow orbits and a float on the atom mark."
+    ],
+    "rules": [
+      { "name": "The Brown Ink Rule", "body": "There is no gray. Every dark, border, divider, and shadow is a brown at some alpha (`--foreground`, `--retro-brown`, `--border`). A neutral gray in a new surface is a defect.", "section": "colors" },
+      { "name": "The Two Signals Rule", "body": "Teal structures; orange acts. A primary action is orange, a status or heading accent is teal. Mustard only marks \"in development\" or warms a wash. Never put two orange fills in the same viewport except a CTA pair where the second is an outline.", "section": "colors" },
+      { "name": "The Cream-on-Brown Band Rule", "body": "Closing bands and the footer invert to retro brown with cream text, keep the starburst wash, and put the orange tagline glow (`0 2px 6px rgba(247,90,51,0.4)`) under the subhead.", "section": "colors" },
+      { "name": "The Uppercase Mono Rule", "body": "Every heading and every label is Space Mono, uppercase, letter-spaced. Base tracking is `0.02em` on headings; labels widen to `0.15em` to `0.35em` as they shrink. Outfit is never uppercased except inside buttons.", "section": "typography" },
+      { "name": "The Two Faces Rule", "body": "Only Space Mono and Outfit exist. No third face, no system display font, and the display face is never swapped for a weight Outfit could carry.", "section": "typography" },
+      { "name": "The Hero-Only Eyebrow Rule", "body": "The starred eyebrow (`★ Text ★`, Space Mono, `text-xs`, `0.35em` tracking) belongs to page heroes and to the incumbent pages' section openers. On the wearables page it appears only on the hero; the lower sections open with the headline directly.", "section": "typography" },
+      { "name": "The Band Alternation Rule", "body": "No two adjacent sections share a ground. A plain cream section is followed by a card-cream band (2px top and bottom borders, starburst wash) or by a brown closing band.", "section": "layout" },
+      { "name": "The Measured Stage Rule", "body": "Anything composed against a raster plate is positioned in `cqw` inside an inline-size container, never in `px` or `vw`, and it must ship a sub-900px stacked layout that abandons absolute positioning.", "section": "layout" },
+      { "name": "The Die-Cut Rule", "body": "Surfaces cast hard offset shadows with zero blur, in retro brown. A soft, blurred shadow under a card or button is off-world. Blur is reserved for light (teal glow) and for the nav backdrop.", "section": "elevation" },
+      { "name": "The Hover Lift Rule", "body": "Interactive cards move `-2px, -2px` and swap the shadow to teal on hover; buttons move `-0.5` unit and lengthen their offset. Nothing scales on hover except the electron dot (1.45x).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do set every heading, label, and button in Space Mono uppercase with tracking; body copy in Outfit at 1.6 line-height.",
+      "Do frame surfaces as Googie cards: 2px border, `5px 5px 0` retro-brown shadow, 12px radius, teal lift on hover.",
+      "Do alternate cream sections with card-cream starburst bands at `py-20`, and close pages on a retro-brown band with an orange tagline glow.",
+      "Do reserve burnt orange for the primary action, the wordmark underscore, taglines, and \"shipping now\"; use teal for structure and focus.",
+      "Do lay a scanline overlay over any raster imagery, and draw the atom rings as `2px` teal circles at 0.2 to 0.45 alpha.",
+      "Do compose against generated plates in `cqw` inside an inline-size container, and ship the stacked layout below 900px.",
+      "Do use `Reveal` (or the incumbent `fadeUp`) as the only entrance, honoring `prefers-reduced-motion`.",
+      "Do refer to the shipped device as \"the clip-on wearable\" and keep the \"★ ... ★\" eyebrow to page heroes and incumbent section openers."
+    ],
+    "donts": [
+      "Don't introduce gray: every neutral is a cream or a brown at some alpha.",
+      "Don't put a soft, blurred drop shadow under a card or button; blur is for teal light and the nav backdrop only.",
+      "Don't use a third typeface, a system display face, or Outfit for headings.",
+      "Don't name the wearable's client, the client's product, or the client's software anywhere on the site.",
+      "Don't add items to the four-item nav; product entry points live on the home grid, the products page, and the footer.",
+      "Don't place starred eyebrows on the wearables page's lower sections, or use the showroom's literal hex inks outside the `.showroom` stage and worn strip.",
+      "Don't build a feature list as an icon grid on a product page that has real hardware to show."
+    ]
+  }
+}

@@ -284,7 +284,9 @@ class DiarizationManager {
   }
 
   async diarize(wavPath, options = {}) {
-    const { numSpeakers = -1, threshold = 0.55, signal = null } = options;
+    // Callers pass threshold explicitly from diarizationPolicy; this fallback
+    // matches DEFAULT_CLUSTER_THRESHOLD there (bias low so voices split readily).
+    const { numSpeakers = -1, threshold = 0.5, signal = null } = options;
 
     if (signal?.aborted) return [];
 

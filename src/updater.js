@@ -27,11 +27,14 @@ class UpdateManager {
       return;
     }
 
+    // Neato Echo publishes to its own GitHub releases. This must match the
+    // `publish` block in electron-builder.json: the upstream GitHub feed here
+    // would otherwise override app-update.yml and offer OpenWhispr's releases
+    // as "updates" to Neato Echo.
     autoUpdater.setFeedURL({
-      provider: "github",
-      owner: "OpenWhispr",
-      repo: "openwhispr",
-      private: false,
+      provider: "generic",
+      url: "https://github.com/markhiltonapps/neato-echo/releases/latest/download",
+      channel: "latest",
     });
 
     // Use arch-specific update channel on macOS to prevent arm64/x64
@@ -64,7 +67,9 @@ class UpdateManager {
       autoUpdater.channel = nativeArch === "arm64" ? "latest-arm64" : "latest-x64";
     }
 
-    autoUpdater.autoDownload = false;
+    // Download updates in the background automatically and install on quit, so users who
+    // ignore the notification still end up current (they were staying stuck on old builds).
+    autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.logger = console;
 
@@ -257,8 +262,12 @@ class UpdateManager {
       this.isInstalling = true;
       console.log("🔄 Installing update and restarting...");
 
-      const isSilent = process.platform === "win32";
-      autoUpdater.quitAndInstall(isSilent, true);
+      // isSilent=false: show the installer's own progress window and, crucially,
+      // let NSIS relaunch the app afterward. A silent install (isSilent=true)
+      // routinely fails to reopen the app on Windows, leaving the user staring
+      // at a closed app with no idea the update finished. isForceRunAfter=true
+      // asks the installer to relaunch us when it completes.
+      autoUpdater.quitAndInstall(false, true);
 
       return { success: true, message: "Update installation started" };
     } catch (error) {
@@ -302,14 +311,25 @@ class UpdateManager {
 
   // Prefs are read at fire time, not scheduling time, so flipping the
   // "App updates" toggle takes effect without a restart (#1605).
-  _autoCheckForUpdates(label) {
+  _autoCheckForUpdates(label, attempt = 0) {
     if (!appUpdatesEnabled(this.windowManager?.notificationPrefs)) {
       console.log(`⏭️ ${label} update check skipped (app updates disabled)`);
       return;
     }
-    console.log(`🔄 ${label} update check...`);
+    console.log(`🔄 ${label} update check${attempt ? ` (retry ${attempt})` : ""}...`);
     autoUpdater.checkForUpdates().catch((err) => {
-      console.error(`${label} update check failed:`, err);
+      console.error(`${label} update check failed (attempt ${attempt + 1}):`, err);
+      // Transient GitHub/network hiccups otherwise stranded users on old builds until
+      // they manually re-checked several times. Retry a few times with backoff so the
+      // automatic check self-heals; the 4h periodic check remains the long-term backstop.
+      const RETRY_DELAYS_MS = [10000, 30000, 60000];
+      if (attempt < RETRY_DELAYS_MS.length) {
+        if (this._autoCheckRetry) clearTimeout(this._autoCheckRetry);
+        this._autoCheckRetry = setTimeout(() => {
+          this._autoCheckRetry = null;
+          this._autoCheckForUpdates(label, attempt + 1);
+        }, RETRY_DELAYS_MS[attempt]);
+      }
     });
   }
 
@@ -330,6 +350,10 @@ class UpdateManager {
     if (this.updateCheckInterval) {
       clearInterval(this.updateCheckInterval);
       this.updateCheckInterval = null;
+    }
+    if (this._autoCheckRetry) {
+      clearTimeout(this._autoCheckRetry);
+      this._autoCheckRetry = null;
     }
     this.eventListeners.forEach(({ event, handler }) => {
       autoUpdater.removeListener(event, handler);

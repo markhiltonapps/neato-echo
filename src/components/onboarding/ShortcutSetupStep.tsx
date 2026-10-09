@@ -143,16 +143,22 @@ export default function ShortcutSetupStep({
         ) : candidate ? (
           <HotkeyChord value={candidate} />
         ) : (
-          // The recommendation leads and the capture instruction closes; the
-          // pair remains centred as the surface scales down.
-          <div className="pointer-events-none flex flex-col items-center gap-8">
-            <p className="flex items-center gap-2 text-base leading-[1.4] text-[var(--onboarding-text-tertiary)]">
-              {recommendedLabel}
-              <span className="rounded-[39px] bg-[var(--onboarding-surface-tertiary)] px-2.5 py-1.5 text-xs leading-[1.4] text-[var(--onboarding-text-secondary)]">
-                {formatHotkeyInstruction(recommended)}
-              </span>
-            </p>
-            <p className="text-base leading-[1.4] text-[var(--onboarding-text-tertiary)]">
+          // Two ways forward, easiest first: one tap to accept the recommended
+          // shortcut, or press your own keys. A novice never has to guess
+          // whether to click the box or how to press the keys.
+          <div className="flex flex-col items-center gap-4">
+            <button
+              type="button"
+              onClick={() => void handleChange(recommended)}
+              disabled={isConfirming}
+              className="pointer-events-auto flex h-11 items-center gap-2 rounded-[39px] bg-[var(--onboarding-accent)] px-5 text-sm font-medium text-[var(--onboarding-accent-foreground)] hover:bg-[var(--onboarding-accent-hover)] disabled:opacity-60"
+            >
+              {t("onboarding.rehaul.hotkey.useRecommended", {
+                hotkey: formatHotkeyInstruction(recommended),
+              })}
+            </button>
+            <p className="flex items-center gap-2 text-sm leading-[1.4] text-[var(--onboarding-text-tertiary)]">
+              <span className="onboarding-listening-dot" aria-hidden="true" />
               {captureLabel}
             </p>
           </div>

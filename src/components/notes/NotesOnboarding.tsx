@@ -23,6 +23,7 @@ import ReasoningModelSelector from "../ReasoningModelSelector";
 import { useSystemAudioPermission } from "../../hooks/useSystemAudioPermission";
 import { canManageSystemAudioInApp } from "../../utils/systemAudioAccess";
 import { usePolicySnapshot } from "../../hooks/usePolicy";
+import { LOCAL_FIRST } from "../../config/edition";
 
 interface NotesOnboardingProps {
   onComplete: () => void;
@@ -32,7 +33,13 @@ export default function NotesOnboarding({ onComplete }: NotesOnboardingProps) {
   const { t } = useTranslation();
   const { isProUser, isProLoading, isLLMConfigured, complete } = useNotesOnboarding();
   const actions = useActions();
+  // Start collapsed whenever a model is already set up (the local edition always
+  // is after onboarding): expanded, the model list pushes Get Started below the
+  // fold and the page reads as "configure this first".
   const [llmExpanded, setLlmExpanded] = useState(!isLLMConfigured && !isProUser);
+  useEffect(() => {
+    if (isLLMConfigured || isProUser) setLlmExpanded(false);
+  }, [isLLMConfigured, isProUser]);
   const [createExpanded, setCreateExpanded] = useState(false);
   const [actionName, setActionName] = useState("");
   const [actionDescription, setActionDescription] = useState("");
@@ -124,8 +131,10 @@ export default function NotesOnboarding({ onComplete }: NotesOnboardingProps) {
           </p>
         </div>
 
-        {/* LLM Configuration — non-Pro only, deferred until pro status is known */}
-        {!isProLoading && !isProUser && (
+        {/* LLM Configuration — non-Pro only, deferred until pro status is known.
+            The local edition picks the model during setup and keeps the full
+            picker in Settings, Language Models, so the section is noise here. */}
+        {!LOCAL_FIRST && !isProLoading && !isProUser && (
           <div
             className={cn(
               "rounded-lg border transition-colors duration-200",

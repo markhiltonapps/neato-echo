@@ -149,6 +149,25 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getAudioPath: (id) => ipcRenderer.invoke("get-audio-path", id),
   showAudioInFolder: (id) => ipcRenderer.invoke("show-audio-in-folder", id),
   getAudioBuffer: (id) => ipcRenderer.invoke("get-audio-buffer", id),
+  getMeetingAudio: (noteId) => ipcRenderer.invoke("get-meeting-audio", noteId),
+  neatoIdMapRead: () => ipcRenderer.invoke("neato-idmap-read"),
+  neatoIdMapWrite: (map) => ipcRenderer.invoke("neato-idmap-write", map),
+  neatoPullMapRead: () => ipcRenderer.invoke("neato-pullmap-read"),
+  neatoPullMapWrite: (map) => ipcRenderer.invoke("neato-pullmap-write", map),
+  neatoUpsertConversation: (payload) =>
+    ipcRenderer.invoke("neato-upsert-conversation", payload),
+  neatoGetConversationTombstones: () =>
+    ipcRenderer.invoke("neato-get-conversation-tombstones"),
+  neatoMarkConversationSynced: (id) =>
+    ipcRenderer.invoke("neato-mark-conversation-synced", id),
+  neatoUpsertFolder: (payload) => ipcRenderer.invoke("neato-upsert-folder", payload),
+  neatoSetNoteOrigin: (id, origin) =>
+    ipcRenderer.invoke("neato-set-note-origin", id, origin),
+  onNeatoMeetingSaved: (cb) => {
+    const handler = (_e, data) => cb(data);
+    ipcRenderer.on("neato-meeting-saved", handler);
+    return () => ipcRenderer.removeListener("neato-meeting-saved", handler);
+  },
   deleteTranscriptionAudio: (id) => ipcRenderer.invoke("delete-transcription-audio", id),
   getAudioStorageUsage: () => ipcRenderer.invoke("get-audio-storage-usage"),
   deleteAllAudio: () => ipcRenderer.invoke("delete-all-audio"),
@@ -205,6 +224,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportDictionary: (words) => ipcRenderer.invoke("export-dictionary", words),
   searchNotes: (query, limit, spaceId, folderId) =>
     ipcRenderer.invoke("db-search-notes", query, limit, spaceId, folderId),
+  listMeetingsByDate: (startDate, endDate, limit) =>
+    ipcRenderer.invoke("db-list-meetings-by-date", startDate, endDate, limit),
   semanticSearchNotes: (query, limit, spaceId, folderId) =>
     ipcRenderer.invoke("db-semantic-search-notes", query, limit, spaceId, folderId),
   semanticReindexAll: () => ipcRenderer.invoke("db-semantic-reindex-all"),
@@ -884,6 +905,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     "meeting-system-audio-degraded",
     (callback) => () => callback()
   ),
+  onMeetingSystemLevel: registerListener(
+    "meeting-system-level",
+    (callback) => (_event, level) => callback(level)
+  ),
 
   // Dictation realtime streaming
   dictationRealtimeWarmup: (options) => ipcRenderer.invoke("dictation-realtime-warmup", options),
@@ -989,6 +1014,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   notifyStartMinimizedChanged: (enabled) => ipcRenderer.send("start-minimized-changed", enabled),
 
   // Auto-start management
+  getSystemMemoryGb: () => ipcRenderer.invoke("get-system-memory-gb"),
   getAutoStartEnabled: () => ipcRenderer.invoke("get-auto-start-enabled"),
   setAutoStartEnabled: (enabled) => ipcRenderer.invoke("set-auto-start-enabled", enabled),
 
