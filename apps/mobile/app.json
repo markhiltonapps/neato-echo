@@ -2,7 +2,8 @@
   "expo": {
     "name": "Neato Echo",
     "slug": "neato-echo",
-    "version": "1.1.57",
+    "owner": "mahilton2000",
+    "version": "1.1.58",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +26,10 @@
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "package": "com.anonymous.neatomobile",
-      "versionCode": 10157
+      "versionCode": 10158,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +38,17 @@
       "expo-audio",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b2fd2d5a-1515-4ffe-9263-94b9e5b7543e"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b2fd2d5a-1515-4ffe-9263-94b9e5b7543e",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }
