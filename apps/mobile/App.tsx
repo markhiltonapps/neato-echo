@@ -62,6 +62,7 @@ import {
 } from "@neato/core";
 import { supabase, SUPABASE_URL, AUDIO_BUCKET } from "./supabase";
 import { downloadAndInstallApk, canInstallInApp } from "./appUpdate";
+import * as Updates from "expo-updates";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import * as Crypto from "expo-crypto";
 import * as Clipboard from "expo-clipboard";
@@ -2825,6 +2826,11 @@ export default function App() {
         </GlossButton>
       </View>
 
+      <Text style={styles.buildTag}>
+        Neato Echo {APP_VERSION}
+        {Updates.isEmbeddedLaunch === false ? " · OTA ✓" : ""}
+      </Text>
+
       <Modal visible={!!selected} animationType="slide" onRequestClose={() => setSelected(null)}>
         <View style={styles.root}>
           <StatusBar style="dark" />
@@ -4600,6 +4606,7 @@ const styles = StyleSheet.create({
 
   footerScrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: 230 },
   footer: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center", paddingBottom: 42, paddingTop: 14 },
+  buildTag: { position: "absolute", left: 0, right: 0, bottom: 6, textAlign: "center", fontSize: 10, color: C.sub, opacity: 0.55 },
   meter: {
     flexDirection: "row",
     alignItems: "center",
