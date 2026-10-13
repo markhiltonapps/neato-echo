@@ -480,6 +480,21 @@ const MOBILE_RELEASE_API =
 const APK_DOWNLOAD_URL =
   "https://github.com/markhiltonapps/neato-echo/releases/download/mobile-latest/Neato-Echo.apk";
 const UPDATE_DISMISS_STORE = "neato.updateDismissed.v1";
+// One-time "What's new" card shown after ANY update lands (in-app APK or silent OTA),
+// once per `id`. The notes travel inside the JS bundle, so even a silent OTA update can
+// announce what it changed. Bump `id` whenever there are notes worth surfacing, and keep
+// each line short + benefit-first (markdown; rendered by InsightsMarkdown).
+const WHATS_NEW = {
+  id: "1.1.58",
+  notes: [
+    "**Silent updates** — most updates now install quietly in the background. No download, no taps.",
+    "**One-tap updates** for the bigger releases, right inside the app.",
+    "**Recording list** now matches the desktop app, with an icon showing where each recording was made (phone / desktop / YouTube).",
+  ]
+    .map((s) => "- " + s)
+    .join("\n"),
+};
+const WHATS_NEW_SEEN_STORE = "neato.whatsNewSeen.v1";
 const DBX_APP_KEY = "ms570m1vr5wecz7"; // public PKCE client id for the Neato Echo Dropbox app
 const DBX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token";
 const DBX_FOLDER = "/Neato Echo";
@@ -648,10 +663,12 @@ export default function App() {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   // In-app update banner + Neato Cloud sync status (last success / last error).
-  const [updateInfo, setUpdateInfo] = useState<{ version: string } | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; notes: string } | null>(null);
   const [updateDismissed, setUpdateDismissed] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
+  const [showUpdateSheet, setShowUpdateSheet] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [autoCloud, setAutoCloud] = useState(false);
@@ -754,6 +771,11 @@ export default function App() {
         const rawStyles = await AsyncStorage.getItem(STYLES_STORE);
         if (rawStyles) setCustomStyles(JSON.parse(rawStyles) as SummaryStyle[]);
         setUpdateDismissed(await AsyncStorage.getItem(UPDATE_DISMISS_STORE));
+        // Show the "What's new" card once after an update changed WHATS_NEW.id
+        // (covers both in-app APK updates and silent OTA — the notes ride in the bundle).
+        if ((await AsyncStorage.getItem(WHATS_NEW_SEEN_STORE)) !== WHATS_NEW.id) {
+          setShowWhatsNew(true);
+        }
       } catch {}
       setLoaded(true);
     })();
@@ -2133,7 +2155,10 @@ export default function App() {
         const data = await res.json();
         const remote = data?.name || data?.tag_name || "";
         if (isNewer(remote, APP_VERSION)) {
-          setUpdateInfo({ version: (parseVer(remote) || []).join(".") });
+          setUpdateInfo({
+            version: (parseVer(remote) || []).join("."),
+            notes: typeof data?.body === "string" ? data.body : "",
+          });
         }
       } catch {
         // offline or rate-limited — try again next launch/foreground
@@ -2150,6 +2175,11 @@ export default function App() {
     if (!updateInfo) return;
     setUpdateDismissed(updateInfo.version);
     AsyncStorage.setItem(UPDATE_DISMISS_STORE, updateInfo.version).catch(() => {});
+  }
+
+  function dismissWhatsNew() {
+    setShowWhatsNew(false);
+    AsyncStorage.setItem(WHATS_NEW_SEEN_STORE, WHATS_NEW.id).catch(() => {});
   }
 
   // One-tap update: download the latest APK and launch Android's installer in-app (like
@@ -2599,9 +2629,17 @@ export default function App() {
 
       {updateInfo && updateDismissed !== updateInfo.version ? (
         <View style={styles.updateBanner}>
-          <Text style={styles.updateText} numberOfLines={1}>
-            Update available · v{updateInfo.version}
-          </Text>
+          <Pressable
+            onPress={() => setShowUpdateSheet(true)}
+            disabled={updating}
+            hitSlop={6}
+            style={{ flex: 1 }}
+          >
+            <Text style={styles.updateText} numberOfLines={1}>
+              Update available · v{updateInfo.version}
+            </Text>
+            {updateInfo.notes ? <Text style={styles.updateWhatsNew}>What's new ›</Text> : null}
+          </Pressable>
           <View style={styles.updateActions}>
             <Pressable
               onPress={startUpdate}
@@ -2623,6 +2661,62 @@ export default function App() {
           </View>
         </View>
       ) : null}
+
+      {/* What's new — BEFORE an in-app update (release notes fetched from GitHub) */}
+      <Modal
+        visible={showUpdateSheet}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUpdateSheet(false)}
+      >
+        <View style={styles.pickerBackdrop}>
+          <View style={styles.pickerCard}>
+            <Text style={styles.pickerTitle}>What's new in v{updateInfo?.version ?? ""}</Text>
+            <ScrollView style={{ maxHeight: 320 }}>
+              {updateInfo?.notes ? (
+                <InsightsMarkdown text={updateInfo.notes} />
+              ) : (
+                <Text style={styles.mdPara}>A new version is available.</Text>
+              )}
+            </ScrollView>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+              <Pressable
+                onPress={() => setShowUpdateSheet(false)}
+                style={({ pressed }) => [styles.pickerBtnGhost, pressed && { opacity: 0.9 }]}
+              >
+                <Text style={styles.pickerBtnGhostText}>Later</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setShowUpdateSheet(false);
+                  startUpdate();
+                }}
+                style={({ pressed }) => [styles.pickerBtn, pressed && { opacity: 0.9 }]}
+              >
+                <Text style={styles.pickerBtnText}>Update now</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* What's new — AFTER any update lands (in-bundle notes; also covers silent OTA) */}
+      <Modal visible={showWhatsNew} transparent animationType="fade" onRequestClose={dismissWhatsNew}>
+        <View style={styles.pickerBackdrop}>
+          <View style={styles.pickerCard}>
+            <Text style={styles.pickerTitle}>What's new · v{APP_VERSION}</Text>
+            <ScrollView style={{ maxHeight: 320 }}>
+              <InsightsMarkdown text={WHATS_NEW.notes} />
+            </ScrollView>
+            <Pressable
+              onPress={dismissWhatsNew}
+              style={({ pressed }) => [styles.pickerBtn, { marginTop: 14 }, pressed && { opacity: 0.9 }]}
+            >
+              <Text style={styles.pickerBtnText}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {session && (syncError || lastSyncAt) ? (
         <Pressable
@@ -4388,6 +4482,7 @@ const styles = StyleSheet.create({
     borderColor: C.teal,
   },
   updateText: { flex: 1, fontFamily: F.semi, fontSize: 13.5, color: C.text },
+  updateWhatsNew: { marginTop: 1, fontFamily: F.med, fontSize: 11, color: C.teal },
   updateActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   updateBtn: {
     paddingHorizontal: 12,
