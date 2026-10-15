@@ -8277,6 +8277,13 @@ class IPCHandlers {
       return { success: true };
     });
 
+    // A meeting start must never hang forever: if any step stalls (a cold cloud
+    // realtime connect, the system-audio helper, the local server), the start would
+    // never settle, so meetingTranscriptionStartInProgress + the lifecycle session lock
+    // would never release and EVERY later recording is rejected with "Operation in
+    // progress" until the app restarts. Bounding the start makes it reject instead, which
+    // runs rollback, clears the flag (finally), and lets the lifecycle drop the session.
+    const MEETING_START_TIMEOUT_MS = 25000;
     const startMeetingTranscription = async (event, options = {}) => {
       // Wait for any in-flight prepare to finish before starting
       if (meetingTranscriptionPreparePromise) {
@@ -8324,7 +8331,10 @@ class IPCHandlers {
         return { ...result, sessionId: recordingSessionId };
       };
 
+      let meetingStartTimeout;
       try {
+        const startResult = await Promise.race([
+          (async () => {
         const systemAudioPlan = await getMeetingSystemAudioPlan({ refreshWindowsCapability: true });
         let { mode: systemAudioMode, strategy: systemAudioStrategy } = systemAudioPlan;
 
@@ -8462,6 +8472,15 @@ class IPCHandlers {
           systemAudioStrategy,
           oneOnOneAttendee: meetingOneOnOneAttendee,
         });
+          })(),
+          new Promise((_, reject) => {
+            meetingStartTimeout = setTimeout(
+              () => reject(new Error("Meeting start timed out")),
+              MEETING_START_TIMEOUT_MS
+            );
+          }),
+        ]);
+        return startResult;
       } catch (error) {
         await rollbackMeetingTranscriptionStart();
         this.meetingDetectionEngine?.endRecordingSession(recordingSessionId);
@@ -8469,6 +8488,7 @@ class IPCHandlers {
         debugLogger.error("Meeting transcription start error", { error: error.message });
         return toPolicyFailure(error);
       } finally {
+        if (meetingStartTimeout) clearTimeout(meetingStartTimeout);
         meetingTranscriptionStartInProgress = false;
       }
     };
