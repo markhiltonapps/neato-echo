@@ -187,3 +187,67 @@ test("a replacement start waits for a deferred accepted stop to finish", async (
   assert.deepEqual(stops, ["meeting-1"]);
   assert.equal(activeCaptureSessionId, "meeting-2");
 });
+
+// Regression: a start that SETTLES as failure (or throws) must release the session lock.
+// The "Operation in progress" brick happened because a real start could HANG and never
+// settle, so the lock was held forever. The lifecycle frees it only when start settles —
+// which is exactly why the start handler is now bounded by a timeout (it rejects instead
+// of hanging). These pin the contract the fix relies on.
+test("a start that resolves as failure frees the lock so the next recording can start", async () => {
+  const starts = [];
+  let attempt = 0;
+  const lifecycle = createMeetingTranscriptionLifecycle({
+    start: async ({ sessionId }) => {
+      starts.push(sessionId);
+      attempt += 1;
+      return attempt === 1 ? { success: false, error: "boom", sessionId } : { success: true, sessionId };
+    },
+    stop: async () => ({ success: true }),
+  });
+
+  const first = await lifecycle.startSession({
+    sessionId: "meeting-1",
+    ownerWebContents: createOwnerWebContents(),
+    options: {},
+  });
+  assert.equal(first.success, false);
+
+  const second = await lifecycle.startSession({
+    sessionId: "meeting-2",
+    ownerWebContents: createOwnerWebContents(),
+    options: {},
+  });
+  assert.equal(second.success, true, "the lock was freed, so the next start actually ran");
+  assert.deepEqual(starts, ["meeting-1", "meeting-2"]);
+});
+
+test("a start that throws frees the lock so the next recording can start", async () => {
+  const starts = [];
+  let attempt = 0;
+  const lifecycle = createMeetingTranscriptionLifecycle({
+    start: async ({ sessionId }) => {
+      starts.push(sessionId);
+      attempt += 1;
+      if (attempt === 1) throw new Error("Meeting start timed out");
+      return { success: true, sessionId };
+    },
+    stop: async () => ({ success: true }),
+  });
+
+  await assert.rejects(
+    lifecycle.startSession({
+      sessionId: "meeting-1",
+      ownerWebContents: createOwnerWebContents(),
+      options: {},
+    }),
+    /Meeting start timed out/
+  );
+
+  const second = await lifecycle.startSession({
+    sessionId: "meeting-2",
+    ownerWebContents: createOwnerWebContents(),
+    options: {},
+  });
+  assert.equal(second.success, true, "a thrown/rejected start must not hold the lock");
+  assert.deepEqual(starts, ["meeting-1", "meeting-2"]);
+});

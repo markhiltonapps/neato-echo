@@ -165,6 +165,19 @@ class LlamaServerManager {
       "--ctx-size",
       String(options.contextSize || DEFAULT_CONTEXT_SIZE),
       "--jinja",
+      // Disable reasoning at the server level for every local request. Thinking
+      // models (Qwen 3.x) otherwise generate a long hidden chain-of-thought on
+      // every turn — on a 2B that was ~1024 tokens/~32s vs ~100 tokens/~3.5s
+      // with it off (measured on an Intel Arc), i.e. the difference between a
+      // one-minute reply and an instant one. The app strips <think> tags from
+      // local output anyway and defaults every local scope to no-thinking, so
+      // suppressing generation here matches intent and, unlike the per-request
+      // control, can't be missed by a streaming code path. Non-thinking models
+      // ignore the flag. Streaming also needs this (not just chat_template_kwargs
+      // enable_thinking:false), or content routes to reasoning_content and the
+      // stream comes back empty.
+      "--reasoning",
+      "off",
     ];
 
     // Draft flags stay separate from baseArgs so the fallback ladder can retry without

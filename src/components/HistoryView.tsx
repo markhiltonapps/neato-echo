@@ -1,4 +1,5 @@
 import { Fragment, useMemo } from "react";
+import neddyMascot from "@/assets/neddy.webp";
 import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Loader2, Sparkles, Cloud, X, Mic, Trash2, Archive } from "lucide-react";
@@ -8,9 +9,11 @@ import { formatHotkeyLabel, parseHotkeyList } from "../utils/hotkeys";
 import { formatDateGroup } from "../utils/dateFormatting";
 import { useUpcomingEvents } from "../hooks/useUpcomingEvents";
 import UpcomingMeetings from "./UpcomingMeetings";
+import TodayBriefing from "./TodayBriefing";
 import { useSettingsStore } from "../stores/settingsStore";
 import { effectiveLocalHistoryEnabled } from "../stores/policyRules";
 import { usePolicyStore } from "../stores/policyStore";
+import { LOCAL_FIRST } from "../config/edition";
 
 interface HistoryViewProps {
   history: TranscriptionItemType[];
@@ -95,6 +98,7 @@ export default function HistoryView({
   return (
     <div className="px-4 pt-4 pb-6">
       <div className="mx-auto max-w-5xl">
+        <TodayBriefing events={events} isConnected={isConnected} />
         {history.length === 0 && <div className="mb-2 flex justify-end">{discardedToggle}</div>}
         {showCloudMigrationBanner && (
           <div className="mb-3 relative rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3">
@@ -136,7 +140,7 @@ export default function HistoryView({
           </div>
         )}
 
-        {!useCleanupModel && !aiCTADismissed && (
+        {!LOCAL_FIRST && !useCleanupModel && !aiCTADismissed && (
           <div className="mb-3 relative rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3">
             <button
               onClick={() => {
@@ -175,8 +179,8 @@ export default function HistoryView({
         <div className="flex gap-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 pb-2.5">
-              <Mic size={12} className="text-muted-foreground" />
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <Mic size={12} className="text-muted-foreground/70" />
+              <span className="font-brand text-[10.5px] font-bold text-muted-foreground uppercase tracking-[0.18em]">
                 {t("upcoming.transcriptions")}
               </span>
             </div>
@@ -189,99 +193,26 @@ export default function HistoryView({
               </div>
             )}
             {isLoading && history.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card/50 dark:bg-card/60 backdrop-blur-sm">
+              <div className="gloss-convex rounded-xl border border-border bg-card/60 dark:bg-card/60 backdrop-blur-sm shadow-[var(--shadow-card)]">
                 <div className="flex items-center justify-center gap-2 py-8">
                   <Loader2 size={14} className="animate-spin text-primary" />
                   <span className="text-sm text-muted-foreground">{t("controlPanel.loading")}</span>
                 </div>
               </div>
             ) : history.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card/50 dark:bg-card/60 backdrop-blur-sm">
+              <div className="gloss-convex rounded-xl border border-border bg-card/60 dark:bg-card/60 backdrop-blur-sm shadow-[var(--shadow-card)]">
                 <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <svg
-                    className="text-foreground dark:text-white mb-5"
-                    width="64"
-                    height="64"
-                    viewBox="0 0 64 64"
-                    fill="none"
-                  >
-                    <rect
-                      x="24"
-                      y="6"
-                      width="16"
-                      height="28"
-                      rx="8"
-                      fill="currentColor"
-                      fillOpacity={0.04}
-                      stroke="currentColor"
-                      strokeOpacity={0.1}
-                    />
-                    <rect
-                      x="28"
-                      y="12"
-                      width="8"
-                      height="3"
-                      rx="1.5"
-                      fill="currentColor"
-                      fillOpacity={0.06}
-                    />
-                    <path
-                      d="M18 28c0 7.7 6.3 14 14 14s14-6.3 14-14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeOpacity={0.07}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <line
-                      x1="32"
-                      y1="42"
-                      x2="32"
-                      y2="50"
-                      stroke="currentColor"
-                      strokeOpacity={0.07}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <line
-                      x1="26"
-                      y1="50"
-                      x2="38"
-                      y2="50"
-                      stroke="currentColor"
-                      strokeOpacity={0.07}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M12 20a2 2 0 0 1 0 8"
-                      stroke="currentColor"
-                      strokeOpacity={0.04}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M8 18a2 2 0 0 1 0 12"
-                      stroke="currentColor"
-                      strokeOpacity={0.03}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M52 20a2 2 0 0 0 0 8"
-                      stroke="currentColor"
-                      strokeOpacity={0.04}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M56 18a2 2 0 0 0 0 12"
-                      stroke="currentColor"
-                      strokeOpacity={0.03}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <img
+                    src={neddyMascot}
+                    alt=""
+                    aria-hidden="true"
+                    width={100}
+                    height={113}
+                    draggable={false}
+                    decoding="async"
+                    className="mb-4 select-none drop-shadow-[0_12px_28px_rgba(58,40,20,0.20)]"
+                    style={{ width: 100, height: 113 }}
+                  />
                   <h3 className="text-xs font-semibold text-foreground/70 dark:text-foreground/60 mb-2">
                     {t("controlPanel.history.empty")}
                   </h3>
@@ -304,7 +235,7 @@ export default function HistoryView({
                 {groupedHistory.map((group, index) => (
                   <div key={group.label} className={index > 0 ? "mt-4" : ""}>
                     <div className="sticky -top-1 z-10 -mx-4 px-5 pt-2 pb-2 bg-background flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-muted-foreground dark:text-muted-foreground uppercase tracking-wide">
+                      <span className="font-brand text-[10px] font-bold text-muted-foreground/80 uppercase tracking-[0.16em]">
                         {group.label}
                       </span>
                       {index === 0 && (

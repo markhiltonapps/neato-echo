@@ -55,11 +55,11 @@ test("fresh Chinese browser locale survives settings hydration", async (t) => {
   installNavigatorLanguage(t, "zh-Hans-CN");
   installBrowserGlobals(t, {
     initialStorage: {
-      customDictionary: JSON.stringify(["OpenWhispr"]),
+      customDictionary: JSON.stringify(["Echo"]),
     },
     window: {
       electronAPI: {
-        getDictionary: async () => ["OpenWhispr"],
+        getDictionary: async () => ["Echo"],
         getUiLanguage: async () => "",
         setDictionary: async () => ({ success: true }),
       },

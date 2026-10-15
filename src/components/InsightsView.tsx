@@ -189,7 +189,7 @@ function MetricCard({
   largeValue?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border/40 dark:border-white/8 bg-card/70 p-4">
+    <div className="gloss-convex rounded-xl border border-border/40 dark:border-white/8 bg-card/70 shadow-[var(--shadow-card)] p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon size={14} />
         <span className="text-xs">{label}</span>
@@ -355,7 +355,7 @@ export default function InsightsView() {
           <button
             type="button"
             onClick={enableInsightsSync}
-            className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            className="gloss-convex shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[0_2px_6px_-2px_rgba(94,148,145,0.45)] hover:brightness-[1.04] transition-[filter]"
           >
             {t(insightsSyncEnabled ? "insights.claimInclude" : "insights.enableSync")}
           </button>
@@ -404,7 +404,7 @@ export default function InsightsView() {
             />
           </div>
 
-          <div className="mt-5 rounded-2xl border border-border/50 bg-card/70 px-5 py-2.5 dark:border-white/8">
+          <div className="mt-5 rounded-2xl border border-border/50 bg-card/70 shadow-[var(--shadow-card)] px-5 py-2.5 dark:border-white/8">
             <h2 className="text-base font-medium text-foreground">{t("insights.activity")}</h2>
             <div className="mt-2">
               <Heatmap daily={summary.daily} />

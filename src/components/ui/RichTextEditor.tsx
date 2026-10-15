@@ -122,7 +122,11 @@ export function RichTextEditor({
         editor={editor}
         className={cn(
           "h-full overflow-y-auto",
-          disabled && "pointer-events-none opacity-70",
+          // Read-only: the editor is already non-editable via `editable`. Don't
+          // add pointer-events-none — it also kills wheel scrolling and text
+          // selection on this scroll container (a long transcript couldn't be
+          // scrolled or copied).
+          disabled && "opacity-80",
           // Reserved by an ancestor via --floating-inset; 0 elsewhere.
           "pb-[var(--floating-inset,0px)]"
         )}

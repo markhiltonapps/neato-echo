@@ -16,15 +16,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary CTA — ultra-premium with subtle depth
+        // Primary CTA — Neddy finish: convex glossy teal shell with a teal-tinted
+        // lift (the mascot's glossy teal); rounded-lg for the chunky friendly feel.
         default: [
-          "relative text-primary-foreground font-semibold tracking-[0.005em]",
-          "bg-primary",
-          "border border-primary/60",
-          "shadow-sm",
-          "hover:bg-primary/95 hover:shadow",
-          "active:bg-primary/85 active:scale-[0.985]",
-          "transition-[background-color,border-color,color,transform] duration-200 ease-out",
+          "gloss-convex relative text-primary-foreground font-semibold tracking-[0.005em]",
+          "bg-primary rounded-lg",
+          "border border-primary/50",
+          "shadow-[0_2px_6px_-2px_rgba(94,148,145,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
+          "hover:brightness-[1.04] hover:shadow-[0_5px_14px_-3px_rgba(94,148,145,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]",
+          "active:scale-[0.985]",
+          "transition-[filter,transform,box-shadow,background-color] duration-200 ease-out",
         ].join(" "),
 
         // Success — uses design tokens

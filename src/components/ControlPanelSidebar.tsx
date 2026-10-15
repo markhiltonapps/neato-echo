@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import logoIcon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { cn } from "./lib/utils";
 import SupportDropdown from "./ui/SupportDropdown";
 import { getCachedPlatform } from "../utils/platform";
@@ -101,11 +102,18 @@ export default function ControlPanelSidebar({
   ];
 
   return (
-    <div className="w-48 h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-surface-1/60 dark:bg-surface-1">
+    <div className="w-full h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-gradient-to-b from-surface-0 to-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] dark:from-surface-2 dark:to-surface-0 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div
         className="w-full h-10 shrink-0"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       />
+
+      <div className="flex items-center gap-2 px-3 pt-0.5 pb-2">
+        <img src={logoIcon} alt="" className="w-[22px] h-[22px] rounded-[6px] shrink-0" />
+        <span className="font-brand text-[13px] font-bold tracking-[0.01em] text-foreground select-none">
+          neato<span className="text-brand-teal">echo</span>
+        </span>
+      </div>
 
       {onOpenSearch && (
         <div className="px-2 pt-2 pb-1">
@@ -139,19 +147,25 @@ export default function ControlPanelSidebar({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               className={cn(
-                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-md outline-none transition-colors duration-150 text-left",
-                "focus-visible:ring-1 focus-visible:ring-primary/30",
+                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-lg outline-none transition-colors duration-150 text-left",
+                "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
                 isActive
-                  ? "bg-primary/8 dark:bg-primary/10"
-                  : "hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
+                  ? "gloss-convex bg-brand-teal-soft border border-brand-teal/30 shadow-[0_3px_12px_-5px_var(--color-brand-teal)]"
+                  : "border border-transparent hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
               )}
             >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand-teal shadow-[0_0_10px_var(--color-brand-teal)]"
+                />
+              )}
               <Icon
                 size={15}
                 className={cn(
                   "shrink-0 transition-colors duration-150",
                   isActive
-                    ? "text-primary"
+                    ? "text-brand-teal"
                     : "text-foreground/60 group-hover:text-foreground/75 dark:text-foreground/55 dark:group-hover:text-foreground/70"
                 )}
               />
@@ -196,7 +210,7 @@ export default function ControlPanelSidebar({
 
       {showUpgradeBanner && (
         <div className="px-2 pb-2">
-          <div className="relative rounded-xl border border-[#6c50e9]/25 dark:border-[#6c50e9]/40 bg-card bg-gradient-to-b from-[#6c50e9]/15 via-[#6c50e9]/5 to-transparent dark:from-[#6c50e9]/30 dark:via-[#6c50e9]/10 p-3">
+          <div className="relative rounded-xl border border-brand-teal/25 dark:border-brand-teal/35 bg-card bg-gradient-to-b from-brand-teal/12 via-brand-teal/4 to-transparent dark:from-brand-teal/20 dark:via-brand-teal/8 p-3">
             <button
               onClick={() => {
                 setUpgradeDismissed(true);
@@ -230,7 +244,7 @@ export default function ControlPanelSidebar({
             </div>
             <button
               onClick={onUpgrade}
-              className="w-full h-7 rounded-full bg-[#4079ed] text-white text-xs font-medium hover:bg-[#3568d9] active:bg-[#2f5dc4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4079ed]/40 transition-colors"
+              className="w-full h-7 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors"
             >
               {t("sidebar.learnMore")}
             </button>
@@ -294,7 +308,7 @@ export default function ControlPanelSidebar({
                   </p>
                 )}
               </>
-            ) : authLoaded && !isSignedIn ? (
+            ) : ACCOUNTS_ENABLED && authLoaded && !isSignedIn ? (
               <p className="text-xs text-foreground/45 dark:text-foreground/55">
                 {t("sidebar.notSignedIn")}
               </p>

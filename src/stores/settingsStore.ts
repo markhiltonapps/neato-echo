@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LOCAL_FIRST } from "../config/edition";
 import { API_ENDPOINTS } from "../config/constants";
 import i18n, { normalizeUiLanguage } from "../i18n";
 import { ensureAgentNameInDictionary } from "../utils/agentName";
@@ -169,8 +170,11 @@ function readString(key: string, fallback: string): string {
 // store, so importing back would create a require cycle.
 const DEFAULT_COHERE_MODEL = "cohere-transcribe-03-2026";
 
-function readLocalProvider(key: string): LocalTranscriptionProvider {
-  const stored = readString(key, "whisper");
+function readLocalProvider(
+  key: string,
+  fallback: LocalTranscriptionProvider = "whisper"
+): LocalTranscriptionProvider {
+  const stored = readString(key, fallback);
   return stored === "nvidia" || stored === "cohere" ? stored : "whisper";
 }
 
@@ -299,7 +303,9 @@ const BOOLEAN_SETTINGS = new Set([
   "floatingIconAutoHide",
   "startMinimized",
   "meetingProcessDetection",
+  "autoRecordMeetings",
   "speakerDiarizationEnabled",
+  "meetingLiveTranscription",
   "dictationSileroEnabled",
   "noteRecordingSileroEnabled",
   "meetingSileroEnabled",
@@ -310,6 +316,7 @@ const BOOLEAN_SETTINGS = new Set([
   "saveDiscardedTranscriptions",
   "noteFilesEnabled",
   "showTranscriptionPreview",
+  "polishLivePreview",
   "cleanupDisableThinking",
   "dictationAgentDisableThinking",
   "dictationAgentVisionDisableThinking",
@@ -668,7 +675,9 @@ export interface SettingsState
   mcalPrimaryOnly: boolean;
   appleCalendarConnected: boolean;
   meetingProcessDetection: boolean;
+  autoRecordMeetings: boolean;
   speakerDiarizationEnabled: boolean;
+  meetingLiveTranscription: boolean;
   dictationSileroEnabled: boolean;
   noteRecordingSileroEnabled: boolean;
   meetingSileroEnabled: boolean;
@@ -680,6 +689,7 @@ export interface SettingsState
   whisperVadSamplesOverlap: number;
   panelStartPosition: "bottom-right" | "center" | "bottom-left";
   showTranscriptionPreview: boolean;
+  polishLivePreview: boolean;
   autoPasteEnabled: boolean;
   keepTranscriptionInClipboard: boolean;
   noteFilesEnabled: boolean;
@@ -974,7 +984,9 @@ export interface SettingsState
   setMcalPrimaryOnly: (value: boolean) => void;
   setAppleCalendarConnected: (value: boolean) => void;
   setMeetingProcessDetection: (value: boolean) => void;
+  setAutoRecordMeetings: (value: boolean) => void;
   setSpeakerDiarizationEnabled: (value: boolean) => void;
+  setMeetingLiveTranscription: (value: boolean) => void;
   setDictationSileroEnabled: (value: boolean) => void;
   setNoteRecordingSileroEnabled: (value: boolean) => void;
   setMeetingSileroEnabled: (value: boolean) => void;
@@ -986,6 +998,7 @@ export interface SettingsState
   setWhisperVadSamplesOverlap: (value: number) => void;
   setPanelStartPosition: (position: "bottom-right" | "center" | "bottom-left") => void;
   setShowTranscriptionPreview: (value: boolean) => void;
+  setPolishLivePreview: (value: boolean) => void;
   setAutoPasteEnabled: (value: boolean) => void;
   setKeepTranscriptionInClipboard: (value: boolean) => void;
   setNoteFilesEnabled: (value: boolean) => void;
@@ -1249,10 +1262,13 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   uiLanguage: normalizeUiLanguage(
     isBrowser ? localStorage.getItem("uiLanguage") || i18n.language : null
   ),
-  useLocalWhisper: readBoolean("useLocalWhisper", false),
+  useLocalWhisper: readBoolean("useLocalWhisper", LOCAL_FIRST),
   whisperModel: readString("whisperModel", "base"),
-  localTranscriptionProvider: readLocalProvider("localTranscriptionProvider"),
-  parakeetModel: readString("parakeetModel", ""),
+  localTranscriptionProvider: readLocalProvider(
+    "localTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
+  parakeetModel: readString("parakeetModel", LOCAL_FIRST ? "parakeet-tdt-0.6b-v3" : ""),
   cohereModel: readString("cohereModel", DEFAULT_COHERE_MODEL),
   allowOpenAIFallback: readBoolean("allowOpenAIFallback", false),
   allowLocalFallback: readBoolean("allowLocalFallback", false),
@@ -1288,7 +1304,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   assemblyAiStreaming: readBoolean("assemblyAiStreaming", true),
 
   autoGenerateNoteTitle: readBoolean("autoGenerateNoteTitle", true),
-  useCleanupModel: readBoolean("useCleanupModel", true),
+  useCleanupModel: readBoolean("useCleanupModel", !LOCAL_FIRST),
   useDictationAgent: readBoolean("useDictationAgent", true),
   cleanupModel: readString("cleanupModel", ""),
   cleanupProvider: readString("cleanupProvider", "openai"),
@@ -1405,7 +1421,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   mcalPrimaryOnly: readBoolean("mcalPrimaryOnly", true),
   appleCalendarConnected: readBoolean("appleCalendarConnected", false),
   meetingProcessDetection: readBoolean("meetingProcessDetection", true),
+  autoRecordMeetings: readBoolean("autoRecordMeetings", false),
   speakerDiarizationEnabled: readBoolean("speakerDiarizationEnabled", true),
+  // Words appear while people speak (streaming local model). Off saves CPU on
+  // older PCs: transcription then runs in 5 s chunks instead.
+  meetingLiveTranscription: readBoolean("meetingLiveTranscription", true),
   // Off by default: VAD on pause-heavy dictations can strip the speech and make
   // Whisper hallucinate the dictionary prompt as the transcript (#1454).
   dictationSileroEnabled: readBoolean("dictationSileroEnabled", false),
@@ -1434,7 +1454,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     if (v === "bottom-right" || v === "center" || v === "bottom-left") return v;
     return "bottom-right" as const;
   })(),
+  // Off by default: the live preview shows the model's raw partial guesses,
+  // which read noticeably rougher than the cleaned final text and made a poor
+  // first impression. Users can opt in from Settings; when on, the panel
+  // carries a note that the final text will be more accurate.
   showTranscriptionPreview: readBoolean("showTranscriptionPreview", false),
+  polishLivePreview: readBoolean("polishLivePreview", false),
   autoPasteEnabled: readBoolean("autoPasteEnabled", true),
   keepTranscriptionInClipboard: readBoolean("keepTranscriptionInClipboard", false),
   noteFilesEnabled: readBoolean("noteFilesEnabled", false),
@@ -1442,7 +1467,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   isSignedIn: readBoolean("isSignedIn", false),
 
   transcriptionMode: (() => {
-    const v = readString("transcriptionMode", "openwhispr");
+    const v = readString("transcriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
@@ -1453,7 +1478,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   remoteTranscriptionUrl: readString("remoteTranscriptionUrl", ""),
   remoteTranscriptionModel: readString("remoteTranscriptionModel", ""),
   cleanupMode: (() => {
-    const v = readString("cleanupMode", "openwhispr");
+    const v = readString("cleanupMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (
       v === "openwhispr" ||
       v === "providers" ||
@@ -1467,13 +1492,16 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   cleanupRemoteUrl: readString("cleanupRemoteUrl", ""),
 
   meetingTranscriptionMode: (() => {
-    const v = readString("meetingTranscriptionMode", "openwhispr");
+    const v = readString("meetingTranscriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
-  meetingUseLocalWhisper: readBoolean("meetingUseLocalWhisper", false),
+  meetingUseLocalWhisper: readBoolean("meetingUseLocalWhisper", LOCAL_FIRST),
   meetingWhisperModel: readString("meetingWhisperModel", ""),
-  meetingLocalTranscriptionProvider: readLocalProvider("meetingLocalTranscriptionProvider"),
+  meetingLocalTranscriptionProvider: readLocalProvider(
+    "meetingLocalTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
   meetingParakeetModel: readString("meetingParakeetModel", ""),
   meetingCohereModel: readString("meetingCohereModel", ""),
   meetingCloudTranscriptionProvider: readString("meetingCloudTranscriptionProvider", ""),
@@ -1487,13 +1515,16 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   meetingRemoteTranscriptionUrl: readString("meetingRemoteTranscriptionUrl", ""),
 
   uploadTranscriptionMode: (() => {
-    const v = readString("uploadTranscriptionMode", "openwhispr");
+    const v = readString("uploadTranscriptionMode", LOCAL_FIRST ? "local" : "openwhispr");
     if (v === "openwhispr" || v === "providers" || v === "local" || v === "self-hosted") return v;
     return "openwhispr" as InferenceMode;
   })(),
-  uploadUseLocalWhisper: readBoolean("uploadUseLocalWhisper", false),
+  uploadUseLocalWhisper: readBoolean("uploadUseLocalWhisper", LOCAL_FIRST),
   uploadWhisperModel: readString("uploadWhisperModel", ""),
-  uploadLocalTranscriptionProvider: readLocalProvider("uploadLocalTranscriptionProvider"),
+  uploadLocalTranscriptionProvider: readLocalProvider(
+    "uploadLocalTranscriptionProvider",
+    LOCAL_FIRST ? "nvidia" : "whisper"
+  ),
   uploadParakeetModel: readString("uploadParakeetModel", ""),
   uploadCohereModel: readString("uploadCohereModel", ""),
   uploadCloudTranscriptionProvider: readString("uploadCloudTranscriptionProvider", ""),
@@ -2184,6 +2215,19 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   },
   setAppleCalendarConnected: createBooleanSetter("appleCalendarConnected"),
   setMeetingProcessDetection: createBooleanSetter("meetingProcessDetection"),
+  // Custom setter (not createBooleanSetter) so the preference reaches the main
+  // process immediately from wherever it is toggled — Settings or onboarding.
+  setAutoRecordMeetings: (value: boolean) => {
+    if (isBrowser) localStorage.setItem("autoRecordMeetings", String(value));
+    useSettingsStore.setState({ autoRecordMeetings: value });
+    if (isBrowser) {
+      window.electronAPI?.meetingDetectionSetPreferences?.({ autoRecordMeetings: value });
+    }
+  },
+  setMeetingLiveTranscription: (value: boolean) => {
+    if (isBrowser) localStorage.setItem("meetingLiveTranscription", String(value));
+    useSettingsStore.setState({ meetingLiveTranscription: value });
+  },
   setSpeakerDiarizationEnabled: (value: boolean) => {
     if (isBrowser) localStorage.setItem("speakerDiarizationEnabled", String(value));
     useSettingsStore.setState({ speakerDiarizationEnabled: value });
@@ -2270,6 +2314,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   },
 
   setShowTranscriptionPreview: createBooleanSetter("showTranscriptionPreview"),
+  setPolishLivePreview: createBooleanSetter("polishLivePreview"),
   setAutoPasteEnabled: createBooleanSetter("autoPasteEnabled"),
   setKeepTranscriptionInClipboard: createBooleanSetter("keepTranscriptionInClipboard"),
   setNoteFilesEnabled: createBooleanSetter("noteFilesEnabled"),
@@ -2325,6 +2370,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       s.setAssemblyAiStreaming(settings.assemblyAiStreaming);
     if (settings.showTranscriptionPreview !== undefined)
       s.setShowTranscriptionPreview(settings.showTranscriptionPreview);
+    if (settings.polishLivePreview !== undefined)
+      s.setPolishLivePreview(settings.polishLivePreview);
   },
 
   // Apply a transcription config to dictation, then mirror its cloud routing to
@@ -2688,6 +2735,29 @@ export function setResolvedLLMConfig(
     (updates as Record<string, unknown>)[storeKey as string] = value;
   }
   if (Object.keys(updates).length > 0) useSettingsStore.setState(updates);
+}
+
+/**
+ * Copy one scope's model routing (mode, provider, model, cloud routing) onto
+ * every other LLM scope, so the user can set one model everywhere in a click
+ * instead of hunting through five tabs. The per-scope custom API key is a
+ * secret kept out of this copy — a BYOK setup still needs its key entered per
+ * scope; the common local case needs none. disableThinking stays per-scope.
+ */
+export function applyReasoningConfigToAllScopes(source: InferenceScope): void {
+  const cfg = selectResolvedLLMConfig(useSettingsStore.getState(), source);
+  const patch: Partial<Omit<ResolvedLLMConfig, "scope">> = {
+    mode: cfg.mode,
+    provider: cfg.provider,
+    model: cfg.model,
+    cloudMode: cfg.cloudMode,
+    cloudBaseUrl: cfg.cloudBaseUrl,
+    remoteUrl: cfg.remoteUrl,
+  };
+  for (const scope of Object.keys(INFERENCE_SCOPES) as InferenceScope[]) {
+    if (scope === source) continue;
+    setResolvedLLMConfig(scope, patch);
+  }
 }
 
 export function isCloudChatAgentMode() {
@@ -3244,6 +3314,7 @@ export async function initializeSettings(): Promise<void> {
       const currentState = useSettingsStore.getState();
       await window.electronAPI.meetingDetectionSetPreferences?.({
         processDetection: currentState.meetingProcessDetection,
+        autoRecordMeetings: currentState.autoRecordMeetings,
       });
     } catch (err) {
       logger.warn(

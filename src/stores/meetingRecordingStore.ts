@@ -5,8 +5,15 @@ import { getStreamingTranscriptionProviders } from "../models/ModelRegistry";
 import { resolveMeetingTranscriptionOptions } from "../helpers/meetingTranscriptionRouting";
 import { followsSystemDefaultMic } from "../helpers/micSelectionRecovery";
 import { resolvePreferredMicrophone } from "../helpers/microphoneSelection";
+import { resolveSystemAudioSource } from "../helpers/systemAudioSource";
+
+type SystemAudioSourceResolution = {
+  mode: "auto" | "screen" | "device";
+  deviceId: string | null;
+};
 import { ActiveMicRecoveryController } from "../helpers/activeMicRecovery";
 import { getBaseLanguageCode } from "../utils/languageSupport";
+import { autoTitleRecording } from "../utils/recordingAutoTitle";
 import {
   resolveInitialSpeakerCountOverride,
   resolveParticipantSpeakerCountSync,
@@ -102,6 +109,8 @@ interface MeetingRecordingState {
   /** Latched once per recording when main reports the system-audio tap has produced only silence. */
   systemAudioSilentWarning: boolean;
   currentMicLevel: number;
+  /** Live system-audio (remote participants) level for the waveform, 0–1. */
+  currentSystemLevel: number;
   micCaptureStatus: "inactive" | "active" | "reconnecting" | "unavailable";
   windowWidth: number;
 }
@@ -158,6 +167,7 @@ const getMeetingTranscriptionOptions = () => {
     cortiEnvironment: state.cortiEnvironment,
     cortiTenant: state.cortiTenant,
     keyterms: (state.customDictionary ?? []).filter(Boolean),
+    liveTranscription: state.meetingLiveTranscription,
   });
 };
 
@@ -202,7 +212,64 @@ const requestSystemAudioDisplayStream = async (mode: "loopback" | "portal") => {
   }
 };
 
-const prepareMeetingSystemAudioCapture = (initialSystemAudioAccess: SystemAudioAccessResult) => {
+// Capture a chosen audio INPUT device (e.g. "Stereo Mix" or a virtual cable) as the
+// system-audio source. Raw passthrough — unlike a mic, system audio must not be run
+// through echo cancellation / noise suppression / AGC.
+const requestSystemAudioInputStream = async (deviceId: string | null) => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) {
+      stopMediaStream(stream);
+      return { stream: null, error: new Error("No audio from the selected system-audio device.") };
+    }
+    return { stream, error: null };
+  } catch (error) {
+    return { stream: null, error: error as Error };
+  }
+};
+
+// The user's meeting system-audio override, read from localStorage (see
+// src/helpers/systemAudioSource.js). "auto" keeps the platform default path unchanged.
+const readSystemAudioOverride = (): SystemAudioSourceResolution =>
+  resolveSystemAudioSource((key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  });
+
+const prepareMeetingSystemAudioCapture = (
+  initialSystemAudioAccess: SystemAudioAccessResult,
+  override: SystemAudioSourceResolution
+) => {
+  // A forced source is captured entirely in the renderer; mark it as a renderer
+  // ("loopback") strategy so ensureRendererSystemAudioCapture doesn't also run, and
+  // start the chosen capture now. Main is told to skip the native helper (see the
+  // meetingTranscriptionStart options), so there's no double capture.
+  if (override.mode === "screen") {
+    return {
+      initialSystemAudioStrategy: "loopback" as SystemAudioStrategy,
+      initialDisplayCaptureStrategy: "loopback" as const,
+      systemCapturePromise: requestSystemAudioDisplayStream("loopback"),
+    };
+  }
+  if (override.mode === "device") {
+    return {
+      initialSystemAudioStrategy: "loopback" as SystemAudioStrategy,
+      initialDisplayCaptureStrategy: "loopback" as const,
+      systemCapturePromise: requestSystemAudioInputStream(override.deviceId),
+    };
+  }
+
   const initialSystemAudioStrategy = initialSystemAudioAccess.strategy ?? "unsupported";
   const initialDisplayCaptureStrategy = isRendererSystemAudioStrategy(initialSystemAudioStrategy)
     ? initialSystemAudioStrategy
@@ -400,9 +467,15 @@ let systemContext: AudioContext | null = null;
 let systemSource: MediaStreamAudioSourceNode | null = null;
 let systemProcessor: AudioWorkletNode | null = null;
 let systemStream: MediaStream | null = null;
+// Analyser for the renderer (display-media) system-audio path; the native main-process
+// path reports its level over IPC instead (see MeetingRecordingMount).
+let systemAnalyser: AnalyserNode | null = null;
 let isRecordingFlag = false;
 let isStartingFlag = false;
 let activeRecordingSessionId: string | null = null;
+// Wall-clock start of the active recording, used to persist audio_duration_seconds
+// on stop so short recordings can be flagged in the notes list.
+let recordingStartedAtMs: number | null = null;
 const meetingRecordingStartCoordinator = createMeetingRecordingStartCoordinator();
 const meetingRecordingStopBarrier = createMeetingRecordingStopBarrier();
 let isPrepared = false;
@@ -439,6 +512,7 @@ export const useMeetingRecordingStore = create<MeetingRecordingState>()(() => ({
   errorNonce: 0,
   systemAudioSilentWarning: false,
   currentMicLevel: 0,
+  currentSystemLevel: 0,
   micCaptureStatus: "inactive",
   windowWidth: typeof window !== "undefined" ? window.innerWidth : SIDE_PANEL_BREAKPOINT_PX,
 }));
@@ -452,6 +526,7 @@ function reportMeetingError(error: string, extra: Partial<MeetingRecordingState>
 }
 
 export const getMicAnalyser = (): AnalyserNode | null => micAnalyser;
+export const getSystemAnalyser = (): AnalyserNode | null => systemAnalyser;
 
 export const getActiveRecordingSessionId = (): string | null => activeRecordingSessionId;
 
@@ -657,6 +732,8 @@ async function cleanup(): Promise<void> {
 
   micAnalyser?.disconnect();
   micAnalyser = null;
+  systemAnalyser?.disconnect();
+  systemAnalyser = null;
 
   try {
     micStream?.getTracks().forEach((t) => t.stop());
@@ -822,6 +899,7 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
     });
 
     isRecordingFlag = true;
+    recordingStartedAtMs = Date.now();
     let setupMicResult: MediaStream | null = null;
     let setupSystemCaptureResult: { stream: MediaStream | null; error: Error | null } = {
       stream: null,
@@ -867,12 +945,14 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
         await teardownStart();
         return;
       }
+      const systemAudioOverride = readSystemAudioOverride();
       const { initialSystemAudioStrategy, initialDisplayCaptureStrategy, systemCapturePromise } =
-        prepareMeetingSystemAudioCapture(initialSystemAudioAccess);
+        prepareMeetingSystemAudioCapture(initialSystemAudioAccess, systemAudioOverride);
 
       startOperation.markMainStartAttempted();
       const mainStartPromise = window.electronAPI?.meetingTranscriptionStart?.({
         ...getMeetingTranscriptionOptions(),
+        systemAudioSource: systemAudioOverride,
         noteId: args.noteId ?? null,
         sessionId,
         autoEndEligible: args.autoEndEligible,
@@ -1343,6 +1423,18 @@ export async function startRecording(args: StartRecordingArgs): Promise<boolean>
         });
         systemSource = source;
         systemProcessor = processor;
+
+        // Drive the waveform from the remote (system) audio too. Muted-gain sink so the
+        // analyser's pull-based buffer keeps updating without routing audio to output.
+        const sysAnalyser = ctx.createAnalyser();
+        sysAnalyser.fftSize = 256;
+        sysAnalyser.smoothingTimeConstant = 0.4;
+        const sysSink = ctx.createGain();
+        sysSink.gain.value = 0;
+        source.connect(sysAnalyser);
+        sysAnalyser.connect(sysSink);
+        sysSink.connect(ctx.destination);
+        systemAnalyser = sysAnalyser;
       };
 
       if (systemCaptureResult.stream) {
@@ -1495,6 +1587,7 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
     return { diarizationSessionId: null, stopped: false };
   }
@@ -1525,10 +1618,20 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
     // that view is unmounted, and any view-scoped saver dies with it. (Delayed
     // diarization results are persisted by the module-level listener below.)
     const { recordingNoteId, segments: finalSegments } = useMeetingRecordingStore.getState();
+    // Duration from wall-clock start→stop, persisted so the notes list can flag
+    // short (likely accidental) recordings. Only the upload path set this before.
+    const durationSeconds =
+      recordingStartedAtMs != null
+        ? Math.max(0, Math.round((Date.now() - recordingStartedAtMs) / 1000))
+        : null;
+    recordingStartedAtMs = null;
     const persistTranscript = async (transcript: string) => {
       if (recordingNoteId == null) return;
       try {
-        await window.electronAPI?.updateNote?.(recordingNoteId, { transcript });
+        await window.electronAPI?.updateNote?.(recordingNoteId, {
+          transcript,
+          ...(durationSeconds != null ? { audio_duration_seconds: durationSeconds } : {}),
+        });
       } catch (err) {
         logger.error(
           "Failed to persist final meeting transcript",
@@ -1581,7 +1684,22 @@ export async function stopRecording(expectedSessionId?: string): Promise<StopRec
       systemPartialSpeakerName: null,
       systemAudioSilentWarning: false,
       currentMicLevel: 0,
+      currentSystemLevel: 0,
     });
+
+    // Name a still-default recording from its transcript so the notes list does
+    // not fill with "Untitled Note". Fire-and-forget; never blocks the stop.
+    if (recordingNoteId != null) {
+      const titleText =
+        buildTranscriptText(finalSegments) ||
+        useMeetingRecordingStore.getState().transcript ||
+        "";
+      void autoTitleRecording(
+        recordingNoteId,
+        titleText,
+        useMeetingRecordingStore.getState().recordingNoteTitle
+      );
+    }
 
     logger.info("Meeting transcription stopped", {}, "meeting");
     // Reaching here means this call ended a live recording and its transcript
@@ -1630,6 +1748,67 @@ if (typeof window !== "undefined") {
   // getNote await and overwrite each other's speaker labels — the later
   // result merges on top of the earlier one's persisted transcript.
   const enqueueDiarizationCompletion = createSerialQueue();
+
+  // Neato Cloud auto-PULL: the desktop used to pull recordings made on OTHER devices
+  // (e.g. the phone) only when the user pressed "↓ Pull recordings" in Settings, so they
+  // never showed up on their own. Mirror the mobile app and pull automatically — on
+  // startup, on window focus, on a periodic backstop, after a meeting saves, and right
+  // after signing in. runNeatoCloudPull is session-gated, throttled and best-effort, so
+  // these can all fire freely. Pulled notes arrive via the normal "note-added" broadcast,
+  // so the notes list refreshes itself.
+  const triggerNeatoPull = (force = false) => {
+    void import("../services/neatoCloud")
+      .then(({ runNeatoCloudPull }) => runNeatoCloudPull({ force }))
+      .catch(() => {
+        // Supabase unavailable / offline — manual Pull in Settings still works
+      });
+  };
+
+  // Neato Cloud auto-PUSH: when a meeting recording is saved, upload it (and any
+  // other pending notes) automatically so the user never has to press Push. Gated
+  // by a setting (default on) and silently skipped when not signed in / offline.
+  let neatoAutoPushInFlight = false;
+  window.electronAPI?.onNeatoMeetingSaved?.(() => {
+    // A finished meeting is also a natural moment to pull anything waiting from the phone.
+    triggerNeatoPull(true);
+    try {
+      if (localStorage.getItem("neato.autoPush.v1") === "off") return;
+    } catch {
+      // default on
+    }
+    if (neatoAutoPushInFlight) return;
+    neatoAutoPushInFlight = true;
+    void import("../services/neatoCloud")
+      .then(({ pushNotesToCloud }) => pushNotesToCloud())
+      .catch(() => {
+        // not signed in / offline — manual Push still works
+      })
+      .finally(() => {
+        neatoAutoPushInFlight = false;
+      });
+  });
+
+  // Coming back to the window is a good moment to reconcile with other devices.
+  window.addEventListener("focus", () => triggerNeatoPull(false));
+
+  // Defer the first pull and the auth listener so Supabase isn't loaded on the critical
+  // startup path; then pull on launch and whenever a fresh Neato Cloud sign-in happens.
+  setTimeout(() => {
+    triggerNeatoPull(true);
+    void import("../services/neatoCloud")
+      .then(({ neatoCloud }) => {
+        neatoCloud.auth.onAuthStateChange((e) => {
+          if (e === "SIGNED_IN") triggerNeatoPull(true);
+        });
+      })
+      .catch(() => {
+        // focus / interval triggers still retry later
+      });
+  }, 4000);
+
+  // Periodic backstop so a long-open window keeps picking up new phone recordings.
+  setInterval(() => triggerNeatoPull(false), 5 * 60 * 1000);
+
   window.electronAPI?.onMeetingDiarizationComplete?.((data) => {
     enqueueDiarizationCompletion(async () => {
       const {

@@ -13,6 +13,7 @@ import {
   Search,
   Plus,
   Check,
+  Copy,
   Share2,
   Users,
 } from "lucide-react";
@@ -60,7 +61,8 @@ import NoteBottomBar from "./NoteBottomBar";
 import EmbeddedChat, { type EmbeddedChatMode } from "./EmbeddedChat";
 import { useEmbeddedChat } from "../../hooks/useEmbeddedChat";
 import { normalizeDbDate, formatRelativeTime, formatShortDate } from "../../utils/dateFormatting";
-import { collectKnownPeople } from "../../utils/llmTranscript";
+import { collectKnownPeople, resolveLlmSpeakerLabel } from "../../utils/llmTranscript";
+import { formatTranscriptForReading } from "../../utils/transcriptReadingFormat";
 import { parseTranscriptSegments } from "../../utils/parseTranscriptSegments";
 import {
   applyTranscriptSpeakerPatch,
@@ -180,6 +182,8 @@ interface NoteEditorProps {
   actionPicker?: React.ReactNode;
   actionProcessingState?: ActionProcessingState;
   actionName?: string | null;
+  actionStartedAt?: number;
+  actionEstimatedSeconds?: number;
   diarizationSessionId?: string | null;
   onLiveSpeakerLock?: (speakerId: string, displayName: string) => void;
   sessionDiarizationEnabled?: boolean;
@@ -212,6 +216,8 @@ export default function NoteEditor({
   actionPicker,
   actionProcessingState,
   actionName,
+  actionStartedAt,
+  actionEstimatedSeconds,
   diarizationSessionId,
   onLiveSpeakerLock,
   sessionDiarizationEnabled,
@@ -227,7 +233,14 @@ export default function NoteEditor({
   onCancelPendingSaves,
 }: NoteEditorProps) {
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<MeetingViewMode>("raw");
+  // NoteEditor is keyed by note id, so it remounts per note — the initial view
+  // must be chosen here, not in an effect (the note-open effect's id-changed
+  // guard never fires on a fresh mount). Reopen a summarized meeting on its
+  // saved summary, a recorded-but-unsummarized one on its transcript, and a
+  // plain note on raw — so the enhanced summary is revisitable like the transcript.
+  const [viewMode, setViewMode] = useState<MeetingViewMode>(() =>
+    enhancement ? "enhanced" : note.transcript ? "transcript" : "raw"
+  );
   const [chatMode, setChatMode] = useState<EmbeddedChatMode>("hidden");
   const [folderSearch, setFolderSearch] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -356,13 +369,6 @@ export default function NoteEditor({
   >([]);
   const editorRef = useRef<Editor | null>(null);
 
-  const embeddedChat = useEmbeddedChat({
-    noteId: note.id,
-    folderId: note.folder_id,
-    noteTitle: note.title,
-    noteContent: note.content,
-    noteTranscript: note.transcript ?? undefined,
-  });
   const titleRef = useRef<HTMLDivElement>(null);
   const prevNoteIdRef = useRef<number>(note.id);
   const autoShowDoneRef = useRef(false);
@@ -390,6 +396,77 @@ export default function NoteEditor({
   }, [diarizedSegments, note.transcript]);
 
   const hasChatSegments = displaySegments.length > 0;
+
+  // Copy the currently-viewed content (transcript / summary / notes) to the
+  // clipboard. The transcript is rendered into readable, speaker-labeled
+  // paragraphs rather than the raw stored segments.
+  const [copiedView, setCopiedView] = useState(false);
+  const selfCopyLabel = user?.name?.trim() || t("notes.speaker.you");
+  const getCurrentViewText = useCallback(() => {
+    if (viewMode === "transcript") {
+      return displaySegments.length > 0
+        ? formatTranscriptForReading(displaySegments, {
+            resolveLabel: (seg: TranscriptSegment) =>
+              resolveLlmSpeakerLabel(seg, speakerMappings, selfCopyLabel, t),
+          })
+        : note.transcript || "";
+    }
+    if (viewMode === "enhanced") return enhancement?.content || "";
+    return note.content || "";
+  }, [
+    viewMode,
+    displaySegments,
+    speakerMappings,
+    selfCopyLabel,
+    t,
+    note.transcript,
+    note.content,
+    enhancement?.content,
+  ]);
+  const hasCopyableContent =
+    viewMode === "transcript"
+      ? hasMeetingTranscript || displaySegments.length > 0
+      : viewMode === "enhanced"
+        ? !!enhancement?.content?.trim()
+        : !!note.content?.trim();
+  const handleCopyView = useCallback(async () => {
+    const text = getCurrentViewText().trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedView(true);
+      setTimeout(() => setCopiedView(false), 1500);
+    } catch {
+      // Clipboard unavailable — nothing to recover, the user can retry.
+    }
+  }, [getCurrentViewText]);
+
+  // Read-only, speaker-labeled paragraphs for revisiting a finished meeting's
+  // transcript, so it reads like a document instead of a wall of one-clause
+  // rows. The live view during recording stays the interactive segment chat.
+  const readableTranscript = useMemo(
+    () =>
+      displaySegments.length > 0
+        ? formatTranscriptForReading(displaySegments, {
+            resolveLabel: (seg: TranscriptSegment) =>
+              resolveLlmSpeakerLabel(seg, speakerMappings, selfCopyLabel, t),
+          })
+        : note.transcript || "",
+    [displaySegments, speakerMappings, selfCopyLabel, t, note.transcript]
+  );
+
+  // The chat gets the readable, speaker-labeled transcript — never the raw
+  // JSON segments. Passing JSON bloated the system prompt (re-sent every turn),
+  // which slowed replies and overflowed smaller models into errors.
+  const embeddedChat = useEmbeddedChat({
+    noteId: note.id,
+    folderId: note.folder_id,
+    noteTitle: note.title,
+    noteContent: note.content,
+    noteTranscript: hasChatSegments ? readableTranscript || undefined : undefined,
+    noteCreatedAt: note.created_at,
+    noteType: note.note_type,
+  });
 
   const knownSpeakers = useMemo(
     () => buildKnownSpeakers(speakerProfiles, displaySegments, speakerMappings),
@@ -479,9 +556,9 @@ export default function NoteEditor({
         setDiarizedSegments(null);
         setIsDiarizing(false);
         setSpeakerMappings({});
-        if (!isRecording) {
-          setViewMode("raw");
-        }
+        // The initial view is chosen at mount (see the viewMode useState);
+        // this effect's guard never fires on a fresh per-note remount, so it no
+        // longer resets the view here.
         if (titleRef.current && titleRef.current.textContent !== note.title) {
           titleRef.current.textContent = note.title || "";
         }
@@ -992,7 +1069,7 @@ export default function NoteEditor({
                   className="relative flex items-center shrink-0 rounded-md bg-foreground/3 dark:bg-white/3 p-0.5"
                 >
                   <div
-                    className="absolute top-0.5 left-0 rounded bg-background dark:bg-surface-2 shadow-sm transition-[width,height,transform,opacity] duration-200 ease-out pointer-events-none"
+                    className="absolute top-0.5 left-0 rounded bg-card shadow-[var(--shadow-card)] transition-[width,height,transform,opacity] duration-200 ease-out pointer-events-none"
                     style={indicatorStyle}
                   />
                   {(hasMeetingTranscript || hasChatSegments || isRecording) && (
@@ -1041,7 +1118,7 @@ export default function NoteEditor({
                       {t("notes.editor.enhanced")}
                       {enhancement.isStale && (
                         <span
-                          className="w-1 h-1 rounded-full bg-amber-400/60"
+                          className="w-1 h-1 rounded-full bg-warning/60"
                           title={t("notes.editor.staleIndicator")}
                         />
                       )}
@@ -1068,10 +1145,24 @@ export default function NoteEditor({
                     className={cn(
                       "transition-colors",
                       isShared
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-primary"
                         : "text-foreground/50 dark:text-foreground/40"
                     )}
                   />
+                </button>
+              )}
+              {hasCopyableContent && (
+                <button
+                  onClick={() => void handleCopyView()}
+                  className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md bg-foreground/4 dark:bg-white/5 text-foreground/50 dark:text-foreground/40 hover:text-foreground/70 hover:bg-foreground/8 dark:hover:text-foreground/60 dark:hover:bg-white/8 transition-colors duration-150"
+                  aria-label={t("notes.editor.copy")}
+                  title={t("notes.editor.copy")}
+                >
+                  {copiedView ? (
+                    <Check size={11} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={11} />
+                  )}
                 </button>
               )}
               {(onExportNote || onExportTranscript) && (
@@ -1145,12 +1236,12 @@ export default function NoteEditor({
           <div
             className={cn(
               "flex items-center gap-2 px-5 h-8 mt-2 shrink-0",
-              "bg-amber-400/5 dark:bg-amber-400/[0.07]",
-              "border-y border-amber-400/15 dark:border-amber-400/20",
+              "bg-warning/5 dark:bg-warning/[0.07]",
+              "border-y border-warning/15 dark:border-warning/20",
               "animate-in slide-in-from-top-2 duration-300"
             )}
           >
-            <span className="w-1 h-1 rounded-full bg-amber-400/60 shrink-0" />
+            <span className="w-1 h-1 rounded-full bg-warning/60 shrink-0" />
             <p className="text-[11px] text-foreground/50 flex-1 truncate">
               {t("notes.spaces.conflictBanner")}
               {conflictEditorName && (
@@ -1180,45 +1271,46 @@ export default function NoteEditor({
 
         <div className="flex-1 relative min-h-0">
           <div ref={contentScrollRef} className="h-full overflow-y-auto">
-            {viewMode === "transcript" && (hasChatSegments || isRecording) ? (
-              isRecording ? (
-                <LiveMeetingTranscriptChat
-                  speakerMappings={speakerMappings}
-                  speakerProfiles={speakerProfiles}
-                  participants={parsedParticipants}
-                  isDiarizing={isDiarizing}
-                  sessionDiarizationEnabled={sessionDiarizationEnabled}
-                  sessionExpectedCount={sessionExpectedCount}
-                  userTouchedStepper={userTouchedStepper}
-                  onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
-                  onSetSessionExpectedCount={onSetSessionExpectedCount}
-                  onMapSpeaker={handleMapSpeaker}
-                  onConfirmSuggestion={handleConfirmSuggestion}
-                  onDismissSuggestion={handleDismissSuggestion}
-                  onAttachSpeakerEmail={handleAttachSpeakerEmail}
-                />
-              ) : (
+            {viewMode === "transcript" && isRecording ? (
+              <LiveMeetingTranscriptChat
+                speakerMappings={speakerMappings}
+                speakerProfiles={speakerProfiles}
+                participants={parsedParticipants}
+                isDiarizing={isDiarizing}
+                sessionDiarizationEnabled={sessionDiarizationEnabled}
+                sessionExpectedCount={sessionExpectedCount}
+                userTouchedStepper={userTouchedStepper}
+                onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
+                onSetSessionExpectedCount={onSetSessionExpectedCount}
+                onMapSpeaker={handleMapSpeaker}
+                onConfirmSuggestion={handleConfirmSuggestion}
+                onDismissSuggestion={handleDismissSuggestion}
+                onAttachSpeakerEmail={handleAttachSpeakerEmail}
+              />
+            ) : viewMode === "transcript" && hasMeetingTranscript ? (
+              hasChatSegments ? (
+                // Revisiting a finished meeting: the interactive, speaker-labeled
+                // transcript so speakers can be renamed after the fact (a rename
+                // maps the speaker and updates all of that speaker's lines) and
+                // lines selected for bulk assignment — the same view used live.
                 <MeetingTranscriptChat
                   segments={displaySegments}
                   speakerMappings={speakerMappings}
-                  speakerProfiles={knownSpeakers}
+                  speakerProfiles={speakerProfiles}
                   participants={parsedParticipants}
-                  isDiarizing={isDiarizing}
-                  sessionDiarizationEnabled={sessionDiarizationEnabled}
-                  sessionExpectedCount={sessionExpectedCount}
-                  userTouchedStepper={userTouchedStepper}
-                  onSetSessionDiarizationEnabled={onSetSessionDiarizationEnabled}
-                  onSetSessionExpectedCount={onSetSessionExpectedCount}
+                  selectedSegmentIds={selectedSegmentIds}
+                  isRecording={false}
                   onMapSpeaker={handleMapSpeaker}
                   onConfirmSuggestion={handleConfirmSuggestion}
                   onDismissSuggestion={handleDismissSuggestion}
                   onAttachSpeakerEmail={handleAttachSpeakerEmail}
-                  selectedSegmentIds={selectedSegmentIds}
                   onToggleSelect={handleToggleSelect}
                 />
+              ) : (
+                // No parseable segments (older/plain-text transcript): keep the
+                // read-only readable document.
+                <RichTextEditor value={readableTranscript} disabled />
               )
-            ) : viewMode === "transcript" && hasMeetingTranscript ? (
-              <RichTextEditor value={note.transcript || ""} disabled />
             ) : viewMode === "enhanced" && enhancement ? (
               <RichTextEditor
                 value={enhancement.content}
@@ -1240,6 +1332,8 @@ export default function NoteEditor({
           <ActionProcessingOverlay
             state={actionProcessingState ?? "idle"}
             actionName={actionName ?? null}
+            startedAt={actionStartedAt}
+            estimatedSeconds={actionEstimatedSeconds}
           />
           <div
             className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"

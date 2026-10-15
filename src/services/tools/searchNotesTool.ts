@@ -26,8 +26,8 @@ export function createSearchNotesTool(options: SearchToolOptions): ToolDefinitio
   return {
     name: "search_notes",
     description: fixedScope
-      ? "Search the notes in the folder or space the user is currently viewing, using semantic search. Understands meaning and context, not just keywords. Returns matching notes with title, date, relevance score, space, and a preview of content."
-      : "Search the user's notes using semantic search. Understands meaning and context, not just keywords. Searches every space the user can access by default; pass space to search within a single space. Returns matching notes with title, date, relevance score, space, and a preview of content.",
+      ? "Semantic search over the notes in the folder/space the user is viewing (meaning, not just keywords). Returns title, date, score, space, and a content preview."
+      : "Semantic search over the user's notes (meaning, not just keywords). Searches all accessible spaces by default; pass space to narrow. Returns title, date, score, space, and a content preview.",
     parameters: {
       type: "object",
       properties: {

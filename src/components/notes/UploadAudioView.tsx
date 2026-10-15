@@ -29,7 +29,6 @@ import {
   findDefaultFolder,
   findVideosFolder,
   DOWNLOAD_ERROR_KEYS,
-  transcriptionErrorKey,
   MEETINGS_FOLDER_NAME,
 } from "./shared";
 import { useAuth } from "../../hooks/useAuth";
@@ -51,15 +50,22 @@ import {
 } from "../../stores/settingsStore";
 import { useBatchQueue } from "../../stores/batchQueueStore";
 import type { TranscribeOptions } from "../../stores/batchQueueStore";
+import { useUploadProcessingStore } from "../../stores/uploadProcessingStore";
 import {
-  transcribeFileWithSpeakers,
+  useUploadJobStore,
+  startUploadJob,
+  cancelUploadJob,
+  clearUploadJob,
+} from "../../stores/uploadJobStore";
+import { useLiveEta } from "../../hooks/useLiveEta";
+import { formatEtaLabel } from "../../utils/formatEta";
+import {
   resolveDiarizationSettings,
   shouldUseByokDiarize,
   getTranscriptionApiKey,
 } from "../../services/fileTranscription";
 import type {
   FileTranscriptionConfig,
-  FileTranscriptionResult,
   DiarizationSettings,
 } from "../../services/fileTranscription";
 import { MAX_SPEAKER_COUNT } from "../../constants/speakerDetection.json";
@@ -70,7 +76,6 @@ import { isTranscriptionContextAllowed } from "../../stores/policyRules";
 import { usePolicyStore } from "../../stores/policyStore";
 import { usePolicySnapshot, useTranscriptionContextAllowed } from "../../hooks/usePolicy";
 import { byokFileSizeLimit, resolveTranscriptionRoute } from "../../helpers/transcriptionRoute";
-import { saveUploadNote, uploadTitleFallback } from "../../services/uploadNotes";
 import { UploadCompleteWarnings, UploadModelSettingsButton } from "./UploadAudioFeedback";
 
 type UploadState = "idle" | "selected" | "downloading" | "transcribing" | "complete" | "error";
@@ -182,6 +187,10 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
   const singleDownloadIdRef = useRef<string | null>(null);
 
   const batch = useBatchQueue();
+  // The transcription itself runs in a detached store so switching tabs doesn't
+  // cancel it. When a job is present it owns the transcribing/complete/error
+  // phases; selecting a file and downloading a URL stay in local state.
+  const job = useUploadJobStore((s) => s.job);
 
   const [diarizationEnabled, setDiarizationEnabled] = useState(
     () => localStorage.getItem("uploadDiarizationEnabled") === "true"
@@ -361,6 +370,17 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
       if (progressRef.current) clearInterval(progressRef.current);
     };
   }, []);
+
+  // Publish whether a download/transcription is in flight so ControlPanel can
+  // warn before a tab switch unmounts this view and discards the job.
+  const setUploadProcessing = useUploadProcessingStore((s) => s.setUploadProcessing);
+  useEffect(() => {
+    // Transcription now runs in a detached store that survives navigation, so
+    // only the foreground URL download (lost on unmount) warrants a tab-switch
+    // warning.
+    setUploadProcessing(state === "downloading");
+  }, [state, setUploadProcessing]);
+  useEffect(() => () => setUploadProcessing(false), [setUploadProcessing]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -593,6 +613,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
   };
 
   const reset = () => {
+    clearUploadJob();
     if (progressRef.current) clearInterval(progressRef.current);
     if (progressCleanupRef.current) progressCleanupRef.current();
     progressCleanupRef.current = null;
@@ -617,12 +638,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
   };
 
   const cancelTranscription = () => {
-    // True backend abort for cloud and local uploads; the run-id bump still
-    // discards any late result from providers that can't be aborted (BYOK).
-    if (activeRequestIdRef.current) {
-      window.electronAPI.cancelUploadTranscription?.(activeRequestIdRef.current);
-      activeRequestIdRef.current = null;
-    }
+    cancelUploadJob();
     runIdRef.current++;
     reset();
   };
@@ -630,121 +646,28 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
     if (!file || batch.isProcessing) return;
     if (!isTranscriptionContextAllowed(usePolicyStore.getState(), getSettings(), "upload")) {
       setError(t("common.managedByOrg"));
+      setState("error");
       return;
     }
     const currentFile = file;
-    const currentTempPath = downloadedTempPath;
-    const runId = ++runIdRef.current;
-    const requestId = crypto.randomUUID();
-    activeRequestIdRef.current = requestId;
+    // Prep (diarization models) can briefly download; show the transcribing UI
+    // during it, then hand the job to the detached store so it survives a tab
+    // switch. The store now owns the temp file's lifecycle.
     setState("transcribing");
     setError(null);
-    setProgress(0);
-    setChunkProgress(null);
-    setDiarizationWarning(false);
-
-    const useChunkProgress = isOpenWhisprCloud && isLargeFile;
-
-    if (useChunkProgress) {
-      progressCleanupRef.current =
-        window.electronAPI.onUploadTranscriptionProgress?.((data) => {
-          if (data.chunksTotal > 0) {
-            setChunkProgress({
-              chunksTotal: data.chunksTotal,
-              chunksCompleted: data.chunksCompleted,
-            });
-            setProgress((data.chunksCompleted / data.chunksTotal) * 90);
-          }
-        }) ?? null;
-    } else {
-      progressRef.current = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            if (progressRef.current) clearInterval(progressRef.current);
-            return prev;
-          }
-          return prev + Math.random() * 6;
-        });
-      }, 500);
-    }
-
-    try {
-      const diarization = await buildDiarizationSettings();
-      const res: FileTranscriptionResult = await transcribeFileWithSpeakers(
-        currentFile.path,
-        buildTranscriptionConfig(),
-        diarization,
-        currentFile.durationSeconds,
-        { requestId, timestamps: true }
-      ).finally(() => {
-        if (activeRequestIdRef.current === requestId) activeRequestIdRef.current = null;
-      });
-
-      if (runId !== runIdRef.current) return;
-
-      if (progressRef.current) clearInterval(progressRef.current);
-      if (progressCleanupRef.current) progressCleanupRef.current();
-      progressCleanupRef.current = null;
-
-      if (res.success && res.text) {
-        setProgress(100);
-        setResult(res.text);
-        setPartialWarning(
-          res.failedChunks && res.totalChunks
-            ? { failed: res.failedChunks, total: res.totalChunks }
-            : null
-        );
-        setDiarizationWarning(!!res.diarizationWarning);
-
-        let title: string;
-        if (currentFile.fromUrl) {
-          title = currentFile.name;
-        } else {
-          const aiTitle = await generateTitle(res.text);
-          if (runId !== runIdRef.current) return;
-          title = aiTitle || uploadTitleFallback(res.text, currentFile.name);
-        }
-
-        const noteRes = await saveUploadNote({
-          title,
-          text: res.text,
-          sourceName: currentFile.name,
-          folderId: selectedFolderId ? Number(selectedFolderId) : null,
-          diarization,
-          durationSeconds: res.durationSeconds,
-          segments: res.segments,
-        });
-        if (runId !== runIdRef.current) return;
-        if (noteRes.success && noteRes.note) setNoteId(noteRes.note.id);
-        if (currentTempPath) {
-          window.electronAPI.deleteTempFile(currentTempPath);
-          setDownloadedTempPath(null);
-        }
-        setState("complete");
-      } else {
-        setProgress(0);
-        const errorKey = transcriptionErrorKey(res);
-        setError(
-          errorKey
-            ? t(`notes.upload.${errorKey}`)
-            : res.error || t("notes.upload.transcriptionFailed")
-        );
-        setState("error");
-      }
-    } catch (err) {
-      if (runId !== runIdRef.current) return;
-      if (progressRef.current) clearInterval(progressRef.current);
-      if (progressCleanupRef.current) progressCleanupRef.current();
-      progressCleanupRef.current = null;
-      setProgress(0);
-      const errorKey = transcriptionErrorKey(err);
-      if (errorKey) {
-        setError(t(`notes.upload.${errorKey}`));
-      } else {
-        setError(err instanceof Error ? err.message : t("notes.upload.errorOccurred"));
-      }
-      setState("error");
-    }
+    const diarization = await buildDiarizationSettings();
+    startUploadJob({
+      filePath: currentFile.path,
+      fileName: currentFile.name,
+      fromUrl: !!currentFile.fromUrl,
+      durationSeconds: currentFile.durationSeconds ?? null,
+      tempPath: downloadedTempPath,
+      transcription: buildTranscriptionConfig(),
+      diarization,
+      folderId: selectedFolderId ? Number(selectedFolderId) : null,
+      generateTitle: async (text) => (await generateTitle(text)) || null,
+    });
+    setDownloadedTempPath(null);
   };
 
   const handleUrlSubmit = async () => {
@@ -863,7 +786,8 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
   };
 
   const startBatchProcessing = async () => {
-    if (state === "downloading" || state === "transcribing") return;
+    if (state === "downloading" || state === "transcribing" || job?.status === "transcribing")
+      return;
     if (!isTranscriptionContextAllowed(usePolicyStore.getState(), getSettings(), "upload")) {
       setBatchUrlNotice(t("common.managedByOrg"));
       return;
@@ -926,6 +850,28 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
     return t("notes.upload.transcribingProvider", { provider: cloudTranscriptionProvider });
   };
 
+  // The detached job, when present, drives the transcribing/complete/error
+  // phases; local state still owns idle/selected/downloading.
+  const effectiveState: UploadState = job
+    ? job.status === "complete"
+      ? "complete"
+      : job.status === "error"
+        ? "error"
+        : "transcribing"
+    : state;
+  const displayProgress = job ? job.progress : progress;
+  const displayChunkProgress = job ? job.chunkProgress : chunkProgress;
+  const displayEtaSeconds = useLiveEta(job ? job.etaSeconds : null);
+  const displayResult = job ? job.result : result;
+  const displayNoteId = job ? job.noteId : noteId;
+  const displayPartialWarning = job ? job.partialWarning : partialWarning;
+  const displayDiarizationWarning = job ? job.diarizationWarning : diarizationWarning;
+  const displayError = job
+    ? job.error?.key
+      ? t(`notes.upload.${job.error.key}`)
+      : job.error?.message || t("notes.upload.transcriptionFailed")
+    : error;
+
   return (
     <div className="flex flex-col items-center h-full overflow-y-auto px-6">
       <div
@@ -933,11 +879,11 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
         style={{ animation: "float-up 0.4s ease-out" }}
       >
         <div className="max-w-[320px] mx-auto">
-          {state === "idle" && providerReady === false && (
+          {effectiveState === "idle" && providerReady === false && (
             <NoProviderView t={t} onOpenSettings={() => onOpenSettings?.("uploadTranscription")} />
           )}
 
-          {state === "idle" && providerReady !== false && (
+          {effectiveState === "idle" && providerReady !== false && (
             <>
               <IdleView
                 t={t}
@@ -951,7 +897,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
 
               <div className="flex items-center gap-3 my-3">
                 <div className="h-px flex-1 bg-foreground/5 dark:bg-white/5" />
-                <span className="text-[10px] text-foreground/20 uppercase tracking-wider">
+                <span className="font-brand text-[10px] text-foreground/25 uppercase tracking-[0.14em]">
                   {t("notes.upload.orDivider")}
                 </span>
                 <div className="h-px flex-1 bg-foreground/5 dark:bg-white/5" />
@@ -1095,8 +1041,8 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
                       onClick={startBatchProcessing}
                       disabled={
                         !uploadAllowedByPolicy ||
-                        state === "downloading" ||
-                        state === "transcribing"
+                        effectiveState === "downloading" ||
+                        effectiveState === "transcribing"
                       }
                       className="h-8 text-xs px-5"
                     >
@@ -1108,7 +1054,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
             </div>
           )}
 
-          {state === "selected" && file && (
+          {effectiveState === "selected" && file && (
             <SelectedView
               t={t}
               file={file}
@@ -1131,7 +1077,7 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
             />
           )}
 
-          {state === "downloading" && downloadProgress && (
+          {effectiveState === "downloading" && downloadProgress && (
             <div
               className="flex flex-col items-center"
               style={{ animation: "float-up 0.3s ease-out" }}
@@ -1191,38 +1137,39 @@ export default function UploadAudioView({ onNoteCreated, onOpenSettings }: Uploa
             </div>
           )}
 
-          {state === "transcribing" && (
+          {effectiveState === "transcribing" && (
             <TranscribingView
               t={t}
-              progress={progress}
+              progress={displayProgress}
               getTranscribingLabel={getTranscribingLabel}
               file={file}
-              chunkProgress={chunkProgress}
+              chunkProgress={displayChunkProgress}
+              etaSeconds={displayEtaSeconds}
               onCancel={cancelTranscription}
             />
           )}
 
-          {state === "complete" && result && (
+          {effectiveState === "complete" && displayResult && (
             <CompleteView
               t={t}
-              result={result}
-              partialWarning={partialWarning}
-              diarizationWarning={diarizationWarning}
+              result={displayResult}
+              partialWarning={displayPartialWarning}
+              diarizationWarning={displayDiarizationWarning}
               folders={folders}
               selectedFolderId={selectedFolderId}
               handleFolderChange={handleFolderChange}
-              noteId={noteId}
+              noteId={displayNoteId}
               onNoteCreated={onNoteCreated}
               reset={reset}
             />
           )}
 
-          {state === "error" && error && (
-            <ErrorView t={t} error={error} reset={reset} onRetry={handleRetry} />
+          {effectiveState === "error" && displayError && (
+            <ErrorView t={t} error={displayError} reset={reset} onRetry={handleRetry} />
           )}
         </div>
 
-        {(state === "idle" || state === "selected") && (
+        {(effectiveState === "idle" || effectiveState === "selected") && (
           <div className="max-w-[320px] mx-auto mt-4">
             <div className="flex items-center justify-between">
               <div>
@@ -1503,10 +1450,10 @@ function IdleView({
         onClick={handleBrowse}
         onKeyDown={handleKeyDown}
         className={cn(
-          "relative rounded-lg p-8 text-center cursor-pointer transition-[background-color,border-color,transform] duration-300 group",
-          "bg-surface-1/40 dark:bg-white/[0.03] backdrop-blur-sm",
+          "gloss-convex relative rounded-2xl p-8 text-center cursor-pointer transition-[background-color,border-color,transform,box-shadow] duration-300 group",
+          "bg-surface-1/60 dark:bg-white/[0.03] backdrop-blur-sm shadow-[var(--shadow-card)]",
           "border border-foreground/6 dark:border-white/6",
-          "hover:bg-surface-1/60 dark:hover:bg-white/[0.05] hover:border-foreground/12 dark:hover:border-white/10",
+          "hover:bg-surface-1/80 dark:hover:bg-white/[0.05] hover:border-foreground/12 dark:hover:border-white/10 hover:shadow-[var(--shadow-card-hover)]",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
           isDragOver && "border-primary/30 bg-primary/[0.04] dark:bg-primary/[0.06] scale-[1.01]"
         )}
@@ -1730,6 +1677,7 @@ interface TranscribingViewProps {
   getTranscribingLabel: () => string;
   file: { name: string; path: string; size: string; sizeBytes: number } | null;
   chunkProgress: { chunksTotal: number; chunksCompleted: number } | null;
+  etaSeconds: number | null;
   onCancel: () => void;
 }
 
@@ -1739,6 +1687,7 @@ function TranscribingView({
   getTranscribingLabel,
   file,
   chunkProgress,
+  etaSeconds,
   onCancel,
 }: TranscribingViewProps) {
   const hasChunkInfo = chunkProgress !== null && chunkProgress.chunksTotal > 0;
@@ -1767,6 +1716,11 @@ function TranscribingView({
       </div>
 
       <p className="text-xs text-foreground/50 font-medium">{getTranscribingLabel()}</p>
+      {etaSeconds !== null ? (
+        <p className="text-xs text-primary/60 mt-1 font-medium">
+          {formatEtaLabel(t, etaSeconds)}
+        </p>
+      ) : null}
       {hasChunkInfo ? (
         <p className="text-xs text-foreground/20 mt-1">
           {t("notes.upload.chunkProgress", {
@@ -1827,7 +1781,7 @@ function FolderSelect({
                 <span className="flex items-center gap-1.5">
                   {f.name}
                   {isMeetings && (
-                    <span className="text-[8px] uppercase tracking-wider text-foreground/25 font-medium">
+                    <span className="font-brand text-[8px] uppercase tracking-[0.14em] text-foreground/30 font-bold">
                       {t("notes.folders.soon")}
                     </span>
                   )}

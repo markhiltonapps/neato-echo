@@ -56,9 +56,16 @@ class ParakeetServerManager {
     const modelDir = path.join(this.getModelsDir(), modelName);
     if (!fs.existsSync(modelDir)) return false;
 
-    return getRequiredModelFiles(modelName).every((file) =>
-      fs.existsSync(path.join(modelDir, file))
-    );
+    // An empty required file is a failed or interrupted install, not a model:
+    // treating it as installed makes every transcription fail later instead
+    // of offering the download again.
+    return getRequiredModelFiles(modelName).every((file) => {
+      try {
+        return fs.statSync(path.join(modelDir, file)).size > 0;
+      } catch {
+        return false;
+      }
+    });
   }
 
   async _ensureWav(audioBuffer) {
@@ -101,7 +108,7 @@ class ParakeetServerManager {
   async transcribe(audioBuffer, options = {}) {
     // signal is optional; only cancellable uploads pass one. Aborting stops
     // scheduling further segments — the in-flight one finishes server-side.
-    const { modelName = "parakeet-tdt-0.6b-v3", language, signal } = options;
+    const { modelName = "parakeet-tdt-0.6b-v3", language, signal, onProgress } = options;
     const throwIfAborted = () => {
       if (signal?.aborted) throw createAbortError("Parakeet transcription cancelled");
     };
@@ -164,14 +171,19 @@ class ParakeetServerManager {
         return { ...retry, elapsed: (result.elapsed || 0) + (retry.elapsed || 0) };
       }
 
+      const segmentsTotal = Math.ceil(samples.length / maxSegmentBytes);
       debugLogger.debug("Parakeet segmenting long audio", {
         durationSeconds,
-        segmentCount: Math.ceil(samples.length / maxSegmentBytes),
+        segmentCount: segmentsTotal,
       });
 
       const texts = [];
       let totalElapsed = 0;
       let truncated = false;
+      let segmentsCompleted = 0;
+      // Real progress for long uploads: report before the first segment so the
+      // UI can show 0 / N and a bar immediately, then after each one decodes.
+      onProgress?.({ chunksTotal: segmentsTotal, chunksCompleted: 0 });
 
       for (let offset = 0; offset < samples.length; offset += maxSegmentBytes) {
         throwIfAborted();
@@ -199,6 +211,8 @@ class ParakeetServerManager {
         // Latched after the retry so a discarded attempt's truncation dies with it.
         if (result.truncated) truncated = true;
         if (result.text) texts.push(result.text);
+        segmentsCompleted += 1;
+        onProgress?.({ chunksTotal: segmentsTotal, chunksCompleted: segmentsCompleted });
       }
 
       const text = texts.join(" ");

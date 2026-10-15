@@ -44,6 +44,7 @@ import { getValidatedAuthGeneration } from "../lib/authRequestContext";
 import { useBillingPortal } from "../hooks/useBillingPortal";
 import MicPermissionWarning from "./ui/MicPermissionWarning";
 import MicrophoneSettings from "./ui/MicrophoneSettings";
+import NeatoCloudSettings from "./NeatoCloudSettings";
 import PermissionCard from "./ui/PermissionCard";
 import PasteToolsInfo from "./ui/PasteToolsInfo";
 import NixOsPasteInfo from "./ui/NixOsPasteInfo";
@@ -150,6 +151,7 @@ import ProfileSection from "./settings/ProfileSection";
 import { formatAmount } from "../utils/formatAmount";
 import { getTranscriptionProvider } from "../models/ModelRegistry";
 import { supportsLiveTranscriptionPreview } from "../utils/transcriptionPreview";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 
 export type SettingsSectionType =
   | "account"
@@ -160,6 +162,7 @@ export type SettingsSectionType =
   | "speechToText"
   | "llms"
   | "privacyData"
+  | "neatoCloud"
   | "system";
 
 interface SettingsPageProps {
@@ -198,7 +201,7 @@ function SettingsPanel({
 }) {
   return (
     <div
-      className={`rounded-lg border border-border/50 dark:border-border-subtle/70 bg-card/50 dark:bg-surface-2/50 backdrop-blur-sm divide-y divide-border/30 dark:divide-border-subtle/50 ${className}`}
+      className={`rounded-xl border border-border/50 dark:border-border-subtle/70 bg-card/60 dark:bg-surface-2/50 backdrop-blur-sm shadow-[var(--shadow-card)] divide-y divide-border/30 dark:divide-border-subtle/50 ${className}`}
     >
       {children}
     </div>
@@ -506,6 +509,8 @@ interface TranscriptionSectionProps {
   setRemoteTranscriptionModel: (model: string) => void;
   showTranscriptionPreview: boolean;
   setShowTranscriptionPreview: (value: boolean) => void;
+  polishLivePreview: boolean;
+  setPolishLivePreview: (value: boolean) => void;
   toast: (opts: {
     title: string;
     description: string;
@@ -544,6 +549,8 @@ function TranscriptionSection({
   setRemoteTranscriptionModel,
   showTranscriptionPreview,
   setShowTranscriptionPreview,
+  polishLivePreview,
+  setPolishLivePreview,
   toast,
 }: TranscriptionSectionProps) {
   const { t } = useTranslation();
@@ -644,6 +651,16 @@ function TranscriptionSection({
           <Toggle checked={showTranscriptionPreview} onChange={setShowTranscriptionPreview} />
         </SettingsRow>
       </SettingsPanelRow>
+      {showTranscriptionPreview && (
+        <SettingsPanelRow>
+          <SettingsRow
+            label={t("settingsPage.transcription.polishLivePreview")}
+            description={t("settingsPage.transcription.polishLivePreviewDescription")}
+          >
+            <Toggle checked={polishLivePreview} onChange={setPolishLivePreview} />
+          </SettingsRow>
+        </SettingsPanelRow>
+      )}
     </SettingsPanel>
   );
 
@@ -1127,6 +1144,8 @@ export default function SettingsPage({
     setPauseMediaOnDictation,
     showTranscriptionPreview,
     setShowTranscriptionPreview,
+    polishLivePreview,
+    setPolishLivePreview,
     autoPasteEnabled,
     setAutoPasteEnabled,
     keepTranscriptionInClipboard,
@@ -1482,16 +1501,31 @@ export default function SettingsPage({
   const readAutoStartState = useCallback(async () => {
     if (!window.electronAPI?.getAutoStartEnabled) return;
     try {
-      const state = await window.electronAPI.getAutoStartEnabled();
-      setAutoStartEnabled(state.enabled);
-      setAutoStartNeedsApproval(state.requiresApproval);
+      // A read that never settles must not leave the toggle locked forever;
+      // after the timeout the control is usable and the write reconciles it.
+      const state = await Promise.race([
+        window.electronAPI.getAutoStartEnabled(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ]);
+      if (!state) {
+        logger.warn("Auto-start status read timed out", {}, "settings");
+        return;
+      }
+      setAutoStartEnabled(Boolean(state.enabled));
+      setAutoStartNeedsApproval(Boolean(state.requiresApproval));
     } catch (error) {
       logger.error("Failed to get auto-start status", error, "settings");
     }
   }, []);
 
   useEffect(() => {
-    readAutoStartState().finally(() => setAutoStartLoading(false));
+    let cancelled = false;
+    readAutoStartState().finally(() => {
+      if (!cancelled) setAutoStartLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [readAutoStartState]);
 
   useEffect(() => {
@@ -1503,18 +1537,29 @@ export default function SettingsPage({
     });
   }, [notificationsEnabled, notifyMeetingDetection, notifyCalendarReminders, notifyUpdates]);
 
+  const autoRecordMeetings = useSettingsStore((s) => s.autoRecordMeetings);
+  const setAutoRecordMeetings = useSettingsStore((s) => s.setAutoRecordMeetings);
+
   const handleAutoStartChange = async (enabled: boolean) => {
     if (!window.electronAPI?.setAutoStartEnabled) return;
+    // Optimistic: the switch moves on click; the read-back below corrects it if
+    // the OS disagrees (Windows can have the item disabled out from under us,
+    // macOS can need approval first).
+    setAutoStartEnabled(enabled);
     try {
-      setAutoStartLoading(true);
-      const result = await window.electronAPI.setAutoStartEnabled(enabled);
-      // Read the state back rather than assuming: on Windows the OS can have the
-      // item disabled out from under us, and on macOS it can need approval first.
-      if (result.success) await readAutoStartState();
+      const result = await Promise.race([
+        window.electronAPI.setAutoStartEnabled(enabled),
+        new Promise<{ success: boolean }>((resolve) =>
+          setTimeout(() => resolve({ success: false }), 4000)
+        ),
+      ]);
+      if (!result?.success) {
+        logger.warn("Auto-start write did not confirm", { enabled }, "settings");
+      }
+      await readAutoStartState();
     } catch (error) {
       logger.error("Failed to set auto-start", error, "settings");
-    } finally {
-      setAutoStartLoading(false);
+      await readAutoStartState();
     }
   };
 
@@ -2012,6 +2057,8 @@ export default function SettingsPage({
 
   const renderSectionContent = () => {
     switch (activeSection) {
+      case "neatoCloud":
+        return <NeatoCloudSettings />;
       case "account":
         return (
           <div className="space-y-5">
@@ -2421,7 +2468,7 @@ export default function SettingsPage({
                           feature.startsWith("## ") ? (
                             <li
                               key={i}
-                              className={`text-[8px] font-semibold uppercase tracking-wide text-muted-foreground/60 ${i > 0 ? "pt-1.5" : ""}`}
+                              className={`font-brand text-[8px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60 ${i > 0 ? "pt-1.5" : ""}`}
                             >
                               {feature.slice(3)}
                             </li>
@@ -2674,7 +2721,7 @@ export default function SettingsPage({
                           >
                             <Check
                               size={9}
-                              className="mt-[2px] text-purple-500 dark:text-purple-400 shrink-0"
+                              className="mt-[2px] text-primary shrink-0"
                             />
                             {feature}
                           </li>
@@ -3010,6 +3057,21 @@ export default function SettingsPage({
                       onChange={setNotifyUpdates}
                       disabled={!notificationsEnabled}
                     />
+                  </SettingsRow>
+                </SettingsPanelRow>
+              </SettingsPanel>
+            </div>
+
+            {/* Meetings */}
+            <div>
+              <SectionHeader title={t("settings.meeting.sectionTitle")} />
+              <SettingsPanel>
+                <SettingsPanelRow>
+                  <SettingsRow
+                    label={t("settings.meeting.autoRecord.title")}
+                    description={t("settings.meeting.autoRecord.description")}
+                  >
+                    <Toggle checked={autoRecordMeetings} onChange={setAutoRecordMeetings} />
                   </SettingsRow>
                 </SettingsPanelRow>
               </SettingsPanel>
@@ -3522,7 +3584,7 @@ export default function SettingsPage({
                           }),
                           desc: t("settingsPage.general.waylandPaste.guide.group.step2Desc", {
                             defaultValue:
-                              "Group changes only take effect after a new login session. Log out of your desktop and log back in, then reopen OpenWhispr.",
+                              "Group changes only take effect after a new login session. Log out of your desktop and log back in, then reopen Neato Echo.",
                           }),
                         },
                       ],
@@ -4079,38 +4141,43 @@ EOF`,
               )}
 
               <SettingsPanel>
-                <SettingsPanelRow>
-                  <SettingsRow
-                    label={t("settingsPage.privacy.insightsSync")}
-                    description={
-                      !isSignedIn
-                        ? t("settingsPage.privacy.insightsSyncRequiresAccount")
-                        : !insightsSyncAllowedByPolicy
-                          ? t("common.managedByOrg")
-                          : effectiveDataRetentionEnabled
-                            ? t("settingsPage.privacy.insightsSyncDescription")
-                            : t("settingsPage.privacy.insightsSyncRequiresHistory")
-                    }
-                  >
-                    {/* With history off nothing is counted anywhere: this
+                {/* Insights sync needs an account to sync to. The local-first
+                    edition has no accounts, so the row can never be enabled —
+                    hide it rather than show a permanently greyed toggle. */}
+                {ACCOUNTS_ENABLED && (
+                  <SettingsPanelRow>
+                    <SettingsRow
+                      label={t("settingsPage.privacy.insightsSync")}
+                      description={
+                        !isSignedIn
+                          ? t("settingsPage.privacy.insightsSyncRequiresAccount")
+                          : !insightsSyncAllowedByPolicy
+                            ? t("common.managedByOrg")
+                            : effectiveDataRetentionEnabled
+                              ? t("settingsPage.privacy.insightsSyncDescription")
+                              : t("settingsPage.privacy.insightsSyncRequiresHistory")
+                      }
+                    >
+                      {/* With history off nothing is counted anywhere: this
                         device records no counter, and the cloud writes none
                         either, because analyticsSyncEnabled withholds the
                         localDate its analytics write requires. Turning this on
                         could therefore only promise a sync that never happens —
                         but an already-on toggle must stay switchable off. */}
-                    <Toggle
-                      checked={insightsSyncEnabled}
-                      disabled={
-                        !isSignedIn ||
-                        !canToggleInsightsSync ||
-                        (!effectiveDataRetentionEnabled && !insightsSyncEnabled)
-                      }
-                      onChange={(enabled) =>
-                        enabled ? enableInsightsSync() : setInsightsSyncEnabled(false)
-                      }
-                    />
-                  </SettingsRow>
-                </SettingsPanelRow>
+                      <Toggle
+                        checked={insightsSyncEnabled}
+                        disabled={
+                          !isSignedIn ||
+                          !canToggleInsightsSync ||
+                          (!effectiveDataRetentionEnabled && !insightsSyncEnabled)
+                        }
+                        onChange={(enabled) =>
+                          enabled ? enableInsightsSync() : setInsightsSyncEnabled(false)
+                        }
+                      />
+                    </SettingsRow>
+                  </SettingsPanelRow>
+                )}
                 <SettingsPanelRow>
                   <SettingsRow
                     label={t("settingsPage.privacy.usageAnalytics")}
@@ -4501,7 +4568,7 @@ EOF`,
 
                   {updateInfo?.releaseNotes && (
                     <div className="mt-4 pt-4 border-t border-border/30">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      <p className="font-brand text-[11px] font-bold text-muted-foreground uppercase tracking-[0.14em] mb-2">
                         {t("settingsPage.general.updates.whatsNew", {
                           version: updateInfo.version,
                         })}
@@ -4717,6 +4784,8 @@ EOF`,
                   setRemoteTranscriptionModel={setRemoteTranscriptionModel}
                   showTranscriptionPreview={showTranscriptionPreview}
                   setShowTranscriptionPreview={setShowTranscriptionPreview}
+                  polishLivePreview={polishLivePreview}
+                  setPolishLivePreview={setPolishLivePreview}
                   toast={toast}
                 />
                 {transcriptionMode === "local" &&

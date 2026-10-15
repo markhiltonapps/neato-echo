@@ -92,7 +92,7 @@ export default function NoteParticipants({ noteId, participants }: NoteParticipa
 
   const chipLabel =
     localParticipants.length > 0
-      ? `${localParticipants.length} ${localParticipants.length === 1 ? t("notes.participants.attendee", "attendee") : t("notes.participants.attendees", "attendees")}`
+      ? t("notes.participants.count", { count: localParticipants.length })
       : t("notes.participants.addAttendees", "Add attendees");
 
   return (

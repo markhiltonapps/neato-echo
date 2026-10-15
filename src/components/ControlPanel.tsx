@@ -1,5 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "./ui/button";
 import {
@@ -56,6 +57,7 @@ import {
 import ControlPanelSidebar, { type ControlPanelView } from "./ControlPanelSidebar";
 import MeetingRecordingMount from "./MeetingRecordingMount";
 import MeetingRecordingPill from "./notes/MeetingRecordingPill";
+import MeetingSystemAudioWarningBanner from "./notes/MeetingSystemAudioWarningBanner";
 import WindowControls from "./WindowControls";
 
 import { getCachedPlatform } from "../utils/platform";
@@ -69,6 +71,8 @@ import {
   initializeNotes,
 } from "../stores/noteStore";
 import { fetchProviders as fetchStreamingProviders } from "../stores/streamingProvidersStore";
+import { useUploadProcessingStore } from "../stores/uploadProcessingStore";
+import { useLocalSummaryModelMigration } from "../hooks/useLocalSummaryModelMigration";
 import {
   executeTranslationChain,
   hasTextContent,
@@ -78,6 +82,7 @@ import { applyChineseScript, resolveChineseScriptTarget } from "../utils/chinese
 import HistoryView from "./HistoryView";
 import BackgroundActionToastListener from "./notes/BackgroundActionToastListener";
 import SpaceSyncToastListener from "./notes/SpaceSyncToastListener";
+import ActivityIndicatorStack from "./notes/ActivityIndicatorStack";
 import { syncService } from "../services/SyncService.js";
 import logger from "../utils/logger";
 import AcceptInvitationModal from "./AcceptInvitationModal";
@@ -146,6 +151,45 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     hidePeek: hideSidebarPeek,
     leaveToggle: leaveSidebarToggle,
   } = useCollapsibleSidebar();
+  // Drag-resizable app rail. Width persists per-user; clamped so the nav labels
+  // never truncate (min) and the rail never eats the workspace (max).
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem("sidebarWidth") || "", 10);
+      return Number.isFinite(v) ? Math.min(360, Math.max(168, v)) : SIDEBAR_WIDTH_PX;
+    } catch {
+      return SIDEBAR_WIDTH_PX;
+    }
+  });
+  const startSidebarResize = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = sidebarWidth;
+      const onMove = (ev: PointerEvent) => {
+        setSidebarWidth(Math.min(360, Math.max(168, startW + (ev.clientX - startX))));
+      };
+      const onUp = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        setSidebarWidth((w) => {
+          try {
+            localStorage.setItem("sidebarWidth", String(w));
+          } catch {
+            /* private mode / blocked storage — width stays for this session only */
+          }
+          return w;
+        });
+      };
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [sidebarWidth]
+  );
   const isMeetingMode = useIsMeetingMode();
   const isNarrowWindow = useIsNarrowWindow();
   const activeNoteId = useActiveNoteId();
@@ -184,6 +228,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
 
   const {
     status: updateStatus,
+    info: updateInfo,
     downloadProgress,
     isDownloading,
     isInstalling,
@@ -234,6 +279,28 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     hideConfirmDialog,
     hideAlertDialog,
   } = useDialogs();
+
+  // Leaving the Upload tab mid-download/transcription unmounts it and discards
+  // the job, so warn first. Confirming still proceeds (and cancels the job);
+  // this just stops it happening by accident.
+  const uploadProcessing = useUploadProcessingStore((s) => s.isProcessing);
+  // One-time: move upgraders off the old local 4B default onto the faster 2B.
+  useLocalSummaryModelMigration();
+  const handleViewChange = useCallback(
+    (view: ControlPanelView) => {
+      if (view !== activeView && activeView === "upload" && uploadProcessing) {
+        showConfirmDialog({
+          title: t("notes.upload.leaveWhileProcessing.title"),
+          description: t("notes.upload.leaveWhileProcessing.description"),
+          onConfirm: () => setActiveView(view),
+          variant: "destructive",
+        });
+        return;
+      }
+      setActiveView(view);
+    },
+    [activeView, uploadProcessing, showConfirmDialog, t]
+  );
 
   const loadTranscriptions = useCallback(
     async (includeDiscarded?: boolean) => {
@@ -311,20 +378,46 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // When an update has finished downloading (auto-download runs in the background), prompt
+  // to install with a prominent modal — not just a toast, which users missed and left them
+  // stranded on old builds. Shown once per session; reappears next launch while pending.
+  // Installing on quit still happens automatically regardless (autoInstallOnAppQuit).
   useEffect(() => {
-    if (updateStatus.updateDownloaded && !isDownloading) {
+    if (updateStatus.isDevelopment) return;
+    if (updateStatus.updateDownloaded && !isDownloading && !isInstalling) {
       if (!updateReadyToastShown.current) {
         updateReadyToastShown.current = true;
-        toast({
+        showConfirmDialog({
           title: t("controlPanel.update.readyTitle"),
-          description: t("controlPanel.update.readyDescription"),
-          variant: "success",
+          description: t("controlPanel.update.installDescription"),
+          confirmText: t("controlPanel.update.installButton"),
+          cancelText: t("controlPanel.update.later"),
+          onConfirm: async () => {
+            try {
+              await installUpdate();
+            } catch {
+              toast({
+                title: t("controlPanel.update.couldNotInstallTitle"),
+                description: t("controlPanel.update.couldNotInstallDescription"),
+                variant: "destructive",
+              });
+            }
+          },
         });
       }
     } else {
       updateReadyToastShown.current = false;
     }
-  }, [updateStatus.updateDownloaded, isDownloading, toast, t]);
+  }, [
+    updateStatus.updateDownloaded,
+    updateStatus.isDevelopment,
+    isDownloading,
+    isInstalling,
+    showConfirmDialog,
+    installUpdate,
+    toast,
+    t,
+  ]);
 
   useEffect(() => {
     if (updateError && updateError !== updateErrorToastShown.current) {
@@ -874,6 +967,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
           setActiveNoteId(recordingNoteId);
         }}
       />
+      <MeetingSystemAudioWarningBanner />
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={hideConfirmDialog}
@@ -966,8 +1060,20 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
       <div className="flex flex-1 overflow-hidden relative">
         <div
           className="shrink-0 transition-[width] duration-300 ease-out"
-          style={{ width: sidebarCollapsed || isSidePanelLayout ? 0 : SIDEBAR_WIDTH_PX }}
+          style={{ width: sidebarCollapsed || isSidePanelLayout ? 0 : sidebarWidth }}
         />
+        {!sidebarCollapsed && !isSidePanelLayout && (
+          <div
+            onPointerDown={startSidebarResize}
+            className="group absolute inset-y-0 z-40 w-2 -translate-x-1/2 cursor-col-resize"
+            style={{ left: sidebarWidth }}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t("sidebar.resize", "Resize sidebar")}
+          >
+            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors duration-150 group-hover:bg-brand-teal/50" />
+          </div>
+        )}
         <div
           className={`absolute inset-y-0 left-0 z-30 transition-transform duration-300 ease-out${
             sidebarCollapsed && sidebarPeek && !isSidePanelLayout
@@ -975,6 +1081,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               : ""
           }`}
           style={{
+            width: sidebarWidth,
             transform:
               !isSidePanelLayout && (!sidebarCollapsed || sidebarPeek)
                 ? "translateX(0)"
@@ -985,7 +1092,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
         >
           <ControlPanelSidebar
             activeView={activeView}
-            onViewChange={setActiveView}
+            onViewChange={handleViewChange}
             onOpenSearch={() => setShowSearch(true)}
             onOpenSettings={() => {
               setSettingsSection(undefined);
@@ -1002,7 +1109,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
             userImage={user?.image}
             isSignedIn={isSignedIn}
             authLoaded={authLoaded}
-            upsell={upsell}
+            upsell={ACCOUNTS_ENABLED ? upsell : "hide"}
             updateAction={
               !updateStatus.isDevelopment &&
               (updateStatus.updateAvailable ||
@@ -1050,7 +1157,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               </div>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto pt-1">
+          <div className="canvas-glow flex-1 overflow-y-auto pt-1">
             {updateRequiredByOrg && (
               <div className="max-w-3xl mx-auto w-full mb-3">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-3">
@@ -1073,6 +1180,45 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               </div>
             )}
             <RequiredModelsBanner />
+            {activeView === "home" &&
+              !updateStatus.isDevelopment &&
+              (updateStatus.updateAvailable ||
+                updateStatus.updateDownloaded ||
+                isDownloading ||
+                isInstalling) && (
+                <div className="max-w-3xl mx-auto w-full mb-3">
+                  <div className="rounded-lg border border-primary/20 dark:border-primary/15 bg-primary/5 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 w-8 h-8 rounded-md bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
+                        <RefreshCw size={16} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground mb-0.5">
+                          {updateStatus.updateDownloaded
+                            ? t("controlPanel.update.readyTitle")
+                            : t("controlPanel.update.availableTitle")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {updateStatus.updateDownloaded
+                            ? t("controlPanel.update.readyDescription")
+                            : t("controlPanel.update.availableBannerDescription", {
+                                version: updateInfo?.version ?? "",
+                              })}
+                        </p>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5"
+                          onClick={handleUpdateClick}
+                          disabled={isInstalling || isDownloading}
+                        >
+                          {getUpdateButtonContent()}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             {usage?.isPastDue && activeView === "home" && (
               <div className="max-w-3xl mx-auto w-full mb-3">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-3">
@@ -1260,6 +1406,15 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
       </div>
       <BackgroundActionToastListener />
       <SpaceSyncToastListener />
+      <ActivityIndicatorStack
+        suppressTranscription={activeView === "upload"}
+        viewingNoteId={activeView === "personal-notes" ? activeNoteId : null}
+        onOpenNote={(noteId, folderId) => {
+          setActiveNoteId(noteId);
+          if (folderId) setActiveFolderId(folderId);
+          setActiveView("personal-notes");
+        }}
+      />
     </div>
   );
 }

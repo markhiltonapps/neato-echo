@@ -24,25 +24,31 @@ export function getWordBoost(customDictionary?: string[]): string[] {
   return customDictionary.filter((w) => w.trim());
 }
 
+// Kept deliberately terse: this whole block rides in the system prompt and is
+// re-processed on every turn (and every tool round). On a local model that
+// prompt-processing time is the bulk of the latency, so brevity here is speed.
+// Trim wording, not the correctness-critical directives (calendar verbatim
+// times, availability facts are authoritative).
 const TOOL_INSTRUCTIONS: Record<string, string> = {
-  search_notes:
-    "Use search_notes to find information from the user's past meetings, discussions, or personal notes before answering from memory.",
+  search_notes: "Search the user's past notes and meetings before answering from memory.",
+  list_recorded_meetings:
+    "The user's own RECORDED meetings — past calls they captured in this app, with transcripts and summaries. Use ONLY for recorded/past meetings, e.g. 'summarize the meetings I recorded yesterday', 'recap last week's calls'. Do NOT use it for the user's calendar or schedule (upcoming/scheduled meetings) — that is get_calendar_events. Convert phrasing to start/end YYYY-MM-DD in local time (same date twice for one day) using the current date below; prefer each meeting's saved summary, else its transcript excerpt.",
   get_note:
-    "Use get_note to fetch the full content of a specific note by ID. If the current note's ID is provided in the context, use it directly. Otherwise, use search_notes first to find the note ID.",
+    "Fetch a note's full content by ID — use the current note's ID from context if given, else search_notes first.",
   create_note:
-    "Use create_note when the user asks you to create, write, or draft a new note. Whenever the note will go into a folder, call list_folders first and reuse an existing folder whose name is a reasonable fit for the note's topic (e.g. a new story belongs in an existing 'Stories' folder) — do this even when the user didn't name a folder but the content clearly fits one. Only pass a new folder name when nothing existing fits. Be tolerant of case, plurals, and typos.",
+    "Create a note when asked to write or draft one. If it belongs in a folder, call list_folders first and reuse a fitting existing folder (tolerant of case/plurals/typos); only name a new folder when none fits.",
   update_note:
-    "Use update_note to modify an existing note's title, content, or move it to a different folder. If the current note's ID is provided in the context, use it directly. Otherwise, use search_notes first to find the note ID. When moving to a folder, call list_folders first and reuse an existing folder whose name fits the note's topic; only create a new folder when nothing existing fits.",
+    "Modify an existing note's title, content, or folder — use the current note's ID from context if given, else search_notes first. When moving to a folder, reuse a fitting one via list_folders.",
+  move_note:
+    "Move a note or recording into a folder when the user asks to (e.g. 'move the Ali Zahir recording into Developers'). Find the note with search_notes if its ID isn't in context, call list_folders to reuse a fitting existing folder, and only name a new folder when none fits (it's auto-created).",
   list_folders:
-    "Use list_folders before create_note or update_note whenever a note is going into a folder, so you can reuse an existing folder whose name fits the note's topic instead of creating a near-duplicate.",
-  web_search:
-    "Use web_search for questions about current events, facts you're unsure about, or anything requiring up-to-date information.",
-  copy_to_clipboard:
-    "Use copy_to_clipboard when the user asks you to copy something to their clipboard.",
+    "List folders before create_note/update_note so you reuse a fitting folder instead of duplicating one.",
+  web_search: "Use for current events or facts you're unsure of.",
+  copy_to_clipboard: "Use when asked to copy something to the clipboard.",
   get_calendar_events:
-    "Use get_calendar_events to check the user's schedule, upcoming meetings, or calendar events.",
+    "The user's CALENDAR / SCHEDULE — upcoming and scheduled meetings and events. ALWAYS use this (never list_recorded_meetings) for any question about what is on the schedule: 'what meetings do I have today/tomorrow/this week', \"what's on my calendar\", 'my next meeting'. Each event has startLocal/endLocal already converted to local time (DST-correct) — quote those verbatim; never recompute times from the raw start/end fields.",
   get_calendar_availability:
-    "Use get_calendar_availability when the user asks when they are free or requests open time slots. Pass timezone-aware RFC3339 start and end timestamps, deriving the correct offset for each future date from the IANA time zone rather than assuming the current offset across a daylight-saving transition. Treat the returned slotCount and each slot's localized date, weekday, times, and duration as authoritative: use them exactly and never recalculate, add, omit, merge, or invent slots. For a broad multi-day request without daily-hour bounds, ask which hours of each day to consider, then make a separate call for each day. Results reflect the local calendar cache across the user's selected connected calendars, so describe free results as no scheduled conflicts found rather than guaranteed real-time availability, and never infer event details from availability facts.",
+    "Use when the user asks when they're free. Pass timezone-aware RFC3339 start/end, deriving each date's offset from the IANA zone (account for DST). Treat returned slots as authoritative — use them exactly; never recalculate, merge, or invent. For a broad multi-day request without hours, ask which hours per day, then call once per day. Describe results as 'no scheduled conflicts found', and never infer event details from availability.",
 };
 
 const twoDigits = (value: number): string => String(value).padStart(2, "0");
@@ -70,9 +76,20 @@ export function getAgentSystemPrompt(availableTools?: string[], noteContext?: st
   if (availableTools && availableTools.length > 0) {
     const toolLines = availableTools.map((name) => TOOL_INSTRUCTIONS[name]).filter(Boolean);
     if (toolLines.length > 0) {
-      prompt += "\n\nYou have access to tools. " + toolLines.join(" ");
+      // Small local models otherwise refuse with "I can't access your calendar
+      // / personal data" instead of calling the tool. These tools read the
+      // user's OWN data, which they've connected and authorized.
+      prompt +=
+        "\n\nYou have tools that read the user's own notes, recorded meetings, and connected " +
+        "calendar — their own data, which they have connected and authorized you to use. Never " +
+        "say you cannot access their calendar, schedule, notes, or personal data: when a question " +
+        "needs any of it, call the appropriate tool instead of refusing or guessing. " +
+        toolLines.join(" ");
     }
-    if (availableTools.includes("get_calendar_availability")) {
+    if (
+      availableTools.includes("get_calendar_availability") ||
+      availableTools.includes("list_recorded_meetings")
+    ) {
       prompt += "\n\n" + getLocalCalendarContext();
     }
   }

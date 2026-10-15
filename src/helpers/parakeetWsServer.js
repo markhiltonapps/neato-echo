@@ -110,7 +110,9 @@ class ParakeetWsServer {
     this.modelRuntime = runtime;
     this.language = language;
 
-    const threads = Math.max(1, Math.min(4, Math.floor(os.cpus().length * 0.75)));
+    // Capped at 8 (was 4): file transcription and the two live meeting streams
+    // are CPU-bound, and modern desktop CPUs have the cores to spare.
+    const threads = Math.max(1, Math.min(8, Math.floor(os.cpus().length * 0.75)));
     const modelArgs =
       getModelType(modelName) === "cohere-transcribe"
         ? [
@@ -136,6 +138,14 @@ class ParakeetWsServer {
             // Default 10ms decode-loop tick adds idle time to faster-than-realtime decode.
             "--loop-interval-ms=2",
             `--end-tail-padding=${ONLINE_END_TAIL_PADDING_S}`,
+            // Endpointing defaults (1.2 s of silence after speech) cut a dictation
+            // into a new segment at every thinking pause and lost the words at the
+            // seam, each fragment starting with a capital. Ordinary pauses now
+            // stay inside one segment; a long silence or a very long utterance
+            // still ends it so live meeting transcripts keep flowing.
+            "--rule1-min-trailing-silence=3.5",
+            "--rule2-min-trailing-silence=2.4",
+            "--rule3-min-utterance-length=40",
             // Nonzero --warm-up aborts startup for non-zipformer2 models; _warmUp()
             // covers it app-side.
             "--warm-up=0",
@@ -432,7 +442,10 @@ class ParakeetWsServer {
     }
   }
 
-  createOnlineStream({ onUpdate, onError } = {}) {
+  // onSegment receives every server message as { text, isFinal, segment } so a
+  // caller can react per segment (live meeting transcripts) rather than to the
+  // accumulated text alone.
+  createOnlineStream({ onUpdate, onError, onSegment } = {}) {
     if (!this.ready || !this.process) {
       throw new Error("parakeet-ws server is not running");
     }
@@ -529,6 +542,24 @@ class ParakeetWsServer {
       if (!closed && text && text !== lastEmitted) {
         lastEmitted = text;
         onUpdate?.(text);
+      }
+      if (!closed && onSegment) {
+        let parsed;
+        try {
+          parsed = JSON.parse(message);
+        } catch {
+          parsed = { text: message };
+        }
+        if (parsed && typeof parsed === "object") {
+          const segmentText = String(parsed.text ?? "").trim();
+          if (segmentText) {
+            onSegment({
+              text: segmentText,
+              isFinal: Boolean(parsed.is_final),
+              segment: parsed.segment ?? null,
+            });
+          }
+        }
       }
     });
 

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "../lib/utils";
 import { SendIcon } from "../ui/SendIcon";
 import { LiveWaveform } from "../ui/LiveWaveform";
-import { GRADIENT_CIRCLE } from "../ui/gradientCircle";
+import { WARM_GRADIENT_CIRCLE } from "../ui/gradientCircle";
 import { GLASS_SURFACE } from "../ui/glass";
 import { useToast } from "../ui/useToast";
 import { formatMmSs } from "../../utils/formatDuration";
@@ -177,7 +177,7 @@ export function ChatInput({
               className={cn(
                 "flex items-center justify-center w-7 h-7 rounded-full shrink-0",
                 "animate-[scale-in_0.15s_ease-out_backwards]",
-                GRADIENT_CIRCLE,
+                WARM_GRADIENT_CIRCLE,
                 "hover:brightness-110 active:scale-95",
                 "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
                 "transition-all duration-100"
@@ -254,7 +254,7 @@ export function ChatInput({
                 title={t("notes.editor.transcribe")}
                 className={cn(
                   "flex items-center justify-center w-7 h-7 rounded-full shrink-0",
-                  GRADIENT_CIRCLE,
+                  WARM_GRADIENT_CIRCLE,
                   "hover:brightness-110 active:scale-95",
                   "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
                   "transition-all duration-100"

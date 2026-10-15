@@ -12,6 +12,11 @@ const SUSTAINED_THRESHOLD_CHECKS = 2;
 const SUSTAINED_EVENT_DRIVEN_MS = 2 * 1000;
 const COOLDOWN_MS = 5 * 60 * 1000;
 const INACTIVE_RESET_MS = 60 * 1000;
+// A capture that has been open this long without a break is treated as
+// ambient (a voice changer, a virtual-mic tool, a streaming app). A new
+// process opening the mic beside it is fresh evidence of a call, even though
+// the aggregate "mic in use" state never changed.
+const AMBIENT_CAPTURE_MS = 2 * 60 * 1000;
 // PipeWire/PulseAudio emit 'change' subscribe events several times a second on
 // cork/volume churn, and every reconcile forks a pactl subprocess.
 const LINUX_RECONCILE_MIN_SPACING_MS = 1000;
@@ -55,6 +60,7 @@ class AudioActivityDetector extends EventEmitter {
     this._externalCapturePids = new Set();
     this._promptedCapturePids = new Set();
     this._captureIdleSincePrompt = false;
+    this._pidActiveSince = new Map();
   }
 
   _markPrompted() {
@@ -88,6 +94,33 @@ class AudioActivityDetector extends EventEmitter {
     this._promptedCapturePids.clear();
     this._captureIdleSincePrompt = false;
     debugLogger.info("Re-armed meeting prompt for a changed capture source", {}, "meeting");
+  }
+
+  // hasPrompted normally re-arms only after the prompted capture goes idle. A
+  // capture that never goes idle (MorphVOX, a virtual mic, OBS) would keep the
+  // prompt disarmed forever, so a *new* process opening the mic while every
+  // prompted capture has been open for AMBIENT_CAPTURE_MS re-arms it. A capture
+  // rebuilt under a new pid (screen share starting) does not qualify: its old
+  // pid is gone, so the prompted set is not "still present".
+  _rearmForNewCaptureBesideAmbient(pid) {
+    if (!this.hasPrompted || !this._pidScopedCapability) return;
+    if (this._promptedCapturePids.has(pid)) return;
+    const present = [...this._promptedCapturePids].filter((p) => this._activeMicPids.has(p));
+    if (!present.length) return;
+    const now = Date.now();
+    const allAmbient = present.every(
+      (p) => now - (this._pidActiveSince.get(p) ?? now) >= AMBIENT_CAPTURE_MS
+    );
+    if (!allAmbient) return;
+    this.hasPrompted = false;
+    this._promptedCapturePids.clear();
+    this._captureIdleSincePrompt = false;
+    this.audioActiveStart = null;
+    debugLogger.info(
+      "Re-armed meeting prompt: a new app opened the mic beside a long-running capture",
+      { pid, ambientPids: present },
+      "meeting"
+    );
   }
 
   getExternalMicState() {
@@ -210,6 +243,7 @@ class AudioActivityDetector extends EventEmitter {
   // still-running call as gone.
   _resetListenerState() {
     this._activeMicPids.clear();
+    this._pidActiveSince.clear();
     this._activeSources = 0;
     this._lastKnownMicState = false;
     this._externalCapturePids.clear();
@@ -456,8 +490,10 @@ class AudioActivityDetector extends EventEmitter {
     if (startMatch) {
       const pid = parseInt(startMatch[1], 10);
       if (this._isExcludedProcessId(pid)) return;
+      if (!this._pidActiveSince.has(pid)) this._pidActiveSince.set(pid, Date.now());
       this._activeMicPids.add(pid);
       const externalMicActive = this._updateExternalMicState();
+      this._rearmForNewCaptureBesideAmbient(pid);
       this._onMicStateChanged(externalMicActive);
       return;
     }
@@ -466,6 +502,7 @@ class AudioActivityDetector extends EventEmitter {
     if (stopMatch) {
       const pid = parseInt(stopMatch[1], 10);
       if (this._isExcludedProcessId(pid)) return;
+      this._pidActiveSince.delete(pid);
       this._activeMicPids.delete(pid);
       const externalMicActive = this._updateExternalMicState();
       this._onMicStateChanged(externalMicActive);
