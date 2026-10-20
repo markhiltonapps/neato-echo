@@ -7123,7 +7123,7 @@ class IPCHandlers {
     const MEETING_STARTUP_WARMUP_MS = 1500;
     const MEETING_MIC_BLEED_LOOKBACK_MS = 500;
     const MEETING_MIC_STATS_LOG_LIMIT = 200;
-    const MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS = 45000;
+    const MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS = 20000;
     let meetingMicStatsLogCount = 0;
     let meetingSystemAudioSilenceTimer = null;
     let meetingStartedAt = null;
@@ -8073,11 +8073,30 @@ class IPCHandlers {
     // deadline, so tell the meeting window the remote side may be missing from
     // the transcript. Audio arriving before the deadline cancels it outright;
     // the toast itself is time-boxed by the renderer, not by later audio.
-    const armMeetingSystemAudioSilenceTimer = (win, systemAudioStrategy) => {
+    const armMeetingSystemAudioSilenceTimer = (event, systemAudioStrategy) => {
       clearMeetingSystemAudioSilenceTimer();
+      const win = BrowserWindow.fromWebContents(event.sender);
       meetingSystemAudioSilenceTimer = setTimeout(() => {
         meetingSystemAudioSilenceTimer = null;
         if (meetingSystemAudioHeard) return;
+        // The Windows WASAPI process-loopback helper can "activate" successfully yet
+        // stream pure silence (the far side plays on a render endpoint it isn't tapping),
+        // and it cannot detect that, so it never emits capture_silent. When nothing
+        // audible has arrived on that strategy, don't just warn and lose the whole call —
+        // auto-switch to Chromium's display-media loopback, which is reliable and
+        // auto-granted on Windows (no picker; see setDisplayMediaRequestHandler in main.js).
+        // A false switch on a genuinely quiet start is harmless: loopback captures system
+        // audio just as well. Keep watching afterward in case loopback is also silent.
+        if (systemAudioStrategy === "wasapi-loopback" && !meetingSystemAudioDegraded) {
+          debugLogger.warn(
+            "Meeting system audio silent on WASAPI past window; auto-degrading to renderer loopback",
+            { timeoutMs: MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS },
+            "meeting"
+          );
+          void degradeMeetingSystemAudioToLoopback(event);
+          armMeetingSystemAudioSilenceTimer(event, "loopback");
+          return;
+        }
         debugLogger.debug(
           "Meeting system audio still silent past warning window",
           { systemAudioStrategy, timeoutMs: MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS },
@@ -8326,7 +8345,7 @@ class IPCHandlers {
         // capability, not call detection — so the warning copy also covers
         // in-person recordings where a silent system tap is expected.
         if (result.systemAudioStrategy && result.systemAudioStrategy !== "unsupported") {
-          armMeetingSystemAudioSilenceTimer(meetingConnectionWin, result.systemAudioStrategy);
+          armMeetingSystemAudioSilenceTimer(event, result.systemAudioStrategy);
         }
         return { ...result, sessionId: recordingSessionId };
       };
