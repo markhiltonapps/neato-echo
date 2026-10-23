@@ -127,18 +127,32 @@ test("a definitive unsupported result is cached for the whole session", async (t
   assert.equal(manager.probeCalls(), 1);
 });
 
-test("an activation timeout is retried after the transient TTL", async (t) => {
-  t.mock.timers.enable({ apis: ["Date"], now: 1_000_000 });
+test("a transient activation timeout recovers on an immediate retry", async () => {
   setPlatform("win32");
   const manager = createManager({
     probe: async (call) =>
       call === 1 ? { ok: false, error: "activation_timeout waiting for audio client" } : NATIVE_OK,
   });
 
-  assert.equal((await manager.getCapability()).available, false);
-  t.mock.timers.tick(30_001);
+  // The first probe hits a transient activation timeout (common while a meeting is
+  // spinning up); the manager retries immediately rather than demoting the whole session
+  // to the default-device-only loopback until the 30s TTL expires.
   assert.equal((await manager.getCapability()).available, true);
   assert.equal(manager.probeCalls(), 2);
+});
+
+test("a confirmed-capable machine is never demoted by a later transient probe", async () => {
+  setPlatform("win32");
+  const manager = createManager({
+    probe: async (call) => (call === 1 ? NATIVE_OK : { ok: false, error: "activation_timeout" }),
+  });
+
+  // First probe confirms the helper is capable.
+  assert.equal((await manager.getCapability()).available, true);
+  // A later forced re-probe (meeting start) hits a transient failure — but WASAPI
+  // process-loopback support can't vanish mid-session, so the confirmed capability stands
+  // and capture keeps using the all-device helper instead of the silent fallback.
+  assert.equal((await manager.getCapability({ force: true })).available, true);
 });
 
 test("a probe spawn failure is logged and retried after the transient TTL", async (t) => {
