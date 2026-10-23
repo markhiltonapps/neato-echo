@@ -73,6 +73,7 @@ const { transcribeWithGemini } = require("./geminiTranscription");
 const AudioStorageManager = require("./audioStorage");
 const AgentStreamRequestRegistry = require("./agentStreamRequestRegistry");
 const createMeetingTranscriptionLifecycle = require("./meetingTranscriptionLifecycle");
+const { farSideSpeakerCap } = require("./meetingSpeakerCap");
 const { registerMeetingAutoEndLifecycleHandlers } = require("./meetingAutoEndLifecycle");
 const liveSpeakerIdentifier = require("./liveSpeakerIdentifier");
 const { supportsLiveSpeakerIdentification } = require("./liveSpeakerIdPolicy");
@@ -899,7 +900,14 @@ class IPCHandlers {
       (note?.diarization_enabled == null
         ? this.speakerDiarizationEnabled
         : note.diarization_enabled !== 0) !== false;
-    return { enabled, expectedCount: this._resolveNoteExpectedSpeakerCount(note) };
+    // countKnown: true only when a real signal set the count (a stored note count or a
+    // calendar roster). A bare default (DEFAULT_EXPECTED_SPEAKER_COUNT) leaves it false so
+    // the live far-side cap stays open instead of collapsing remote voices onto one speaker.
+    return {
+      enabled,
+      expectedCount: this._resolveNoteExpectedSpeakerCount(note),
+      countKnown: this._noteExpectedSpeakerCountOrNull(note) != null,
+    };
   }
 
   // Participants added mid-meeting must raise the speaker cap that was derived
@@ -918,7 +926,7 @@ class IPCHandlers {
     const expectedCount = this._noteExpectedSpeakerCountOrNull(note);
     if (expectedCount == null || expectedCount <= config.expectedCount) return;
 
-    this.activeMeetingSpeakerConfig = { ...config, expectedCount };
+    this.activeMeetingSpeakerConfig = { ...config, expectedCount, countKnown: true };
     liveSpeakerIdentifier.setMaxSpeakers(Math.max(1, expectedCount - 1));
     broadcastToWindows("meeting-session-speaker-config-updated", {
       enabled: config.enabled,
@@ -7210,9 +7218,15 @@ class IPCHandlers {
       (this.activeMeetingSpeakerConfig?.enabled ?? this.speakerDiarizationEnabled) !== false;
 
     const resolveSessionMaxSpeakers = () => {
-      const count = this.activeMeetingSpeakerConfig?.expectedCount;
-      const total = count ? Math.min(count, MAX_SPEAKER_COUNT) : DEFAULT_EXPECTED_SPEAKER_COUNT;
-      return Math.max(1, total - 1);
+      const config = this.activeMeetingSpeakerConfig;
+      return farSideSpeakerCap(
+        {
+          explicit: config?.explicit === true,
+          countKnown: config?.countKnown === true,
+          expectedCount: config?.expectedCount,
+        },
+        { defaultCount: DEFAULT_EXPECTED_SPEAKER_COUNT, maxCount: MAX_SPEAKER_COUNT }
+      );
     };
 
     const bindOneOnOneAttendeeToSpeaker = (speakerId) => {
@@ -11215,15 +11229,21 @@ class IPCHandlers {
         );
         // Only a stepper-set count is explicit; the diarization toggle reuses this
         // channel and must not freeze the count against roster-driven refreshes.
-        this.activeMeetingSpeakerConfig = {
-          enabled,
-          expectedCount,
-          explicit: payload?.countIsExplicit === true,
-        };
+        const explicit = payload?.countIsExplicit === true;
+        // Toggling diarization alone must not drop a count a roster/note already
+        // established — only a stepper-set count is newly explicit.
+        const countKnown = explicit || this.activeMeetingSpeakerConfig?.countKnown === true;
+        this.activeMeetingSpeakerConfig = { enabled, expectedCount, explicit, countKnown };
         liveSpeakerIdentifier.setEnabled(enabled);
-        // Live identification only labels other speakers (the mic track is "you"),
-        // so cap at expectedCount - 1 to match resolveSessionMaxSpeakers().
-        liveSpeakerIdentifier.setMaxSpeakers(Math.max(1, expectedCount - 1));
+        // Live identification only labels other speakers (the mic track is "you"). Cap the
+        // far side at expectedCount - 1 when the count is known; otherwise leave it open so
+        // a diarization toggle without a count doesn't collapse remote voices onto one.
+        liveSpeakerIdentifier.setMaxSpeakers(
+          farSideSpeakerCap(
+            { explicit, countKnown, expectedCount },
+            { defaultCount: DEFAULT_EXPECTED_SPEAKER_COUNT, maxCount: MAX_SPEAKER_COUNT }
+          )
+        );
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
