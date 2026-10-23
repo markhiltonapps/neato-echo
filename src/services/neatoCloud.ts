@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NoteItem } from "../types/electron";
+import { decideNeatoConnection } from "./neatoCloudConnection.js";
 
 // Neato Cloud = the shared Supabase backend (NeatoRecall project), same one the mobile
 // app uses. Publishable key is safe in the client; RLS enforces per-user access. In the
@@ -10,6 +11,100 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_oFOe6rf_a1tHoHDuwmrciA_bYwE-M5x
 export const neatoCloud = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
 });
+
+// ── Connection state (drives the "reconnect to keep syncing" banner) ───────────────
+// The Neato Cloud session can lapse (access token expires and the refresh fails / the
+// refresh token is invalidated), after which every auto-push/pull silently no-ops and the
+// user's meetings quietly stop reaching the cloud (and the MCP / Neato Muse). We surface
+// that instead of failing in silence.
+export type NeatoCloudConnection = "unknown" | "connected" | "disconnected";
+
+let neatoConnection: NeatoCloudConnection = "unknown";
+let neatoHadSession = false;
+let neatoUserSignedOut = false;
+const neatoConnListeners = new Set<(s: NeatoCloudConnection) => void>();
+
+function setNeatoConnection(next: NeatoCloudConnection) {
+  if (next === neatoConnection) return;
+  neatoConnection = next;
+  for (const listener of neatoConnListeners) {
+    try {
+      listener(next);
+    } catch {
+      // a listener throwing must never break auth handling
+    }
+  }
+}
+
+export function getNeatoCloudConnection(): NeatoCloudConnection {
+  return neatoConnection;
+}
+
+// Subscribe to connection changes; the callback fires immediately with the current state.
+export function onNeatoCloudConnectionChange(
+  cb: (s: NeatoCloudConnection) => void
+): () => void {
+  neatoConnListeners.add(cb);
+  cb(neatoConnection);
+  return () => {
+    neatoConnListeners.delete(cb);
+  };
+}
+
+// Call right before an intentional sign-out so the lapse banner doesn't fire for it.
+export function markNeatoCloudUserSignOut() {
+  neatoUserSignedOut = true;
+}
+
+neatoCloud.auth.onAuthStateChange((event, session) => {
+  const hasSession = !!session;
+  if (hasSession) neatoHadSession = true;
+  setNeatoConnection(
+    decideNeatoConnection({
+      event,
+      hasSession,
+      hadSession: neatoHadSession,
+      userSignedOut: neatoUserSignedOut,
+    })
+  );
+  neatoUserSignedOut = false;
+});
+
+// Keep-alive: validate the session and refresh it ahead of expiry. Call on app startup,
+// window focus, and on an interval so a long-idle window doesn't lapse unnoticed. Returns
+// true when a live session remains; a failed refresh of a previously-live session flips the
+// banner to "disconnected" so the user is told to reconnect instead of syncing silently
+// stopping.
+let neatoKeepAliveInFlight = false;
+export async function ensureNeatoCloudSession(): Promise<boolean> {
+  if (neatoKeepAliveInFlight) return neatoConnection === "connected";
+  neatoKeepAliveInFlight = true;
+  try {
+    const {
+      data: { session },
+    } = await neatoCloud.auth.getSession();
+    if (!session) {
+      if (neatoHadSession && !neatoUserSignedOut) setNeatoConnection("disconnected");
+      return false;
+    }
+    neatoHadSession = true;
+    const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
+    if (expiresAtMs && expiresAtMs - Date.now() < 15 * 60 * 1000) {
+      const { data, error } = await neatoCloud.auth.refreshSession();
+      if (error || !data.session) {
+        setNeatoConnection("disconnected");
+        return false;
+      }
+    }
+    setNeatoConnection("connected");
+    return true;
+  } catch {
+    // Network blip: leave the state as-is (a real lapse comes through onAuthStateChange).
+    return neatoConnection === "connected";
+  } finally {
+    neatoKeepAliveInFlight = false;
+  }
+}
 
 function uuidv4(): string {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {

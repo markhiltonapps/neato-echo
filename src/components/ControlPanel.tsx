@@ -58,6 +58,7 @@ import ControlPanelSidebar, { type ControlPanelView } from "./ControlPanelSideba
 import MeetingRecordingMount from "./MeetingRecordingMount";
 import MeetingRecordingPill from "./notes/MeetingRecordingPill";
 import MeetingSystemAudioWarningBanner from "./notes/MeetingSystemAudioWarningBanner";
+import NeatoCloudReconnectBanner from "./NeatoCloudReconnectBanner";
 import WindowControls from "./WindowControls";
 
 import { getCachedPlatform } from "../utils/platform";
@@ -968,6 +969,12 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
         }}
       />
       <MeetingSystemAudioWarningBanner />
+      <NeatoCloudReconnectBanner
+        onReconnect={() => {
+          setSettingsSection("neatoCloud");
+          setShowSettings(true);
+        }}
+      />
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={hideConfirmDialog}

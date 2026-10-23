@@ -5,6 +5,7 @@ import {
   pullNotesFromCloud,
   pushConversationsToCloud,
   pullConversationsFromCloud,
+  markNeatoCloudUserSignOut,
 } from "../services/neatoCloud";
 import ConnectAiAgentCard from "./ConnectAiAgentCard";
 
@@ -139,7 +140,10 @@ export default function NeatoCloudSettings() {
           <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
             <span className="truncate text-sm text-foreground">✓ Signed in as {session.user?.email}</span>
             <button
-              onClick={() => neatoCloud.auth.signOut()}
+              onClick={() => {
+                markNeatoCloudUserSignOut();
+                void neatoCloud.auth.signOut();
+              }}
               className="ml-3 shrink-0 text-sm font-medium text-destructive hover:opacity-80"
             >
               Sign out

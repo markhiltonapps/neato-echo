@@ -1764,6 +1764,17 @@ if (typeof window !== "undefined") {
       });
   };
 
+  // Keep the Neato Cloud session alive (refresh ahead of expiry) and, if it has lapsed,
+  // flip the reconnect banner so syncing never silently stops. Runs on focus, startup,
+  // and the interval alongside the pull.
+  const triggerNeatoKeepAlive = () => {
+    void import("../services/neatoCloud")
+      .then(({ ensureNeatoCloudSession }) => ensureNeatoCloudSession())
+      .catch(() => {
+        // Supabase not loaded yet / offline — the next trigger retries
+      });
+  };
+
   // Neato Cloud auto-PUSH: when a meeting recording is saved, upload it (and any
   // other pending notes) automatically so the user never has to press Push. Gated
   // by a setting (default on) and silently skipped when not signed in / offline.
@@ -1789,11 +1800,15 @@ if (typeof window !== "undefined") {
   });
 
   // Coming back to the window is a good moment to reconcile with other devices.
-  window.addEventListener("focus", () => triggerNeatoPull(false));
+  window.addEventListener("focus", () => {
+    triggerNeatoKeepAlive();
+    triggerNeatoPull(false);
+  });
 
   // Defer the first pull and the auth listener so Supabase isn't loaded on the critical
   // startup path; then pull on launch and whenever a fresh Neato Cloud sign-in happens.
   setTimeout(() => {
+    triggerNeatoKeepAlive();
     triggerNeatoPull(true);
     void import("../services/neatoCloud")
       .then(({ neatoCloud }) => {
@@ -1806,8 +1821,12 @@ if (typeof window !== "undefined") {
       });
   }, 4000);
 
-  // Periodic backstop so a long-open window keeps picking up new phone recordings.
-  setInterval(() => triggerNeatoPull(false), 5 * 60 * 1000);
+  // Periodic backstop so a long-open window keeps the session fresh and picks up new
+  // phone recordings.
+  setInterval(() => {
+    triggerNeatoKeepAlive();
+    triggerNeatoPull(false);
+  }, 5 * 60 * 1000);
 
   window.electronAPI?.onMeetingDiarizationComplete?.((data) => {
     enqueueDiarizationCompletion(async () => {
