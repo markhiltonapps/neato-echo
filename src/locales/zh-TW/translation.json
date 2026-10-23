@@ -26,6 +26,18 @@
       "meetingCount": "今天 {{count}} 場",
       "next": "下一個",
       "join": "加入"
+    },
+    "dash": {
+      "statUpcoming": "即將開始",
+      "statRecordings": "錄音",
+      "statNarrations": "口述",
+      "statWords": "已聽寫字數",
+      "upcomingTitle": "接下來",
+      "recentRecordings": "最近錄音",
+      "recentNarrations": "最近口述",
+      "viewAll": "查看全部",
+      "noRecordings": "尚無錄音",
+      "noNarrations": "尚無口述"
     }
   },
   "settings": {
@@ -3420,7 +3432,8 @@
     "chat": "聊天",
     "collapse": "收合側邊欄",
     "expand": "展開側邊欄",
-    "resize": "調整側邊欄大小"
+    "resize": "調整側邊欄大小",
+    "dictation": "聽寫"
   },
   "chat": {
     "newChat": "新對話",

@@ -33,6 +33,9 @@ interface HistoryViewProps {
   onRetryTranscription: (id: number, options?: { isRecover?: boolean }) => Promise<void>;
   showDiscarded: boolean;
   onToggleDiscarded: () => void;
+  // When this view is the dedicated "Dictation" tab, the upcoming-meetings sidebar lives
+  // on the Home dashboard instead, so hide it here to keep the tab purely narrations.
+  hideUpcoming?: boolean;
 }
 
 export default function HistoryView({
@@ -53,6 +56,7 @@ export default function HistoryView({
   onRetryTranscription,
   showDiscarded,
   onToggleDiscarded,
+  hideUpcoming = false,
 }: HistoryViewProps) {
   const { t } = useTranslation();
   const personalDataRetentionEnabled = useSettingsStore((s) => s.dataRetentionEnabled);
@@ -270,16 +274,18 @@ export default function HistoryView({
             )}
           </div>
 
-          <div className="w-64 shrink-0 hidden sm:block">
-            <div className="sticky top-4">
-              <UpcomingMeetings
-                events={events}
-                isLoading={eventsLoading}
-                isConnected={isConnected}
-                onConnectCalendar={onOpenIntegrations}
-              />
+          {!hideUpcoming && (
+            <div className="w-64 shrink-0 hidden sm:block">
+              <div className="sticky top-4">
+                <UpcomingMeetings
+                  events={events}
+                  isLoading={eventsLoading}
+                  isConnected={isConnected}
+                  onConnectCalendar={onOpenIntegrations}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

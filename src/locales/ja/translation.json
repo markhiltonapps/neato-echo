@@ -26,6 +26,18 @@
       "meetingCount": "本日 {{count}} 件",
       "next": "次",
       "join": "参加"
+    },
+    "dash": {
+      "statUpcoming": "予定",
+      "statRecordings": "録音",
+      "statNarrations": "ナレーション",
+      "statWords": "入力した単語数",
+      "upcomingTitle": "次の予定",
+      "recentRecordings": "最近の録音",
+      "recentNarrations": "最近のナレーション",
+      "viewAll": "すべて表示",
+      "noRecordings": "録音はまだありません",
+      "noNarrations": "ナレーションはまだありません"
     }
   },
   "settings": {
@@ -3420,7 +3432,8 @@
     "chat": "チャット",
     "collapse": "サイドバーを折りたたむ",
     "expand": "サイドバーを展開",
-    "resize": "サイドバーのサイズ変更"
+    "resize": "サイドバーのサイズ変更",
+    "dictation": "ディクテーション"
   },
   "chat": {
     "newChat": "新しいチャット",

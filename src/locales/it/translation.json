@@ -27,6 +27,18 @@
       "meetingCount": "{{count}} oggi",
       "next": "Successiva",
       "join": "Partecipa"
+    },
+    "dash": {
+      "statUpcoming": "In arrivo",
+      "statRecordings": "Registrazioni",
+      "statNarrations": "Narrazioni",
+      "statWords": "Parole dettate",
+      "upcomingTitle": "Prossimi impegni",
+      "recentRecordings": "Registrazioni recenti",
+      "recentNarrations": "Narrazioni recenti",
+      "viewAll": "Vedi tutto",
+      "noRecordings": "Nessuna registrazione",
+      "noNarrations": "Nessuna narrazione"
     }
   },
   "settings": {
@@ -3425,7 +3437,8 @@
     "chat": "Chat",
     "collapse": "Comprimi barra laterale",
     "expand": "Espandi barra laterale",
-    "resize": "Ridimensiona barra laterale"
+    "resize": "Ridimensiona barra laterale",
+    "dictation": "Dettatura"
   },
   "chat": {
     "newChat": "Nuova chat",

@@ -27,6 +27,18 @@
       "meetingCount": "{{count}} hoy",
       "next": "Siguiente",
       "join": "Unirse"
+    },
+    "dash": {
+      "statUpcoming": "Próximas",
+      "statRecordings": "Grabaciones",
+      "statNarrations": "Narraciones",
+      "statWords": "Palabras dictadas",
+      "upcomingTitle": "Qué sigue",
+      "recentRecordings": "Grabaciones recientes",
+      "recentNarrations": "Narraciones recientes",
+      "viewAll": "Ver todo",
+      "noRecordings": "Aún no hay grabaciones",
+      "noNarrations": "Aún no hay narraciones"
     }
   },
   "settings": {
@@ -3473,7 +3485,8 @@
     "chat": "Chat",
     "collapse": "Contraer barra lateral",
     "expand": "Expandir barra lateral",
-    "resize": "Redimensionar barra lateral"
+    "resize": "Redimensionar barra lateral",
+    "dictation": "Dictado"
   },
   "chat": {
     "newChat": "Nuevo chat",

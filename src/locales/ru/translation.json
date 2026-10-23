@@ -29,6 +29,18 @@
       "meetingCount": "{{count}} сегодня",
       "next": "Далее",
       "join": "Присоединиться"
+    },
+    "dash": {
+      "statUpcoming": "Предстоящие",
+      "statRecordings": "Записи",
+      "statNarrations": "Надиктовки",
+      "statWords": "Надиктовано слов",
+      "upcomingTitle": "Что дальше",
+      "recentRecordings": "Недавние записи",
+      "recentNarrations": "Недавние надиктовки",
+      "viewAll": "Показать все",
+      "noRecordings": "Пока нет записей",
+      "noNarrations": "Пока нет надиктовок"
     }
   },
   "settings": {
@@ -3473,7 +3485,8 @@
     "chat": "Чат",
     "collapse": "Свернуть боковую панель",
     "expand": "Развернуть боковую панель",
-    "resize": "Изменить размер боковой панели"
+    "resize": "Изменить размер боковой панели",
+    "dictation": "Диктовка"
   },
   "chat": {
     "newChat": "Новый чат",

@@ -59,6 +59,7 @@ import MeetingRecordingMount from "./MeetingRecordingMount";
 import MeetingRecordingPill from "./notes/MeetingRecordingPill";
 import MeetingSystemAudioWarningBanner from "./notes/MeetingSystemAudioWarningBanner";
 import NeatoCloudReconnectBanner from "./NeatoCloudReconnectBanner";
+import HomeDashboard from "./HomeDashboard";
 import WindowControls from "./WindowControls";
 
 import { getCachedPlatform } from "../utils/platform";
@@ -1308,6 +1309,20 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
                 </div>
               )}
             {activeView === "home" && (
+              <HomeDashboard
+                history={history}
+                wordsUsed={limitData?.wordsUsed ?? null}
+                onOpenDictation={() => setActiveView("dictation")}
+                onOpenNotes={() => setActiveView("personal-notes")}
+                onOpenNote={(noteId, folderId) => {
+                  setActiveFolderId(folderId);
+                  setActiveNoteId(noteId);
+                  setActiveView("personal-notes");
+                }}
+                onOpenIntegrations={() => setActiveView("integrations")}
+              />
+            )}
+            {activeView === "dictation" && (
               <HistoryView
                 history={history}
                 isLoading={isLoading}
@@ -1329,6 +1344,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
                   setShowSettings(true);
                 }}
                 onOpenIntegrations={() => setActiveView("integrations")}
+                hideUpcoming
               />
             )}
             {activeView === "insights" && (
