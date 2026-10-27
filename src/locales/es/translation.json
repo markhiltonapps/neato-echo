@@ -38,7 +38,8 @@
       "recentNarrations": "Narraciones recientes",
       "viewAll": "Ver todo",
       "noRecordings": "Aún no hay grabaciones",
-      "noNarrations": "Aún no hay narraciones"
+      "noNarrations": "Aún no hay narraciones",
+      "recordNow": "Grabar ahora"
     }
   },
   "settings": {
@@ -3486,7 +3487,8 @@
     "collapse": "Contraer barra lateral",
     "expand": "Expandir barra lateral",
     "resize": "Redimensionar barra lateral",
-    "dictation": "Dictado"
+    "dictation": "Dictado",
+    "folders": "Carpetas"
   },
   "chat": {
     "newChat": "Nuevo chat",

@@ -9,6 +9,7 @@ import type { NoteItem, TranscriptionItem } from "../types/electron";
 interface HomeDashboardProps {
   history: TranscriptionItem[];
   wordsUsed: number | null;
+  onRecordNow: () => void;
   onOpenDictation: () => void;
   onOpenNotes: () => void;
   onOpenNote: (noteId: number, folderId: number | null) => void;
@@ -71,6 +72,7 @@ function SectionHeader({
 export default function HomeDashboard({
   history,
   wordsUsed,
+  onRecordNow,
   onOpenDictation,
   onOpenNotes,
   onOpenNote,
@@ -113,6 +115,17 @@ export default function HomeDashboard({
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 py-4">
+      {/* Primary action */}
+      <button
+        onClick={onRecordNow}
+        className="gloss-convex group flex w-full items-center justify-center gap-2.5 rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_var(--color-primary)] outline-none transition-[transform,filter] duration-150 hover:brightness-[1.06] active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+          <Mic size={14} />
+        </span>
+        {t("home.dash.recordNow")}
+      </button>
+
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon={Calendar} label={t("home.dash.statUpcoming")} value={String(events.length)} />

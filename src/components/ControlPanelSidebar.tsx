@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Home,
   Mic,
@@ -17,7 +17,9 @@ import {
   X,
   Search,
   Zap,
+  Folder,
 } from "lucide-react";
+import { useFolders, useActiveContext, setActiveFolderId, loadFolders } from "../stores/noteStore";
 import logoIcon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
 import { ACCOUNTS_ENABLED } from "../config/edition";
@@ -90,6 +92,23 @@ export default function ControlPanelSidebar({
 
   const agentAllowed = usePolicyStore(isAgentAllowed);
   const policyActionsAllowed = usePolicyStore((state) => isPolicyActionAllowed(state));
+
+  // Quick folder access: the full folder tree lives inside the Notes view (and
+  // can require scrolling), so surface the user's own folders here for one-click
+  // selection. The sidebar is always mounted, so prime the store on mount.
+  const folders = useFolders();
+  const activeContext = useActiveContext();
+  useEffect(() => {
+    void loadFolders();
+  }, []);
+  const navFolders = useMemo(
+    () =>
+      folders
+        .filter((f) => !f.deleted_at && f.is_default === 0)
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [folders]
+  );
+  const activeFolderId = activeView === "personal-notes" ? (activeContext?.folderId ?? null) : null;
 
   const navItems: {
     id: ControlPanelView;
@@ -193,7 +212,59 @@ export default function ControlPanelSidebar({
         })}
       </nav>
 
-      <div className="flex-1" />
+      {navFolders.length > 0 && (
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+          <div className="px-2.5 pt-1 pb-1.5">
+            <span className="font-brand text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/70">
+              {t("sidebar.folders")}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {navFolders.map((folder) => {
+              const isActive = activeFolderId === folder.id;
+              return (
+                <button
+                  key={folder.id}
+                  onClick={() => {
+                    setActiveFolderId(folder.id);
+                    onViewChange("personal-notes");
+                  }}
+                  title={folder.name}
+                  className={cn(
+                    "group flex items-center gap-2.5 w-full h-7 px-2.5 rounded-md outline-none text-left transition-colors duration-150",
+                    "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
+                    isActive
+                      ? "bg-brand-teal-soft text-foreground"
+                      : "hover:bg-foreground/4 dark:hover:bg-white/4"
+                  )}
+                >
+                  <Folder
+                    size={13}
+                    className={cn(
+                      "shrink-0 transition-colors duration-150",
+                      isActive
+                        ? "text-brand-teal"
+                        : "text-foreground/45 group-hover:text-foreground/65 dark:text-foreground/40"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "flex-1 min-w-0 truncate text-[11.5px] transition-colors duration-150",
+                      isActive
+                        ? "text-foreground font-medium"
+                        : "text-foreground/75 group-hover:text-foreground dark:text-foreground/70"
+                    )}
+                  >
+                    {folder.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {navFolders.length === 0 && <div className="flex-1" />}
 
       {showLimitBanner && (
         <div className="px-2 pb-2">

@@ -38,7 +38,8 @@
       "recentNarrations": "Recent narrations",
       "viewAll": "View all",
       "noRecordings": "No recordings yet",
-      "noNarrations": "No narrations yet"
+      "noNarrations": "No narrations yet",
+      "recordNow": "Record now"
     }
   },
   "settings": {
@@ -2837,7 +2838,8 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "resize": "Resize sidebar",
-    "dictation": "Dictation"
+    "dictation": "Dictation",
+    "folders": "Folders"
   },
   "insights": {
     "title": "Insights",

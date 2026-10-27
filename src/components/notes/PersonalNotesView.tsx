@@ -125,6 +125,10 @@ interface PersonalNotesViewProps {
     event: any;
   } | null;
   onMeetingRecordingRequestHandled?: () => void;
+  // One-shot "Record Now" from the Home dashboard: start a fresh recording in the
+  // current (or private) context, then call onStartRecordingRequestHandled to clear it.
+  startRecordingRequest?: boolean;
+  onStartRecordingRequestHandled?: () => void;
   invitationEntry?: { workspaceId: string; teamIds: string[] } | null;
   onInvitationEntryHandled?: () => void;
 }
@@ -133,6 +137,8 @@ export default function PersonalNotesView({
   onOpenSettings,
   meetingRecordingRequest,
   onMeetingRecordingRequestHandled,
+  startRecordingRequest,
+  onStartRecordingRequestHandled,
   invitationEntry,
   onInvitationEntryHandled,
 }: PersonalNotesViewProps) {
@@ -641,6 +647,22 @@ export default function PersonalNotesView({
       autoEndEligible: isMeetingAutoEndEligible(note),
     });
   }, [activeContext, privateSpaceId, t, setActiveContext, revealContainer, setActiveNoteId]);
+
+  // Honor a one-shot "Record Now" request from the Home dashboard. Wait until a
+  // target space is resolvable (the tree may still be loading on first mount),
+  // then start recording once and clear the request.
+  useEffect(() => {
+    if (!startRecordingRequest) return;
+    if (activeContext?.spaceId == null && privateSpaceId == null) return;
+    void handleNewRecording();
+    onStartRecordingRequestHandled?.();
+  }, [
+    startRecordingRequest,
+    activeContext,
+    privateSpaceId,
+    handleNewRecording,
+    onStartRecordingRequestHandled,
+  ]);
 
   const handleNotesAdded = useCallback(async () => {
     if (activeFolderId) {

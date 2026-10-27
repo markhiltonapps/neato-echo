@@ -38,7 +38,8 @@
       "recentNarrations": "Letzte Diktate",
       "viewAll": "Alle anzeigen",
       "noRecordings": "Noch keine Aufnahmen",
-      "noNarrations": "Noch keine Diktate"
+      "noNarrations": "Noch keine Diktate",
+      "recordNow": "Jetzt aufnehmen"
     }
   },
   "settings": {
@@ -2876,7 +2877,8 @@
     "collapse": "Seitenleiste einklappen",
     "expand": "Seitenleiste ausklappen",
     "resize": "Seitenleiste anpassen",
-    "dictation": "Diktat"
+    "dictation": "Diktat",
+    "folders": "Ordner"
   },
   "workspaces": {
     "switcher": {

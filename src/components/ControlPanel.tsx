@@ -204,6 +204,10 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     folderId: number;
     event: any;
   } | null>(null);
+  // One-shot "Record Now" request from the Home dashboard: PersonalNotesView owns
+  // the new-recording flow (it needs the notes context), so the dashboard button
+  // flips this and navigates to the notes view, which consumes it and clears it.
+  const [newRecordingRequest, setNewRecordingRequest] = useState(false);
   const [gpuBannerDismissed, setGpuBannerDismissed] = useState(
     () => localStorage.getItem("gpuBannerDismissedUnified") === "true"
   );
@@ -575,6 +579,7 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
     fetchStreamingProviders();
   }, []);
 
+  const handleNewRecordingRequestHandled = useCallback(() => setNewRecordingRequest(false), []);
   const handleMeetingRecordingRequestHandled = useCallback(
     () => setMeetingRecordingRequest(null),
     []
@@ -1312,6 +1317,10 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
               <HomeDashboard
                 history={history}
                 wordsUsed={limitData?.wordsUsed ?? null}
+                onRecordNow={() => {
+                  setNewRecordingRequest(true);
+                  setActiveView("personal-notes");
+                }}
                 onOpenDictation={() => setActiveView("dictation")}
                 onOpenNotes={() => setActiveView("personal-notes")}
                 onOpenNote={(noteId, folderId) => {
@@ -1366,6 +1375,8 @@ export default function ControlPanel({ initialSettingsSection }: ControlPanelPro
                   }}
                   meetingRecordingRequest={meetingRecordingRequest}
                   onMeetingRecordingRequestHandled={handleMeetingRecordingRequestHandled}
+                  startRecordingRequest={newRecordingRequest}
+                  onStartRecordingRequestHandled={handleNewRecordingRequestHandled}
                   invitationEntry={invitationNotesEntry}
                   onInvitationEntryHandled={() => setInvitationNotesEntry(null)}
                 />

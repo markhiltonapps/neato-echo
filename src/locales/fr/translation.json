@@ -38,7 +38,8 @@
       "recentNarrations": "Narrations récentes",
       "viewAll": "Tout voir",
       "noRecordings": "Aucun enregistrement",
-      "noNarrations": "Aucune narration"
+      "noNarrations": "Aucune narration",
+      "recordNow": "Enregistrer"
     }
   },
   "settings": {
@@ -2876,7 +2877,8 @@
     "collapse": "Réduire la barre latérale",
     "expand": "Développer la barre latérale",
     "resize": "Redimensionner la barre latérale",
-    "dictation": "Dictée"
+    "dictation": "Dictée",
+    "folders": "Dossiers"
   },
   "workspaces": {
     "switcher": {

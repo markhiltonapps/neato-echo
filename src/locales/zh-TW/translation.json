@@ -37,7 +37,8 @@
       "recentNarrations": "最近口述",
       "viewAll": "查看全部",
       "noRecordings": "尚無錄音",
-      "noNarrations": "尚無口述"
+      "noNarrations": "尚無口述",
+      "recordNow": "立即錄音"
     }
   },
   "settings": {
@@ -3433,7 +3434,8 @@
     "collapse": "收合側邊欄",
     "expand": "展開側邊欄",
     "resize": "調整側邊欄大小",
-    "dictation": "聽寫"
+    "dictation": "聽寫",
+    "folders": "資料夾"
   },
   "chat": {
     "newChat": "新對話",

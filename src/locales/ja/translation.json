@@ -37,7 +37,8 @@
       "recentNarrations": "最近のナレーション",
       "viewAll": "すべて表示",
       "noRecordings": "録音はまだありません",
-      "noNarrations": "ナレーションはまだありません"
+      "noNarrations": "ナレーションはまだありません",
+      "recordNow": "今すぐ録音"
     }
   },
   "settings": {
@@ -3433,7 +3434,8 @@
     "collapse": "サイドバーを折りたたむ",
     "expand": "サイドバーを展開",
     "resize": "サイドバーのサイズ変更",
-    "dictation": "ディクテーション"
+    "dictation": "ディクテーション",
+    "folders": "フォルダ"
   },
   "chat": {
     "newChat": "新しいチャット",
