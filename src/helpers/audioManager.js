@@ -16,6 +16,7 @@ import {
   recordLocalSpeechWindow,
 } from "./localSpeechGate";
 import { reacquireIfDead } from "./micTrackHealth";
+import { stripPauseEllipses } from "./pauseEllipsis";
 import { isMicWarm, WARMUP_ACQUIRE_TIMEOUT_MS } from "./micWarmState";
 import {
   PreparedMicCapture,
@@ -2928,7 +2929,11 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
   }
 
   async processTranscriptionCore(text, source, wasCancelled = neverCancelled) {
-    const normalizedText = typeof text === "string" ? text.trim() : "";
+    // Drop pause/hesitation ellipses the speech model leaves mid-sentence
+    // before anything downstream sees the transcript — this covers the cleanup,
+    // agent and translation routes and the no-model "skip" path alike, so a
+    // mid-sentence "..." never survives even when the LLM cleanup misses it.
+    const normalizedText = stripPauseEllipses(typeof text === "string" ? text.trim() : "");
 
     if (!normalizedText) {
       logger.logReasoning("TRANSCRIPTION_EMPTY_SKIPPING_REASONING", {
