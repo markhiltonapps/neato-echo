@@ -3062,7 +3062,11 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
         });
 
         // A blank reply must not wipe the dictation — keep the transcript (#1616).
-        return hasTextContent(result) ? result : normalizedText;
+        if (!hasTextContent(result)) return normalizedText;
+        // The cleanup model is handed ellipsis-free text but can re-introduce a
+        // mid-sentence "..." in its output (smaller/faster models do this often),
+        // so strip its result too. Agent answers are returned as written.
+        return route.kind === "agent" ? result : stripPauseEllipses(result);
       } catch (error) {
         if (error.selectionEditFatal) throw error;
         if (wasCancelled()) return normalizedText;

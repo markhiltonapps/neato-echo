@@ -19,6 +19,19 @@ test("handles the real-world Amanda report across several pauses", async () => {
   );
 });
 
+test("strips every mid-sentence pause in a real dictated message", async () => {
+  const { stripPauseEllipses } = await load();
+  const input =
+    "Hey Ali...here is the overview from the meeting with the real-time translation company. " +
+    "I think we're pretty free to suggest what... process would work best. " +
+    "So primarily, this would be for... More of a... Inbound call.";
+  const output = stripPauseEllipses(input);
+  assert.ok(!output.includes("..."), `expected no pause ellipses, got: ${output}`);
+  assert.ok(output.includes("Hey Ali here is the overview"));
+  assert.ok(output.includes("suggest what process would work best"));
+  assert.ok(output.includes("this would be for More of a Inbound call"));
+});
+
 test("collapses the unicode ellipsis character", async () => {
   const { stripPauseEllipses } = await load();
   assert.equal(stripPauseEllipses("wait… what was that"), "wait what was that");
