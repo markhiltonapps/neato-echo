@@ -1,4 +1,5 @@
 import { Fragment, forwardRef, useRef, useState } from "react";
+import { ACCOUNTS_ENABLED } from "../../config/edition";
 import {
   AlertCircle,
   BanknoteCheck,
@@ -37,7 +38,10 @@ type AdvancedSetupMode = Exclude<SetupMode, "cloud">;
 // more-options modal, so a "byok" pending state is unreachable.
 type WarningSetupMode = Exclude<AdvancedSetupMode, "byok">;
 
-const REFERENCE_LOCAL_MODEL_ID = "nemotron-3.5-asr-streaming-0.6b";
+// The two downloads the local setup recommends by default; their sizes drive the
+// disk-space copy on this step so it matches what the model picker will offer.
+const REFERENCE_SPEECH_MODEL_ID = "parakeet-tdt-0.6b-v3";
+const REFERENCE_SUMMARY_MODEL_ID = "qwen3.5-2b-q4_k_m";
 
 interface SetupChoiceStepProps {
   isSignedIn: boolean;
@@ -128,14 +132,19 @@ export default function SetupChoiceStep({
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [showMore, setShowMore] = useState(false);
 
-  const localReferenceModel = getParakeetModelInfo(REFERENCE_LOCAL_MODEL_ID);
-  const localModelSize = (localReferenceModel?.size ?? t("common.unknown")).replace(
+  const speechReferenceModel = getParakeetModelInfo(REFERENCE_SPEECH_MODEL_ID);
+  const summaryReferenceModel = modelRegistry.getModel(REFERENCE_SUMMARY_MODEL_ID)?.model;
+  const summaryModelMb = summaryReferenceModel ? summaryReferenceModel.sizeBytes / 1_000_000 : 0;
+  const localModelSize = (summaryReferenceModel?.size ?? t("common.unknown")).replace(
     /(\d)([A-Za-z])/,
     "$1 $2"
   );
-  // The model arrives as an archive and needs room to unpack, so quoting only
-  // its compressed size can send a user into a setup that runs out of disk.
-  const minimumLocalSpaceGb = Math.max(2, Math.ceil((localReferenceModel?.sizeMb ?? 0) / 1000));
+  // Speech model plus summary model, with room to unpack the speech archive, so
+  // the number quoted here does not send a user into a setup that runs out of disk.
+  const minimumLocalSpaceGb = Math.max(
+    2,
+    Math.ceil((((speechReferenceModel?.sizeMb ?? 0) + summaryModelMb) * 1.15) / 1000)
+  );
 
   const availability = getOnboardingSetupAvailability({
     policy,
@@ -144,11 +153,13 @@ export default function SetupChoiceStep({
     llmProviders: modelRegistry.getCloudProviders(),
   });
   const {
-    cloud: cloudAllowed,
+    cloud: cloudAllowedByPolicy,
     local: localAllowed,
     byok: byokAllowed,
     selfHosted: selfHostedAllowed,
   } = availability;
+  // Neato Echo: the cloud card only exists when accounts are enabled.
+  const cloudAllowed = ACCOUNTS_ENABLED && cloudAllowedByPolicy;
   const moreOptionsAllowed = byokAllowed || selfHostedAllowed;
 
   const chooseCloud = () => {
@@ -309,8 +320,8 @@ export default function SetupChoiceStep({
             />
             <div className="relative z-10 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                {/* Frame 48: 40px mark on the brand gradient. */}
-                <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-b from-[#4079ed] to-[#244587] text-white">
+                {/* Frame 48: 40px mark on the brand gradient (Neddy teal). */}
+                <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-b from-[#57938c] to-[#3d726c] text-white">
                   <BrandMark className="size-5" />
                 </span>
                 {/* Frame 49: the "Recommended" chip. Figma has white text on a

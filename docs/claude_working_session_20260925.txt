@@ -1,0 +1,145 @@
+Neato Echo — Working Session 2026-09-25
+=======================================================
+
+SCOPE: Mobile companion (apps/mobile) + desktop (repo root), now one monorepo
+sharing packages/core (@neato/core). Cloud = Supabase project NeatoRecall
+(djrgoduukyqarozqyxbu). Account holding notes: markallenhilton@gmail.com.
+
+WHAT CHANGED
+------------
+1. Cloud-pull mystery (RESOLVED, not a bug): mobile showed no desktop notes because
+   the app was signed into mark.hilton@neatoventures.com, not the gmail account that
+   holds the 39 migrated notes. Verified via RLS simulation + user/data queries.
+   Fix = sign into the same account on both. Added a temporary diagnostic (state vs
+   server uid, fetched/added counts) to confirm, then reverted to a clean message.
+
+2. Readable transcripts: desktop meeting transcripts are stored as JSON segment
+   arrays and were rendering as raw JSON on mobile. Added packages/core/src/transcript.ts
+   (parseTranscriptSegments, resolveSpeakerLabel, groupTranscriptForReading,
+   formatTranscriptForReading) — dependency-free, mirrors desktop label precedence.
+   Mobile Transcript tab now renders speaker bubbles (You right/teal, others left/cream);
+   plain-text phone transcripts keep the editable field. Share exports readable text.
+   Tests: test/utils/coreTranscript.test.js (5, all pass).
+
+3. Audio playback for pulled recordings:
+   - Mobile: uploads local .wav to echo-audio bucket on push (streamed w/ user token
+     so owner=auth.uid()); plays cloud recordings via createSignedUrl stream. "No audio"
+     shown when a cloud row has none. Field: cloudAudioPath, persisted.
+   - Desktop: new src/helpers/meetingAudioRecorder.js taps dispatchMeetingAudioBuffer,
+     streams mic+system PCM to temp files, mixes to userData/meeting-audio/{noteId}.m4a
+     via bundled ffmpeg (amix, AAC 64k) at stop. get-meeting-audio IPC + preload.
+     neatoCloud.ts uploads it on push and sets audio_path. Duration derived from PCM
+     (sidecar {noteId}.json).
+
+4. Duplicate cleanup + sync robustness:
+   - Deleted 27 python-migration duplicate rows (id-scheme clash with the app's push).
+     Backup table: public.echo_recordings_bak_20260925. Kept app rows (correct local
+     times, in the id map). 4 remaining same-name rows are genuinely distinct notes.
+   - Mobile pull now RECONCILES (prunes cloud-origin recs no longer in the cloud) and
+     REFRESHES metadata on existing cloud recs (durations/renames update in place).
+   - Desktop id map moved to userData file (neato-echo-idmap.json) so re-pushes are
+     idempotent across reinstalls (prevents future duplication).
+
+5. Desktop auto-push: after a meeting's audio saves, main emits neato-meeting-saved;
+   meetingRecordingStore listens and calls pushNotesToCloud (gated by localStorage
+   neato.autoPush.v1, default on; toggle in NeatoCloudSettings). No more manual Push.
+
+6. Pull-to-refresh: swipe down on the home list = push + pull (independent try/catch
+   so a push hiccup never skips the pull).
+
+7. Folder sync (one-way desktop -> cloud -> mobile): added echo_folders.sort_order;
+   neatoCloud.ts upserts folders (id = desktop client_folder_id) and tags each note's
+   folder_id. Mobile pulls folders, groups the home list into folder sections in
+   desktop sort order (Personal, Meetings, Videos, Ali Zahir, Claude Design, Developers,
+   2026 Houston SMB Expo), "On this phone" for unfiled, count badges, newest-first.
+
+8. UI: full-body Neddy mascot on home header, Ask Neddy header, and chat message
+   avatars (was head-only). Fixed chat keyboard overlap (KeyboardAvoidingView
+   behavior="padding" inside the Modal).
+
+BUILDS / OPS
+------------
+- Desktop installers cut: 1.1.44 -> 1.1.45 -> 1.1.46 -> 1.1.47 (each dist/Neato-Echo-Setup-*.exe).
+  User on 1.1.47. package.json version bumped to 1.1.47 (uncommitted).
+- APK rebuilt + adb install -r repeatedly to the phone (wireless adb 192.168.4.88).
+- Supabase: echo_folders.sort_order added; audio_path/echo_audio_owner already existed;
+  backfilled duration_ms for notes 50 (10550) and 88850f25 (21210) by matching m4a size.
+- Backups of edited desktop files in _backups/ (NOT in .gitignore — see KNOWN ISSUES).
+
+TEST RESULTS
+------------
+- @neato/core transcript tests: 5/5 pass.
+- Mobile + desktop tsc: clean (only pre-existing whisper.rn types gap).
+- End-to-end verified on device: readable transcripts, audio playback, dedup via
+  swipe, auto-push (note 53 auto-synced with correct 9.46s), folder grouping.
+
+KNOWN ISSUES
+------------
+- MEETING AUDIO DOUBLING: meetings recorded WITH system audio playing produce ~2x-length
+  m4a (11s meeting -> 21s file); mic-only meetings are correct (note 53 = 9.46s, both
+  streams matched). Not a sample-rate issue (both 24kHz) and single-dispatch paths look
+  correct on read. Next: reproduce with system audio and read {noteId}.json micMs/systemMs
+  to see which stream doubles.
+- _backups/ at repo root is not in .gitignore (backups are safe on disk; not committed).
+- package.json version bump to 1.1.47 is uncommitted (may clash with release flow).
+
+PENDING (TOMORROW, priority order)
+----------------------------------
+1. Desktop PULL — mobile recordings sync DOWN to the desktop (today desktop only pushes).
+2. Two-way folder management — create/rename folders on mobile, sync to desktop.
+3. Agentic "move to folder" chat on mobile (create folder if missing) — desktop parity.
+4. Fix the meeting-audio doubling (see KNOWN ISSUES).
+5. Date sub-headers (Today / This week) within folders.
+6. Ask-Neddy chat sync mobile<->PC; origin badge (mobile vs desktop); manual move-to-folder UI.
+
+More PC-parity features to add on mobile (requested 2026-09-25, after the sync backbone):
+7. Calendar view of notes (browse recordings by date, like PC).
+8. Sort/filter: All / Today / This week / This month on the notes list (PC has this).
+9. Upload a YouTube video to transcribe/summarize, like the PC version.
+10. Two-way delete sync (delete on mobile or PC removes on both) — needs soft-delete/
+    tombstone (deleted_at) on echo_recordings so pull prunes it and pushes don't resurrect it.
+11. More summary types + custom summaries: expand built-in presets (team meeting, interview,
+    product discussion, ...) beyond @neato/core BUILTIN_SUMMARY_STYLES, plus user-defined
+    custom summary via own prompt (echo_summary_styles table exists). Very easy selection.
+
+=======================================================
+OVERNIGHT 1.1.48 BATCH (autonomous, unverified on-device)
+=======================================================
+User asked to build the backlog overnight, keep 1.1.47 as safe fallback, ship new
+work as 1.1.48. Reality: every mobile feature needs on-device verification, so this
+is "built + typechecked + unit-tested + APK installed," NOT verified working. Good
+APK preserved for rollback: apps/mobile/_backups/app-release-1.1.47-good.apk
+
+SHIPPED IN THE APK (mobile only; cloud/mobile writes, reversible; nothing writes to
+the desktop notes DB):
+- Date filters All/Today/This week/This month (shared packages/core/src/dateFilter.ts
+  + tests; applied to the grouped list).
+- More summary presets (team meeting, interview, product discussion, sales call, 1:1,
+  brainstorm, lecture) in @neato/core; auto-appear on the summary picker.
+- Custom summaries: "＋ Custom" chip -> modal (name + prompt) -> customSummaryStyle,
+  persisted locally + synced to echo_summary_styles; pulled back on Pull.
+- Manual folder create + move: "Folder" bar in the detail sheet -> picker modal
+  (existing folders + None + new-folder input). Writes echo_folders + folder_id;
+  mobile push now carries folder_id.
+- Delete -> cloud tombstone: added echo_recordings.deleted_at; delete sets it, pull
+  filters is-null + reconciliation prunes it on other devices.
+
+DESKTOP: no source changes tonight; desktop does not import @neato/core in src, so no
+1.1.48 desktop build. Desktop stays 1.1.47 (the fallback).
+
+CLOUD MIGRATIONS: echo_recordings.deleted_at (added); echo_summary_styles verified
+(key/label/prompt); echo_folders.sort_order (from earlier today).
+
+TESTS: test/utils/coreDateFilter.test.js (6) + coreTranscript.test.js (5) = 11 pass.
+Mobile tsc clean (only pre-existing whisper.rn types gap).
+
+DEFERRED (too risky to ship blind — do WITH Mark, verify first run):
+- Desktop PULL into the real notes DB (entangled with the desktop's own cloud sync).
+- Agentic move-to-folder CHAT on mobile (needs a real tool-calling loop; manual move shipped).
+
+MORNING CHECK LIST (Mark):
+1. Open app -> home shows filter chips (All/Today/This week/This month) + folder sections.
+2. Open a recording -> Folder bar -> move to a folder / create one -> swipe down -> folder sticks.
+3. Summary tab -> new presets + "＋ Custom" -> create one -> it summarizes with your prompt.
+4. Delete a recording -> it's gone; on a 2nd device a pull removes it too.
+If anything crashes: reinstall the preserved good APK from apps/mobile/_backups/.

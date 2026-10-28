@@ -73,6 +73,7 @@ const { transcribeWithGemini } = require("./geminiTranscription");
 const AudioStorageManager = require("./audioStorage");
 const AgentStreamRequestRegistry = require("./agentStreamRequestRegistry");
 const createMeetingTranscriptionLifecycle = require("./meetingTranscriptionLifecycle");
+const { farSideSpeakerCap } = require("./meetingSpeakerCap");
 const { registerMeetingAutoEndLifecycleHandlers } = require("./meetingAutoEndLifecycle");
 const liveSpeakerIdentifier = require("./liveSpeakerIdentifier");
 const { supportsLiveSpeakerIdentification } = require("./liveSpeakerIdPolicy");
@@ -91,6 +92,12 @@ const {
   MEETING_MIC_SILENCE_PEAK,
 } = require("./meetingMicGate");
 const { resolveDiarizationInput } = require("./meetingDiarizationInput");
+const {
+  meetingAudioRecorder,
+  getMeetingAudioPath,
+  meetingAudioExists,
+  getMeetingAudioDurationMs,
+} = require("./meetingAudioRecorder");
 const { applySmartSpacing } = require("./smartSpacing");
 const { applyAutoLearnSetting } = require("./autoLearnSetting");
 const {
@@ -893,7 +900,14 @@ class IPCHandlers {
       (note?.diarization_enabled == null
         ? this.speakerDiarizationEnabled
         : note.diarization_enabled !== 0) !== false;
-    return { enabled, expectedCount: this._resolveNoteExpectedSpeakerCount(note) };
+    // countKnown: true only when a real signal set the count (a stored note count or a
+    // calendar roster). A bare default (DEFAULT_EXPECTED_SPEAKER_COUNT) leaves it false so
+    // the live far-side cap stays open instead of collapsing remote voices onto one speaker.
+    return {
+      enabled,
+      expectedCount: this._resolveNoteExpectedSpeakerCount(note),
+      countKnown: this._noteExpectedSpeakerCountOrNull(note) != null,
+    };
   }
 
   // Participants added mid-meeting must raise the speaker cap that was derived
@@ -912,7 +926,7 @@ class IPCHandlers {
     const expectedCount = this._noteExpectedSpeakerCountOrNull(note);
     if (expectedCount == null || expectedCount <= config.expectedCount) return;
 
-    this.activeMeetingSpeakerConfig = { ...config, expectedCount };
+    this.activeMeetingSpeakerConfig = { ...config, expectedCount, countKnown: true };
     liveSpeakerIdentifier.setMaxSpeakers(Math.max(1, expectedCount - 1));
     broadcastToWindows("meeting-session-speaker-config-updated", {
       enabled: config.enabled,
@@ -1537,6 +1551,132 @@ class IPCHandlers {
       return buffer ? buffer.buffer : null;
     });
 
+    // Durable note→Neato-Cloud id map. Kept in userData (survives app reinstalls) so
+    // desktop pushes stay idempotent and never create duplicate cloud rows.
+    const neatoIdMapFile = () => path.join(app.getPath("userData"), "neato-echo-idmap.json");
+    ipcMain.handle("neato-idmap-read", async () => {
+      try {
+        return JSON.parse(fs.readFileSync(neatoIdMapFile(), "utf8"));
+      } catch {
+        return {};
+      }
+    });
+    ipcMain.handle("neato-idmap-write", async (event, map) => {
+      try {
+        fs.writeFileSync(neatoIdMapFile(), JSON.stringify(map || {}));
+        return true;
+      } catch (error) {
+        debugLogger.debug("neato-idmap-write failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Pull dedup map (cloud recording id -> local note id) so re-pulling never
+    // creates duplicate desktop notes. Also in userData, survives reinstalls.
+    const neatoPullMapFile = () => path.join(app.getPath("userData"), "neato-echo-pullmap.json");
+    ipcMain.handle("neato-pullmap-read", async () => {
+      try {
+        return JSON.parse(fs.readFileSync(neatoPullMapFile(), "utf8"));
+      } catch {
+        return {};
+      }
+    });
+    ipcMain.handle("neato-pullmap-write", async (event, map) => {
+      try {
+        fs.writeFileSync(neatoPullMapFile(), JSON.stringify(map || {}));
+        return true;
+      } catch (error) {
+        debugLogger.debug("neato-pullmap-write failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Merge one Neato Cloud conversation into local agent_conversations (last-write-wins
+    // by updated_at). Used by the desktop's chat pull so mobile-authored chats land here.
+    ipcMain.handle("neato-upsert-conversation", async (event, payload) => {
+      try {
+        const { clientConversationId, title, messages, updatedAt, deletedAt } = payload || {};
+        return this.databaseManager.upsertConversationFromCloud(
+          clientConversationId,
+          title,
+          messages,
+          updatedAt,
+          deletedAt || null
+        );
+      } catch (error) {
+        debugLogger.debug("neato-upsert-conversation failed", { error: error.message });
+        return { status: "error", error: error.message };
+      }
+    });
+
+    // Standalone chats deleted locally that still need their tombstone pushed to the cloud.
+    ipcMain.handle("neato-get-conversation-tombstones", async () => {
+      try {
+        return this.databaseManager.getStandaloneConversationTombstones();
+      } catch (error) {
+        debugLogger.debug("neato-get-conversation-tombstones failed", { error: error.message });
+        return [];
+      }
+    });
+
+    ipcMain.handle("neato-mark-conversation-synced", async (event, id) => {
+      try {
+        return this.databaseManager.markConversationSynced(id);
+      } catch (error) {
+        debugLogger.debug("neato-mark-conversation-synced failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Set a note's origin device for the badge (from the cloud pull; no sync side effects).
+    ipcMain.handle("neato-set-note-origin", async (event, id, origin) => {
+      try {
+        return this.databaseManager.setNoteOrigin(id, origin);
+      } catch (error) {
+        debugLogger.debug("neato-set-note-origin failed", { error: error.message });
+        return false;
+      }
+    });
+
+    // Create a local folder from a cloud folder (mobile-made folders appear on the desktop).
+    ipcMain.handle("neato-upsert-folder", async (event, payload) => {
+      try {
+        const { clientFolderId, name, sortOrder } = payload || {};
+        return this.databaseManager.createFolderFromCloud(clientFolderId, name, sortOrder);
+      } catch (error) {
+        debugLogger.debug("neato-upsert-folder failed", { error: error.message });
+        return { success: false, error: error.message };
+      }
+    });
+
+    // Tell the renderer a meeting recording was just saved, so Neato Cloud auto-push
+    // (when enabled + signed in) can upload it without the user pressing Push.
+    const notifyNeatoMeetingSaved = (noteId) => {
+      try {
+        BrowserWindow.getAllWindows().forEach((w) => {
+          if (!w.isDestroyed()) w.webContents.send("neato-meeting-saved", { noteId });
+        });
+      } catch (error) {
+        debugLogger.debug("notifyNeatoMeetingSaved failed", { error: error.message });
+      }
+    };
+
+    // Saved meeting recording (mixed mic + system .m4a) for a note, for cloud sync.
+    // Returns the raw bytes + content type, or null when the note has no saved audio.
+    ipcMain.handle("get-meeting-audio", async (event, noteId) => {
+      try {
+        if (!noteId || !meetingAudioExists(noteId)) return null;
+        const filePath = getMeetingAudioPath(noteId);
+        const buf = fs.readFileSync(filePath);
+        // Return a tightly-sliced ArrayBuffer so the renderer gets exactly the bytes.
+        const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+        return { data: arrayBuffer, contentType: "audio/mp4", durationMs: getMeetingAudioDurationMs(noteId) };
+      } catch (error) {
+        debugLogger.debug("get-meeting-audio failed", { error: error.message });
+        return null;
+      }
+    });
+
     ipcMain.handle("delete-transcription-audio", async (event, id) => {
       const result = this.audioStorageManager.deleteAudio(id);
       if (result.success) {
@@ -1855,6 +1995,10 @@ class IPCHandlers {
 
     ipcMain.handle("db-search-notes", async (event, query, limit, spaceId, folderId) => {
       return this.databaseManager.searchNotes(query, limit, spaceId, folderId);
+    });
+
+    ipcMain.handle("db-list-meetings-by-date", async (_event, startDate, endDate, limit) => {
+      return this.databaseManager.getMeetingsInDateRange(startDate, endDate, limit);
     });
 
     ipcMain.handle(
@@ -2752,6 +2896,12 @@ class IPCHandlers {
           const result = await this.parakeetManager.transcribeLocalParakeet(audioBuffer, {
             ...options,
             signal,
+            // Uploads (which carry a requestId) get real per-segment progress on
+            // the same channel the cloud chunked path uses; dictation/voice
+            // drafts pass no requestId and stay silent.
+            onProgress: options.requestId
+              ? (payload) => event.sender.send("upload-transcription-progress", payload)
+              : undefined,
           });
           return result;
         }
@@ -3508,7 +3658,12 @@ class IPCHandlers {
 
         const { convertToWav } = require("./ffmpegUtils");
         const { getSafeTempDir } = require("./safeTempDir");
-        const { resolveClusterThreshold, dropNegligibleClusters } = require("./diarizationPolicy");
+        const {
+          resolveClusterThreshold,
+          shouldRetryForOversplit,
+          OVERSPLIT_CLUSTER_THRESHOLD,
+          dropNegligibleClusters,
+        } = require("./diarizationPolicy");
         const { PCM16_MONO_16K_BYTES_PER_SECOND } = require("./transcriptionTimeout");
         const wavPath = path.join(getSafeTempDir(), `ow-diarize-${Date.now()}.wav`);
 
@@ -3517,10 +3672,10 @@ class IPCHandlers {
           if (signal?.aborted) {
             return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
           }
-          // Auto-clustering over-splits long single-mic audio at the 0.55
-          // default, so the threshold ramps with duration unless pinned.
+          // Cluster low so distinct voices split readily (merges are
+          // unrecoverable); over-splitting is cleaned up below.
           const durationSeconds = fs.statSync(wavPath).size / PCM16_MONO_16K_BYTES_PER_SECOND;
-          const threshold = resolveClusterThreshold(durationSeconds, options.threshold);
+          const threshold = resolveClusterThreshold(options.threshold);
 
           let segments = await this.diarizationManager.diarize(wavPath, {
             numSpeakers,
@@ -3529,6 +3684,25 @@ class IPCHandlers {
           });
           if (signal?.aborted) {
             return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
+          }
+          // Only one speaker drifting across a long recording over-splits; when
+          // that is actually observed (long audio, no pinned count/threshold,
+          // implausibly many clusters) re-cluster once at the higher threshold.
+          // Real multi-speaker meetings stay at the low base and are not merged.
+          if (
+            numSpeakers <= 0 &&
+            (options.threshold == null || options.threshold === "") &&
+            shouldRetryForOversplit({ segments, durationSeconds, hasExplicitCount: false })
+          ) {
+            const retry = await this.diarizationManager.diarize(wavPath, {
+              numSpeakers,
+              threshold: OVERSPLIT_CLUSTER_THRESHOLD,
+              signal,
+            });
+            if (signal?.aborted) {
+              return { success: false, error: "Cancelled", code: "UPLOAD_CANCELLED" };
+            }
+            if (retry.length) segments = retry;
           }
           // The meeting path caps clusters via its expectation resolver; this
           // path fed raw sherpa output to the merge, which is how a 2-person
@@ -3685,7 +3859,7 @@ class IPCHandlers {
 
       // These caches are not owned by one account. Remove them only through
       // the explicit device-erasure path, never during normal account deletion.
-      const homeCacheRoot = path.join(os.homedir(), ".cache", "openwhispr");
+      const homeCacheRoot = path.join(os.homedir(), ".cache", "neato-echo");
       for (const cacheName of ["embedding-models", "qdrant-data", "qdrant-data-dev", "yt-dlp"]) {
         try {
           fs.rmSync(path.join(homeCacheRoot, cacheName), { recursive: true, force: true });
@@ -4026,6 +4200,9 @@ class IPCHandlers {
         return { success: false, error: error.message };
       }
     });
+
+    // Total physical memory, for picking a local model size the PC can run.
+    ipcMain.handle("get-system-memory-gb", () => os.totalmem() / 1024 ** 3);
 
     ipcMain.handle("get-auto-start-enabled", async () => {
       try {
@@ -6954,7 +7131,7 @@ class IPCHandlers {
     const MEETING_STARTUP_WARMUP_MS = 1500;
     const MEETING_MIC_BLEED_LOOKBACK_MS = 500;
     const MEETING_MIC_STATS_LOG_LIMIT = 200;
-    const MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS = 45000;
+    const MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS = 20000;
     let meetingMicStatsLogCount = 0;
     let meetingSystemAudioSilenceTimer = null;
     let meetingStartedAt = null;
@@ -6997,6 +7174,13 @@ class IPCHandlers {
     let meetingLocalModel = null;
     let meetingLocalLanguage = null;
     let meetingLocalTranscribing = false;
+    // Live local transcription: one online (streaming) recognizer per source,
+    // fed straight from the audio chunks instead of the 5 s buffer. Falls back
+    // to the chunked path (meetingLocalLive = false) if a stream fails.
+    let meetingLocalLive = false;
+    let meetingLocalStreams = { mic: null, system: null };
+    let meetingLocalSegmentStartedAt = { mic: null, system: null };
+    let meetingLocalLastPartial = { mic: "", system: "" };
     let meetingPendingMicChunks = [];
     let meetingPendingMicFinals = [];
     let meetingPendingMicFinalTimer = null;
@@ -7034,9 +7218,15 @@ class IPCHandlers {
       (this.activeMeetingSpeakerConfig?.enabled ?? this.speakerDiarizationEnabled) !== false;
 
     const resolveSessionMaxSpeakers = () => {
-      const count = this.activeMeetingSpeakerConfig?.expectedCount;
-      const total = count ? Math.min(count, MAX_SPEAKER_COUNT) : DEFAULT_EXPECTED_SPEAKER_COUNT;
-      return Math.max(1, total - 1);
+      const config = this.activeMeetingSpeakerConfig;
+      return farSideSpeakerCap(
+        {
+          explicit: config?.explicit === true,
+          countKnown: config?.countKnown === true,
+          expectedCount: config?.expectedCount,
+        },
+        { defaultCount: DEFAULT_EXPECTED_SPEAKER_COUNT, maxCount: MAX_SPEAKER_COUNT }
+      );
     };
 
     const bindOneOnOneAttendeeToSpeaker = (speakerId) => {
@@ -7068,7 +7258,16 @@ class IPCHandlers {
     };
 
     const dispatchMeetingAudioBuffer = (buffer, source) => {
+      // Persist the full meeting audio (both streams) for mobile sync/playback.
+      // Best-effort and off to the side of transcription; a no-op unless a note-
+      // linked meeting is being captured.
+      meetingAudioRecorder.append(source, buffer);
+
       if (meetingLocalMode) {
+        if (meetingLocalLive && meetingLocalStreams[source]) {
+          sendLiveMeetingChunk(buffer, source);
+          return;
+        }
         meetingLocalBuffers[source].push(buffer);
         return;
       }
@@ -7350,6 +7549,122 @@ class IPCHandlers {
       return started;
     };
 
+    // A finished piece of local transcript (a 5 s chunk, or a streamed segment):
+    // mic bleed suppression, duplicate checks against system audio, retractions
+    // and holdback, then the final segment to the renderer.
+    const handleLocalMeetingFinalText = (source, text, chunkDurationMs) => {
+      const segTimestamp = Date.now();
+      let micSuppression = null;
+      if (source === "mic") {
+        micSuppression = shouldSuppressMicTranscriptSegment(
+          segTimestamp - chunkDurationMs,
+          segTimestamp
+        );
+        debugLogger.debug("Local meeting transcription candidate", {
+          source,
+          text: text.slice(0, 80),
+          suppress: micSuppression.suppress,
+          reason: micSuppression.reason,
+          hasBleedEvidence: micSuppression.hasBleedEvidence,
+          likelyRenderBleed: micSuppression.likelyRenderBleed,
+          averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+          averageResidual: micSuppression.averageResidual?.toFixed(3),
+        });
+        if (micSuppression.suppress) {
+          debugLogger.debug("Suppressing contaminated local mic segment", {
+            reason: micSuppression.reason,
+            averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+            averageResidual: micSuppression.averageResidual?.toFixed(3),
+            text: text.slice(0, 80),
+          });
+          return;
+        }
+
+        if (shouldSkipDuplicateMicSegment(text, segTimestamp, micSuppression)) {
+          debugLogger.debug("Skipping duplicate local mic segment that matches system audio", {
+            text: text.slice(0, 80),
+            averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
+            averageResidual: micSuppression.averageResidual?.toFixed(3),
+          });
+          return;
+        }
+      } else {
+        debugLogger.debug("Local meeting transcription candidate", {
+          source,
+          text: text.slice(0, 80),
+        });
+      }
+
+      if (source === "system") {
+        const pending = removePendingMicFinalsFor(text, segTimestamp);
+        if (pending.length > 0) {
+          debugLogger.debug(
+            "Dropping buffered local mic segments after system transcript arrived",
+            {
+              count: pending.length,
+              text: text.slice(0, 80),
+            }
+          );
+        }
+
+        const retracted = removeRacingMicEntriesFor(text, segTimestamp);
+        for (const stale of retracted) {
+          if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
+            meetingLocalWin.webContents.send("meeting-transcription-segment", {
+              text: stale.text,
+              source: "mic",
+              type: "retract",
+              timestamp: stale.timestamp,
+            });
+          }
+        }
+      }
+
+      const sendLocalSegment = (channel, payload) => {
+        if (channel !== "meeting-transcription-segment") {
+          return;
+        }
+
+        if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
+          meetingLocalWin.webContents.send(channel, payload);
+        }
+      };
+
+      if (source === "mic" && hasRiskyMicDuplicateProfile(micSuppression)) {
+        debugLogger.debug("Buffering risky local mic segment before renderer commit", {
+          text: text.slice(0, 80),
+          holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
+          reason: micSuppression?.reason,
+          hasBleedEvidence: micSuppression?.hasBleedEvidence,
+        });
+        queuePendingMicFinal({
+          text,
+          timestamp: segTimestamp,
+          micSuppression,
+          holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
+          emit: () =>
+            sendMeetingFinalSegment({
+              text,
+              source,
+              timestamp: segTimestamp,
+              micSuppression,
+              send: sendLocalSegment,
+              includeInLocalTranscript: true,
+            }),
+        });
+        return;
+      }
+
+      sendMeetingFinalSegment({
+        text,
+        source,
+        timestamp: segTimestamp,
+        micSuppression,
+        send: sendLocalSegment,
+        includeInLocalTranscript: true,
+      });
+    };
+
     const transcribeLocalMeetingChunk = async (source) => {
       const chunks = meetingLocalBuffers[source];
       if (!chunks.length) return;
@@ -7407,118 +7722,11 @@ class IPCHandlers {
         }
 
         if (result?.success && result.text?.trim()) {
-          const text = result.text.trim();
-          const segTimestamp = Date.now();
-          let micSuppression = null;
-          if (source === "mic") {
-            const chunkDurationMs = (pcm24k.length / 2 / 24000) * 1000;
-            micSuppression = shouldSuppressMicTranscriptSegment(
-              segTimestamp - chunkDurationMs,
-              segTimestamp
-            );
-            debugLogger.debug("Local meeting transcription candidate", {
-              source,
-              text: text.slice(0, 80),
-              suppress: micSuppression.suppress,
-              reason: micSuppression.reason,
-              hasBleedEvidence: micSuppression.hasBleedEvidence,
-              likelyRenderBleed: micSuppression.likelyRenderBleed,
-              averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-              averageResidual: micSuppression.averageResidual?.toFixed(3),
-            });
-            if (micSuppression.suppress) {
-              debugLogger.debug("Suppressing contaminated local mic segment", {
-                reason: micSuppression.reason,
-                averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-                averageResidual: micSuppression.averageResidual?.toFixed(3),
-                text: text.slice(0, 80),
-              });
-              return;
-            }
-
-            if (shouldSkipDuplicateMicSegment(text, segTimestamp, micSuppression)) {
-              debugLogger.debug("Skipping duplicate local mic segment that matches system audio", {
-                text: text.slice(0, 80),
-                averageCorrelation: micSuppression.averageCorrelation?.toFixed(3),
-                averageResidual: micSuppression.averageResidual?.toFixed(3),
-              });
-              return;
-            }
-          } else {
-            debugLogger.debug("Local meeting transcription candidate", {
-              source,
-              text: text.slice(0, 80),
-            });
-          }
-
-          if (source === "system") {
-            const pending = removePendingMicFinalsFor(text, segTimestamp);
-            if (pending.length > 0) {
-              debugLogger.debug(
-                "Dropping buffered local mic segments after system transcript arrived",
-                {
-                  count: pending.length,
-                  text: text.slice(0, 80),
-                }
-              );
-            }
-
-            const retracted = removeRacingMicEntriesFor(text, segTimestamp);
-            for (const stale of retracted) {
-              if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
-                meetingLocalWin.webContents.send("meeting-transcription-segment", {
-                  text: stale.text,
-                  source: "mic",
-                  type: "retract",
-                  timestamp: stale.timestamp,
-                });
-              }
-            }
-          }
-
-          const sendLocalSegment = (channel, payload) => {
-            if (channel !== "meeting-transcription-segment") {
-              return;
-            }
-
-            if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
-              meetingLocalWin.webContents.send(channel, payload);
-            }
-          };
-
-          if (source === "mic" && hasRiskyMicDuplicateProfile(micSuppression)) {
-            debugLogger.debug("Buffering risky local mic segment before renderer commit", {
-              text: text.slice(0, 80),
-              holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
-              reason: micSuppression?.reason,
-              hasBleedEvidence: micSuppression?.hasBleedEvidence,
-            });
-            queuePendingMicFinal({
-              text,
-              timestamp: segTimestamp,
-              micSuppression,
-              holdbackMs: LOCAL_RISKY_MIC_SEGMENT_HOLDBACK_MS,
-              emit: () =>
-                sendMeetingFinalSegment({
-                  text,
-                  source,
-                  timestamp: segTimestamp,
-                  micSuppression,
-                  send: sendLocalSegment,
-                  includeInLocalTranscript: true,
-                }),
-            });
-            return;
-          }
-
-          sendMeetingFinalSegment({
-            text,
+          handleLocalMeetingFinalText(
             source,
-            timestamp: segTimestamp,
-            micSuppression,
-            send: sendLocalSegment,
-            includeInLocalTranscript: true,
-          });
+            result.text.trim(),
+            (pcm24k.length / 2 / 24000) * 1000
+          );
         }
       } catch (error) {
         debugLogger.error("Local meeting transcription chunk failed", {
@@ -7527,6 +7735,120 @@ class IPCHandlers {
         });
         if (meetingLocalWin && !meetingLocalWin.isDestroyed()) {
           meetingLocalWin.webContents.send("meeting-transcription-error", error.message);
+        }
+      }
+    };
+
+    const sendLiveMeetingChunk = (buffer, source) => {
+      const stream = meetingLocalStreams[source];
+      if (!stream || buffer.length < 2) return;
+      let pcm16k = downsample24kTo16k(buffer);
+      if (source === "mic") {
+        const { rms, peak, sampleCount } = computeChunkStats(pcm16k);
+        const verdict = resolveMicChunkAction({
+          mode: "streaming",
+          source,
+          rms,
+          peak,
+          sampleCount,
+          isSystemSpeaking: () =>
+            meetingEchoLeakDetector.isSystemSpeaking(Date.now() - MEETING_MIC_BLEED_LOOKBACK_MS),
+        });
+        if (verdict.action === "zero") pcm16k = Buffer.alloc(pcm16k.length);
+      }
+      try {
+        stream.sendPcm16(pcm16k);
+      } catch (error) {
+        debugLogger.warn("Live meeting stream send failed; falling back to chunked", {
+          source,
+          error: error.message,
+        });
+        disableLiveMeetingTranscription();
+      }
+    };
+
+    const sendLivePartial = (source, text) => {
+      if (!meetingLocalWin || meetingLocalWin.isDestroyed()) return;
+      meetingLocalWin.webContents.send("meeting-transcription-segment", {
+        text,
+        source,
+        type: "partial",
+      });
+    };
+
+    const handleLiveMeetingSegment = (source, { text, isFinal }) => {
+      if (!meetingLocalMode) return;
+      if (!isFinal) {
+        if (meetingLocalSegmentStartedAt[source] == null) {
+          meetingLocalSegmentStartedAt[source] = Date.now();
+        }
+        meetingLocalLastPartial[source] = text;
+        if (source === "mic" && meetingEchoLeakDetector.isMicProbablyRenderBleed()) {
+          sendLivePartial(source, "");
+          return;
+        }
+        sendLivePartial(source, text);
+        return;
+      }
+      const startedAt = meetingLocalSegmentStartedAt[source] ?? Date.now() - 2000;
+      meetingLocalSegmentStartedAt[source] = null;
+      meetingLocalLastPartial[source] = "";
+      sendLivePartial(source, "");
+      handleLocalMeetingFinalText(source, text, Math.max(500, Date.now() - startedAt));
+    };
+
+    const disableLiveMeetingTranscription = () => {
+      if (!meetingLocalLive) return;
+      meetingLocalLive = false;
+      for (const source of ["mic", "system"]) {
+        const stream = meetingLocalStreams[source];
+        meetingLocalStreams[source] = null;
+        try {
+          stream?.abort();
+        } catch {}
+      }
+    };
+
+    const startLiveMeetingStreams = async () => {
+      for (const source of ["mic", "system"]) {
+        meetingLocalSegmentStartedAt[source] = null;
+        meetingLocalLastPartial[source] = "";
+        meetingLocalStreams[source] = await this.parakeetManager.createOnlineStream(
+          meetingLocalModel,
+          {
+            onSegment: (segment) => handleLiveMeetingSegment(source, segment),
+            onError: (error) => {
+              debugLogger.warn("Live meeting stream error; falling back to chunked", {
+                source,
+                error: error?.message,
+              });
+              disableLiveMeetingTranscription();
+            },
+          }
+        );
+      }
+    };
+
+    const finishLiveMeetingStreams = async () => {
+      if (!meetingLocalLive) return;
+      meetingLocalLive = false;
+      for (const source of ["system", "mic"]) {
+        const stream = meetingLocalStreams[source];
+        meetingLocalStreams[source] = null;
+        if (!stream) continue;
+        try {
+          await stream.finish({ idleTimeoutMs: 4000 });
+        } catch (error) {
+          debugLogger.warn("Live meeting stream finish failed", { source, error: error.message });
+        }
+        // A partial the server never finalized is still the user's words.
+        const leftover = meetingLocalLastPartial[source];
+        if (leftover) {
+          meetingLocalLastPartial[source] = "";
+          const startedAt = meetingLocalSegmentStartedAt[source] ?? Date.now() - 2000;
+          meetingLocalSegmentStartedAt[source] = null;
+          sendLivePartial(source, "");
+          handleLocalMeetingFinalText(source, leftover, Math.max(500, Date.now() - startedAt));
         }
       }
     };
@@ -7572,6 +7894,9 @@ class IPCHandlers {
       this._activeMeetingNoteId = null;
       meetingLocalMode = false;
       meetingLocalBuffers = { mic: [], system: [] };
+      disableLiveMeetingTranscription();
+      meetingLocalSegmentStartedAt = { mic: null, system: null };
+      meetingLocalLastPartial = { mic: "", system: "" };
       if (meetingDiarizationStream) {
         meetingDiarizationStream.end();
         meetingDiarizationStream = null;
@@ -7762,11 +8087,30 @@ class IPCHandlers {
     // deadline, so tell the meeting window the remote side may be missing from
     // the transcript. Audio arriving before the deadline cancels it outright;
     // the toast itself is time-boxed by the renderer, not by later audio.
-    const armMeetingSystemAudioSilenceTimer = (win, systemAudioStrategy) => {
+    const armMeetingSystemAudioSilenceTimer = (event, systemAudioStrategy) => {
       clearMeetingSystemAudioSilenceTimer();
+      const win = BrowserWindow.fromWebContents(event.sender);
       meetingSystemAudioSilenceTimer = setTimeout(() => {
         meetingSystemAudioSilenceTimer = null;
         if (meetingSystemAudioHeard) return;
+        // The Windows WASAPI process-loopback helper can "activate" successfully yet
+        // stream pure silence (the far side plays on a render endpoint it isn't tapping),
+        // and it cannot detect that, so it never emits capture_silent. When nothing
+        // audible has arrived on that strategy, don't just warn and lose the whole call —
+        // auto-switch to Chromium's display-media loopback, which is reliable and
+        // auto-granted on Windows (no picker; see setDisplayMediaRequestHandler in main.js).
+        // A false switch on a genuinely quiet start is harmless: loopback captures system
+        // audio just as well. Keep watching afterward in case loopback is also silent.
+        if (systemAudioStrategy === "wasapi-loopback" && !meetingSystemAudioDegraded) {
+          debugLogger.warn(
+            "Meeting system audio silent on WASAPI past window; auto-degrading to renderer loopback",
+            { timeoutMs: MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS },
+            "meeting"
+          );
+          void degradeMeetingSystemAudioToLoopback(event);
+          armMeetingSystemAudioSilenceTimer(event, "loopback");
+          return;
+        }
         debugLogger.debug(
           "Meeting system audio still silent past warning window",
           { systemAudioStrategy, timeoutMs: MEETING_SYSTEM_AUDIO_SILENCE_WARNING_MS },
@@ -7966,6 +8310,13 @@ class IPCHandlers {
       return { success: true };
     });
 
+    // A meeting start must never hang forever: if any step stalls (a cold cloud
+    // realtime connect, the system-audio helper, the local server), the start would
+    // never settle, so meetingTranscriptionStartInProgress + the lifecycle session lock
+    // would never release and EVERY later recording is rejected with "Operation in
+    // progress" until the app restarts. Bounding the start makes it reject instead, which
+    // runs rollback, clears the flag (finally), and lets the lifecycle drop the session.
+    const MEETING_START_TIMEOUT_MS = 25000;
     const startMeetingTranscription = async (event, options = {}) => {
       // Wait for any in-flight prepare to finish before starting
       if (meetingTranscriptionPreparePromise) {
@@ -8008,20 +8359,35 @@ class IPCHandlers {
         // capability, not call detection — so the warning copy also covers
         // in-person recordings where a silent system tap is expected.
         if (result.systemAudioStrategy && result.systemAudioStrategy !== "unsupported") {
-          armMeetingSystemAudioSilenceTimer(meetingConnectionWin, result.systemAudioStrategy);
+          armMeetingSystemAudioSilenceTimer(event, result.systemAudioStrategy);
         }
         return { ...result, sessionId: recordingSessionId };
       };
 
+      let meetingStartTimeout;
       try {
+        const startResult = await Promise.race([
+          (async () => {
         const systemAudioPlan = await getMeetingSystemAudioPlan({ refreshWindowsCapability: true });
         let { mode: systemAudioMode, strategy: systemAudioStrategy } = systemAudioPlan;
+
+        // The user forced a manual system-audio source captured in the renderer
+        // ("screen" = getDisplayMedia, "device" = getUserMedia on a chosen input). Skip
+        // the native helper so it can't double-capture (or capture silence); the renderer
+        // feeds PCM over meeting-transcription-send via the loopback strategy.
+        const forcedSystemAudioSource = options.systemAudioSource?.mode;
+        if (forcedSystemAudioSource === "screen" || forcedSystemAudioSource === "device") {
+          systemAudioStrategy = "loopback";
+          if (systemAudioMode === "unsupported") systemAudioMode = "loopback";
+        }
         const requestedConnectionKey = getMeetingConnectionKey(options);
         meetingEchoLeakDetector.reset();
         meetingOneOnOneAttendee = resolveOneOnOneAttendeeForNote(options.noteId);
         meetingOneOnOneProfileBound = false;
         meetingNoteId = options.noteId ?? null;
         this._activeMeetingNoteId = meetingNoteId;
+        // Start persisting this meeting's audio (mic + system) for mobile playback.
+        meetingAudioRecorder.start(meetingNoteId);
 
         // Seed the speaker cap from the note/calendar participants up front so live
         // identification isn't stuck at the default if the renderer never pushes a config.
@@ -8070,6 +8436,30 @@ class IPCHandlers {
           meetingLocalWin = BrowserWindow.fromWebContents(event.sender);
           meetingLocalBuffers = { mic: [], system: [] };
           meetingLocalTranscript = "";
+          meetingLocalLive = false;
+          if (
+            options.liveTranscription !== false &&
+            isSherpaLocalProvider(meetingLocalProvider) &&
+            meetingLocalModel &&
+            this.parakeetManager?.supportsOnlineStreaming?.(meetingLocalModel)
+          ) {
+            try {
+              await startLiveMeetingStreams();
+              meetingLocalLive = true;
+              debugLogger.info(
+                "Meeting live transcription active",
+                { model: meetingLocalModel },
+                "meeting"
+              );
+            } catch (error) {
+              disableLiveMeetingTranscription();
+              debugLogger.warn(
+                "Meeting live transcription unavailable; using chunked transcription",
+                { error: error.message },
+                "meeting"
+              );
+            }
+          }
 
           await startLiveSpeakerIdentification(meetingLocalWin, systemAudioMode);
           await startMeetingAec(systemAudioMode);
@@ -8115,6 +8505,15 @@ class IPCHandlers {
           systemAudioStrategy,
           oneOnOneAttendee: meetingOneOnOneAttendee,
         });
+          })(),
+          new Promise((_, reject) => {
+            meetingStartTimeout = setTimeout(
+              () => reject(new Error("Meeting start timed out")),
+              MEETING_START_TIMEOUT_MS
+            );
+          }),
+        ]);
+        return startResult;
       } catch (error) {
         await rollbackMeetingTranscriptionStart();
         this.meetingDetectionEngine?.endRecordingSession(recordingSessionId);
@@ -8122,6 +8521,7 @@ class IPCHandlers {
         debugLogger.error("Meeting transcription start error", { error: error.message });
         return toPolicyFailure(error);
       } finally {
+        if (meetingStartTimeout) clearTimeout(meetingStartTimeout);
         meetingTranscriptionStartInProgress = false;
       }
     };
@@ -8238,9 +8638,33 @@ class IPCHandlers {
 
     const startManagedMeetingSystemAudio = (event, manager, warningLabel, onWarningCode) => {
       const win = BrowserWindow.fromWebContents(event.sender);
+      // Throttled RMS of the system PCM (24 kHz mono s16le) → the meeting waveform, so
+      // the bars move when the far side speaks (the mic meter never sees remote audio).
+      let lastSystemLevelAt = 0;
+      const emitSystemLevel = (chunk) => {
+        const now = Date.now();
+        if (now - lastSystemLevelAt < 60) return; // ~16 fps is plenty for a meter
+        lastSystemLevelAt = now;
+        try {
+          const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          const n = Math.floor(buf.length / 2);
+          if (n === 0) return;
+          let sumSq = 0;
+          for (let i = 0; i < n; i++) {
+            const v = buf.readInt16LE(i * 2) / 32768;
+            sumSq += v * v;
+          }
+          const rms = Math.sqrt(sumSq / n);
+          const level = rms < 0 ? 0 : rms > 1 ? 1 : rms;
+          if (win && !win.isDestroyed()) win.webContents.send("meeting-system-level", level);
+        } catch {
+          // level is cosmetic — never let it disrupt capture
+        }
+      };
       return manager.start({
         onChunk: (chunk) => {
           sendMeetingAudio(chunk, "system");
+          emitSystemLevel(chunk);
         },
         onError: (error) => {
           if (win && !win.isDestroyed()) {
@@ -8382,6 +8806,7 @@ class IPCHandlers {
             meetingLocalTimer = null;
           }
           try {
+            await finishLiveMeetingStreams();
             await transcribeAllLocalBuffers();
           } catch (err) {
             debugLogger.error("Local meeting final transcription failed", { error: err.message });
@@ -8408,6 +8833,14 @@ class IPCHandlers {
             noteIdSnapshot,
             diarizedSource
           );
+
+          // Save the captured meeting audio (mic + system) for mobile playback.
+          void meetingAudioRecorder.finish().then((audioPath) => {
+            if (audioPath) {
+              debugLogger.debug("Meeting audio saved", { noteId: noteIdSnapshot });
+              notifyNeatoMeetingSaved(noteIdSnapshot);
+            }
+          });
 
           return { success: true, transcript, diarizationSessionId };
         }
@@ -8436,9 +8869,36 @@ class IPCHandlers {
           diarizedSource
         );
 
+        // Save the captured meeting audio (mic + system) for mobile playback.
+        void meetingAudioRecorder.finish().then((audioPath) => {
+          if (audioPath) {
+            debugLogger.debug("Meeting audio saved", { noteId: noteIdSnapshot });
+            notifyNeatoMeetingSaved(noteIdSnapshot);
+          }
+        });
+
+        // If this recording produced nothing, remove the speculatively-created note so
+        // it doesn't linger as an empty "Meetings" shell. Delayed 2 min so any late
+        // background diarization has written first; targeted to THIS note only and gated
+        // on reconcileEmptyNote (deletes only if still a true empty shell), so it can
+        // never touch a note the user is composing or one that got a transcript.
+        if (noteIdSnapshot != null) {
+          const reconcileNoteId = noteIdSnapshot;
+          setTimeout(() => {
+            try {
+              if (this.databaseManager?.reconcileEmptyNote(reconcileNoteId)) {
+                broadcastToWindows("note-deleted", { id: reconcileNoteId });
+              }
+            } catch {
+              // cleanup is best-effort; the startup sweep is the backstop
+            }
+          }, 120000);
+        }
+
         return { success: true, transcript, diarizationSessionId };
       } catch (error) {
         debugLogger.error("Meeting transcription stop error", { error: error.message });
+        meetingAudioRecorder.abort();
         return { success: false, error: error.message };
       }
     };
@@ -10769,15 +11229,21 @@ class IPCHandlers {
         );
         // Only a stepper-set count is explicit; the diarization toggle reuses this
         // channel and must not freeze the count against roster-driven refreshes.
-        this.activeMeetingSpeakerConfig = {
-          enabled,
-          expectedCount,
-          explicit: payload?.countIsExplicit === true,
-        };
+        const explicit = payload?.countIsExplicit === true;
+        // Toggling diarization alone must not drop a count a roster/note already
+        // established — only a stepper-set count is newly explicit.
+        const countKnown = explicit || this.activeMeetingSpeakerConfig?.countKnown === true;
+        this.activeMeetingSpeakerConfig = { enabled, expectedCount, explicit, countKnown };
         liveSpeakerIdentifier.setEnabled(enabled);
-        // Live identification only labels other speakers (the mic track is "you"),
-        // so cap at expectedCount - 1 to match resolveSessionMaxSpeakers().
-        liveSpeakerIdentifier.setMaxSpeakers(Math.max(1, expectedCount - 1));
+        // Live identification only labels other speakers (the mic track is "you"). Cap the
+        // far side at expectedCount - 1 when the count is known; otherwise leave it open so
+        // a diarization toggle without a count doesn't collapse remote voices onto one.
+        liveSpeakerIdentifier.setMaxSpeakers(
+          farSideSpeakerCap(
+            { explicit, countKnown, expectedCount },
+            { defaultCount: DEFAULT_EXPECTED_SPEAKER_COUNT, maxCount: MAX_SPEAKER_COUNT }
+          )
+        );
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -11471,10 +11937,43 @@ class IPCHandlers {
           observedSpeakerIds,
           diarizedSource,
         });
+        const {
+          resolveClusterThreshold,
+          shouldRetryForOversplit,
+          OVERSPLIT_CLUSTER_THRESHOLD,
+          dropNegligibleClusters,
+        } = require("./diarizationPolicy");
+        const { PCM16_MONO_16K_BYTES_PER_SECOND } = require("./transcriptionTimeout");
+        let meetingDurationSeconds = NaN;
+        try {
+          meetingDurationSeconds = fs.statSync(tmpWav).size / PCM16_MONO_16K_BYTES_PER_SECOND;
+        } catch {
+          // Unreadable WAV: the over-split retry simply won't trigger.
+        }
+        // Cluster low so distinct meeting voices split readily instead of being
+        // merged into one — a pinned count (numSpeakers > 0) still forces the
+        // exact number of clusters and ignores the threshold.
         let diarizationSegments = await this.diarizationManager.diarize(
           tmpWav,
-          numSpeakers > 0 ? { numSpeakers } : {}
+          numSpeakers > 0 ? { numSpeakers } : { threshold: resolveClusterThreshold(null) }
         );
+        // Only re-cluster higher when a long recording with no pinned count
+        // actually over-split (one speaker drifting), never for a normal meeting.
+        if (
+          numSpeakers <= 0 &&
+          shouldRetryForOversplit({
+            segments: diarizationSegments,
+            durationSeconds: meetingDurationSeconds,
+            hasExplicitCount: false,
+          })
+        ) {
+          const retry = await this.diarizationManager.diarize(tmpWav, {
+            threshold: OVERSPLIT_CLUSTER_THRESHOLD,
+          });
+          if (retry.length) diarizationSegments = retry;
+        }
+        // Drop sub-second phantom clusters before capping, matching the upload path.
+        diarizationSegments = dropNegligibleClusters(diarizationSegments);
         if (cap != null) {
           diarizationSegments = this.diarizationManager.capSpeakerClusters(
             diarizationSegments,

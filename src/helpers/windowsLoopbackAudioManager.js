@@ -25,6 +25,13 @@ class WindowsLoopbackAudioManager {
     this.cachedCapability = null;
     this.cachedCapabilityExpiresAt = 0;
     this.capabilityPromise = null;
+    // WASAPI process-loopback support is a STATIC OS capability — once the helper probes
+    // capable, it stays capable for the session. The probe can still return a false
+    // "unavailable" when it runs during the audio-engine churn of meeting startup, which
+    // would wrongly demote capture to the default-device-only display-media loopback (and
+    // miss the far side entirely when the meeting plays on a non-default device). Remember
+    // the last confirmed-capable result so one flaky probe can't undo it.
+    this.lastAvailableCapability = null;
   }
 
   isSupported() {
@@ -74,8 +81,23 @@ class WindowsLoopbackAudioManager {
     // are cached only briefly so a momentary audio-stack hiccup can't pin the
     // native path "unavailable" until restart, while still bounding how often
     // IPC capability checks can respawn the probe.
-    const promise = this._probeCapability()
+    const promise = this._probeCapabilityWithRetry()
       .then((capability) => {
+        if (capability.available) {
+          this.lastAvailableCapability = capability;
+          this._cacheCapability(capability, false);
+          return capability;
+        }
+        // Never demote a machine we've already confirmed capable — the OS feature can't
+        // vanish mid-session, so an "unavailable" now is a transient probe false negative.
+        if (this.lastAvailableCapability) {
+          debugLogger.debug(
+            "[WindowsLoopbackAudioManager] Probe returned unavailable; keeping confirmed capability",
+            { error: capability.error || null },
+            "meeting"
+          );
+          return this.lastAvailableCapability;
+        }
         this._cacheCapability(capability, this._isTransientProbeFailure(capability));
         return capability;
       })
@@ -85,6 +107,7 @@ class WindowsLoopbackAudioManager {
           { error: error.message },
           "meeting"
         );
+        if (this.lastAvailableCapability) return this.lastAvailableCapability;
         const capability = { available: false, error: error.message };
         this._cacheCapability(capability, true);
         return capability;
@@ -281,6 +304,22 @@ class WindowsLoopbackAudioManager {
     this.onError = null;
     this.onWarning = null;
     this.isStopping = false;
+  }
+
+  // Probe, and if it comes back "unavailable" during the first attempt (typically audio
+  // engine contention while a meeting is spinning up), try once more after a short beat.
+  // The helper is reliably capable when the engine settles, so a single retry rescues the
+  // common meeting-start false negative without adding latency to the healthy path.
+  async _probeCapabilityWithRetry() {
+    const first = await this._probeCapability();
+    // Retry only a TRANSIENT miss (activation contention during meeting startup). A
+    // definitive "unsupported" (old Windows) won't change, so don't re-probe it every
+    // call; and once we have a confirmed capability there's nothing to recover.
+    if (first.available || this.lastAvailableCapability || !this._isTransientProbeFailure(first)) {
+      return first;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return this._probeCapability();
   }
 
   async _probeCapability() {

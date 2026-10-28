@@ -4,6 +4,7 @@ import { useToast } from "./ui/useToast";
 import {
   getActiveRecordingSessionId,
   getMicAnalyser,
+  getSystemAnalyser,
   primeMeetingWorklet,
   startRecording,
   stopRecording,
@@ -222,33 +223,49 @@ export default function MeetingRecordingMount(): null {
 
     let rafId = 0;
     let smoothed = 0;
+    let sysSmoothed = 0;
     let buf = new Float32Array(256);
 
+    // Read one analyser's RMS into its smoothed EMA.
+    const readLevel = (analyser: AnalyserNode | null, prev: number): number => {
+      if (!analyser) return prev;
+      if (buf.length !== analyser.fftSize) buf = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(buf);
+      let sumSquares = 0;
+      for (let i = 0; i < buf.length; i++) sumSquares += buf[i] * buf[i];
+      const rms = Math.sqrt(sumSquares / buf.length);
+      const s = EMA_PREV * prev + EMA_NEXT * rms;
+      return s < 0 ? 0 : s > 1 ? 1 : s;
+    };
+
     const tick = () => {
-      const analyser = getMicAnalyser();
-      if (analyser) {
-        if (buf.length !== analyser.fftSize) {
-          buf = new Float32Array(analyser.fftSize);
-        }
-        analyser.getFloatTimeDomainData(buf);
-        let sumSquares = 0;
-        for (let i = 0; i < buf.length; i++) {
-          const v = buf[i];
-          sumSquares += v * v;
-        }
-        const rms = Math.sqrt(sumSquares / buf.length);
-        smoothed = EMA_PREV * smoothed + EMA_NEXT * rms;
-        const clamped = smoothed < 0 ? 0 : smoothed > 1 ? 1 : smoothed;
-        useMeetingRecordingStore.setState({ currentMicLevel: clamped });
+      const mic = getMicAnalyser();
+      if (mic) {
+        smoothed = readLevel(mic, smoothed);
+        useMeetingRecordingStore.setState({ currentMicLevel: smoothed });
+      }
+      // Display-media (renderer) system path. The native main-process tap reports its
+      // level over IPC instead (below); the two paths are mutually exclusive.
+      const sys = getSystemAnalyser();
+      if (sys) {
+        sysSmoothed = readLevel(sys, sysSmoothed);
+        useMeetingRecordingStore.setState({ currentSystemLevel: sysSmoothed });
       }
       rafId = requestAnimationFrame(tick);
     };
 
     rafId = requestAnimationFrame(tick);
 
+    // Native (main-process) system-audio tap: level arrives over IPC.
+    const offSystemLevel = window.electronAPI?.onMeetingSystemLevel?.((level) => {
+      const v = typeof level === "number" && level >= 0 ? (level > 1 ? 1 : level) : 0;
+      useMeetingRecordingStore.setState({ currentSystemLevel: v });
+    });
+
     return () => {
       cancelAnimationFrame(rafId);
-      useMeetingRecordingStore.setState({ currentMicLevel: 0 });
+      offSystemLevel?.();
+      useMeetingRecordingStore.setState({ currentMicLevel: 0, currentSystemLevel: 0 });
     };
   }, [isRecording]);
 

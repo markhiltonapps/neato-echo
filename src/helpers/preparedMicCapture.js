@@ -8,6 +8,32 @@ export const PREPARED_MAX_AGE_MS = 10000;
 // dictate. The stream is still reusable; only the buffered chunks are not.
 export const PRE_ROLL_MAX_AGE_MS = 2000;
 
+// Streaming pre-roll: the 16 kHz worklet pipeline primed at prepare time
+// buffers PCM until the recording adopts it. Keep about three seconds so a
+// key-down-to-speech gap is covered without holding audio from long before.
+export const STREAMING_PRE_ROLL_MAX_BYTES = 16000 * 2 * 3;
+
+export const discardStreamingPreRoll = (prepared) => {
+  if (prepared?.pcmChunks) prepared.pcmChunks.length = 0;
+  if (prepared) prepared.pcmBytes = 0;
+};
+
+export const closeStreamingPreRoll = (prepared) => {
+  if (!prepared) return;
+  discardStreamingPreRoll(prepared);
+  try {
+    if (prepared.pcmProcessor) prepared.pcmProcessor.port.onmessage = null;
+    prepared.pcmSource?.disconnect?.();
+    prepared.pcmProcessor?.disconnect?.();
+    prepared.pcmContext?.close?.().catch?.(() => {});
+  } catch {
+    // Already torn down.
+  }
+  prepared.pcmContext = null;
+  prepared.pcmSource = null;
+  prepared.pcmProcessor = null;
+};
+
 export const discardPreRoll = (prepared) => {
   const recorder = prepared?.recorder;
   if (recorder) {
@@ -22,11 +48,13 @@ export const discardPreRoll = (prepared) => {
     prepared.recorder = null;
   }
   if (prepared?.chunks) prepared.chunks.length = 0;
+  discardStreamingPreRoll(prepared);
 };
 
 export const disposePreparedCapture = (prepared) => {
   if (!prepared) return;
   discardPreRoll(prepared);
+  closeStreamingPreRoll(prepared);
   prepared.stream?.getTracks?.().forEach((track) => track.stop());
 };
 

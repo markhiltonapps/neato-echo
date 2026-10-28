@@ -37,6 +37,7 @@ export interface TranscriptionSettings {
   snippets: Snippet[];
   assemblyAiStreaming: boolean;
   showTranscriptionPreview: boolean;
+  polishLivePreview: boolean;
 }
 
 export interface CleanupSettings {
@@ -384,6 +385,8 @@ function useSettingsInternal() {
     setAutoLearnCorrections,
     showTranscriptionPreview: store.showTranscriptionPreview,
     setShowTranscriptionPreview: store.setShowTranscriptionPreview,
+    polishLivePreview: store.polishLivePreview,
+    setPolishLivePreview: store.setPolishLivePreview,
     autoPasteEnabled: store.autoPasteEnabled,
     setAutoPasteEnabled: store.setAutoPasteEnabled,
     keepTranscriptionInClipboard: store.keepTranscriptionInClipboard,

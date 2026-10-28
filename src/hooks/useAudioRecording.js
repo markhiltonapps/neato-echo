@@ -5,6 +5,7 @@ import logger from "../utils/logger";
 import { playStartCue, playStopCue } from "../utils/dictationCues";
 import { getSettings } from "../stores/settingsStore";
 import { expandSnippets } from "../utils/snippets";
+import { stripPauseEllipses } from "../helpers/pauseEllipsis";
 import { getRecordingErrorTitle, getRecordingErrorDescription } from "../utils/recordingErrors";
 import { isAccessibilitySkipped } from "../utils/permissions";
 import { needsSttConfigBeforeStart } from "../helpers/sttConfigPolicy";
@@ -471,6 +472,13 @@ export const useAudioRecording = (toast, options = {}) => {
       onTranscriptionComplete: async (result) => {
         if (result.success) {
           dismissDictationError?.();
+          // Final safety net for pause/hesitation ellipses. The pre-cleanup
+          // strip in audioManager can be bypassed two ways: a cleanup model can
+          // re-add "..." in its output, and the streaming-commit path never
+          // runs processTranscription at all. Every transcription source
+          // converges here, so stripping result.text makes a mid-sentence "..."
+          // impossible to deliver regardless of model quality or pause length.
+          if (typeof result.text === "string") result.text = stripPauseEllipses(result.text);
           const transcribedText = result.text?.trim();
 
           if (!transcribedText) {

@@ -3,26 +3,33 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { ActionProcessingState } from "../../hooks/useActionProcessing";
+import { useElapsedSeconds } from "../../hooks/useElapsedSeconds";
+import { formatElapsedClock, formatEnhanceRemaining } from "../../utils/formatEta";
 
 interface ActionProcessingOverlayProps {
   state: ActionProcessingState;
   actionName: string | null;
+  startedAt?: number;
+  estimatedSeconds?: number;
 }
 
 export default function ActionProcessingOverlay({
   state,
   actionName,
+  startedAt,
+  estimatedSeconds,
 }: ActionProcessingOverlayProps) {
   const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
-  const [prevState, setPrevState] = useState(state);
+  // Show whenever there's an active/just-finished run — including on first mount
+  // when returning to a note whose enhancement is already underway (previously
+  // the overlay only appeared on a state transition, so it silently vanished
+  // after a tab switch and the work looked cancelled).
+  const [visible, setVisible] = useState(state === "processing" || state === "success");
+  const elapsed = useElapsedSeconds(state === "processing" ? startedAt : null);
 
-  if (state !== prevState) {
-    setPrevState(state);
-    if (state === "processing" || state === "success") {
-      setVisible(true);
-    }
-  }
+  useEffect(() => {
+    if (state === "processing" || state === "success") setVisible(true);
+  }, [state]);
 
   useEffect(() => {
     if (state !== "idle") return;
@@ -94,6 +101,14 @@ export default function ActionProcessingOverlay({
                 data-scanner-progress=""
               />
             </div>
+            {startedAt != null && (
+              <span className="text-[11px] tabular-nums text-accent/50">
+                {formatEnhanceRemaining(t, elapsed, estimatedSeconds)} · {formatElapsedClock(elapsed)}
+              </span>
+            )}
+            <span className="text-[10px] text-foreground/30">
+              {t("notes.enhance.safeToLeave")}
+            </span>
           </>
         )}
       </div>

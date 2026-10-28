@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePolicyStore } from "../stores/policyStore";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import {
   Sliders,
   Mic,
@@ -11,6 +12,7 @@ import {
   CreditCard,
   Shield,
   Users,
+  Cloud,
 } from "lucide-react";
 import SidebarModal, { type SidebarItem } from "./ui/SidebarModal";
 import SettingsPage, { AccountAvatar, SettingsSectionType } from "./SettingsPage";
@@ -119,6 +121,15 @@ export default function SettingsModal({ open, onOpenChange, initialSection }: Se
         group: t("settingsModal.groups.system"),
       },
       {
+        id: "neatoCloud",
+        label: t("settingsModal.sections.neatoCloud.label", { defaultValue: "Neato Cloud" }),
+        icon: Cloud,
+        description: t("settingsModal.sections.neatoCloud.description", {
+          defaultValue: "Sync notes to the mobile app",
+        }),
+        group: t("settingsModal.groups.system"),
+      },
+      {
         id: "system",
         label: t("settingsModal.sections.system.label"),
         icon: Wrench,
@@ -126,11 +137,19 @@ export default function SettingsModal({ open, onOpenChange, initialSection }: Se
         group: t("settingsModal.groups.system"),
       },
     ];
-    return isSignedIn ? items : items.filter((item) => item.id !== "workspace");
+    // Neato Echo local-first edition hides every account-bound section.
+    const hidden = new Set<SettingsSectionType>(
+      ACCOUNTS_ENABLED
+        ? isSignedIn
+          ? []
+          : ["workspace"]
+        : ["account", "plansBilling", "workspace"]
+    );
+    return items.filter((item) => !hidden.has(item.id));
   }, [t, isSignedIn]);
 
   const resolveSection = (section: string | undefined): SettingsSectionType => {
-    if (!section) return "account";
+    if (!section) return ACCOUNTS_ENABLED ? "account" : "general";
     return (SECTION_ALIASES[section] ?? section) as SettingsSectionType;
   };
 
@@ -179,7 +198,7 @@ export default function SettingsModal({ open, onOpenChange, initialSection }: Se
       }
     >
       {policyManaged && (
-        <div className="mx-4 mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+        <div className="mx-4 mt-4 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-sm text-info">
           {t("settingsModal.managedByOrg")}
         </div>
       )}

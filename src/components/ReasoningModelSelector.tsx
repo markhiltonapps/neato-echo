@@ -241,6 +241,10 @@ function GpuStatusBadge() {
   // State 4: Downloaded + GPU active
   if (vulkanStatus?.downloaded) {
     const isGpu = serverStatus?.gpuAccelerated && serverStatus?.backend === "vulkan";
+    // The pack is installed but the running server actually fell back to CPU.
+    // Previously this showed a benign "ready" — indistinguishable from GPU
+    // working — so users believed acceleration was on while replies crawled.
+    const runningOnCpu = serverStatus?.running && !isGpu && serverStatus?.backend === "cpu";
 
     // State 6: Activation failed
     if (!isGpu && activationFailed) {
@@ -272,6 +276,27 @@ function GpuStatusBadge() {
           >
             {t("gpu.remove")}
           </Button>
+        </div>
+      );
+    }
+
+    // Running on CPU despite the pack being installed — make it explicit and
+    // offer a one-click retry (re-detect + restart on the Vulkan binary).
+    if (runningOnCpu) {
+      return (
+        <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-warning/40 bg-warning/5 p-2.5">
+          <div className="flex min-w-0 items-start gap-2">
+            <CircleAlert size={15} className="mt-0.5 shrink-0 text-warning" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground">{t("gpu.runningOnCpu")}</p>
+              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                {t("gpu.runningOnCpuDescription")}
+              </p>
+              <Button type="button" onClick={handleRetry} size="sm" className="mt-2 h-7 px-3 text-xs">
+                {t("gpu.retryActivation")}
+              </Button>
+            </div>
+          </div>
         </div>
       );
     }

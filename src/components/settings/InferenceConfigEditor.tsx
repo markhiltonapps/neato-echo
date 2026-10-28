@@ -1,7 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
-import { Cloud, Key, Cpu, Network, Building2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Cloud, Key, Cpu, Network, Building2, ShieldCheck, AlertTriangle, Check } from "lucide-react";
 import {
   LLM_ENTERPRISE_POLICY_PROVIDER_IDS,
   LLM_POLICY_PROVIDER_IDS,
@@ -9,6 +9,7 @@ import {
   selectPolicyEffectiveSettings,
   selectResolvedLLMConfig,
   setResolvedLLMConfig,
+  applyReasoningConfigToAllScopes,
 } from "../../stores/settingsStore";
 import { usePolicyModeOptions, usePolicySnapshot } from "../../hooks/usePolicy";
 import { InferenceModeSelector } from "../ui/SettingsSection";
@@ -157,6 +158,13 @@ export default function InferenceConfigEditor({
   const setProvider = setField("provider");
   const setModel = setField("model");
 
+  const [appliedToAll, setAppliedToAll] = useState(false);
+  const handleApplyToAll = useCallback(() => {
+    applyReasoningConfigToAllScopes(scope);
+    setAppliedToAll(true);
+    setTimeout(() => setAppliedToAll(false), 2500);
+  }, [scope]);
+
   const renderModelSelector = (mode?: "cloud" | "local") => (
     <ReasoningModelSelector
       reasoningModel={config.model}
@@ -285,6 +293,26 @@ export default function InferenceConfigEditor({
           }
         />
       )}
+
+      {(effectiveMode === "local" ||
+        effectiveMode === "providers" ||
+        effectiveMode === "self-hosted") &&
+        !!config.model && (
+          <button
+            type="button"
+            onClick={handleApplyToAll}
+            className="inline-flex items-center gap-1.5 self-start text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {appliedToAll ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-success" />
+                {t("settingsPage.llms.appliedToAll")}
+              </>
+            ) : (
+              t("settingsPage.llms.applyToAll")
+            )}
+          </button>
+        )}
 
       {showThinkingToggle && (
         <div className="flex items-start justify-between gap-3 pt-1">

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Home,
+  Mic,
   BarChart3,
   MessageSquare,
   NotebookPen,
@@ -16,9 +17,12 @@ import {
   X,
   Search,
   Zap,
+  Folder,
 } from "lucide-react";
+import { useFolders, useActiveContext, setActiveFolderId, loadFolders } from "../stores/noteStore";
 import logoIcon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 import { cn } from "./lib/utils";
 import SupportDropdown from "./ui/SupportDropdown";
 import { getCachedPlatform } from "../utils/platform";
@@ -36,7 +40,14 @@ const rowButtonClass =
   "group flex items-center gap-2.5 w-full h-8 px-2.5 rounded-md text-left outline-none hover:bg-foreground/4 dark:hover:bg-white/4 focus-visible:ring-1 focus-visible:ring-primary/30 transition-colors duration-150";
 
 export type ControlPanelView =
-  "home" | "insights" | "chat" | "personal-notes" | "dictionary" | "upload" | "integrations";
+  | "home"
+  | "dictation"
+  | "insights"
+  | "chat"
+  | "personal-notes"
+  | "dictionary"
+  | "upload"
+  | "integrations";
 
 interface ControlPanelSidebarProps {
   activeView: ControlPanelView;
@@ -82,12 +93,30 @@ export default function ControlPanelSidebar({
   const agentAllowed = usePolicyStore(isAgentAllowed);
   const policyActionsAllowed = usePolicyStore((state) => isPolicyActionAllowed(state));
 
+  // Quick folder access: the full folder tree lives inside the Notes view (and
+  // can require scrolling), so surface the user's own folders here for one-click
+  // selection. The sidebar is always mounted, so prime the store on mount.
+  const folders = useFolders();
+  const activeContext = useActiveContext();
+  useEffect(() => {
+    void loadFolders();
+  }, []);
+  const navFolders = useMemo(
+    () =>
+      folders
+        .filter((f) => !f.deleted_at && f.is_default === 0)
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [folders]
+  );
+  const activeFolderId = activeView === "personal-notes" ? (activeContext?.folderId ?? null) : null;
+
   const navItems: {
     id: ControlPanelView;
     label: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
   }[] = [
     { id: "home", label: t("sidebar.home"), icon: Home },
+    { id: "dictation", label: t("sidebar.dictation"), icon: Mic },
     { id: "insights", label: t("sidebar.insights"), icon: BarChart3 },
     ...(agentAllowed
       ? [{ id: "chat" as const, label: t("sidebar.chat"), icon: MessageSquare }]
@@ -101,11 +130,18 @@ export default function ControlPanelSidebar({
   ];
 
   return (
-    <div className="w-48 h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-surface-1/60 dark:bg-surface-1">
+    <div className="w-full h-full shrink-0 border-r border-border/15 dark:border-white/6 flex flex-col bg-gradient-to-b from-surface-0 to-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] dark:from-surface-2 dark:to-surface-0 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div
         className="w-full h-10 shrink-0"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       />
+
+      <div className="flex items-center gap-2 px-3 pt-0.5 pb-2">
+        <img src={logoIcon} alt="" className="w-[22px] h-[22px] rounded-[6px] shrink-0" />
+        <span className="font-brand text-[13px] font-bold tracking-[0.01em] text-foreground select-none">
+          neato<span className="text-brand-teal">echo</span>
+        </span>
+      </div>
 
       {onOpenSearch && (
         <div className="px-2 pt-2 pb-1">
@@ -139,19 +175,25 @@ export default function ControlPanelSidebar({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               className={cn(
-                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-md outline-none transition-colors duration-150 text-left",
-                "focus-visible:ring-1 focus-visible:ring-primary/30",
+                "group relative flex items-center gap-2.5 w-full h-8 px-2.5 rounded-lg outline-none transition-colors duration-150 text-left",
+                "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
                 isActive
-                  ? "bg-primary/8 dark:bg-primary/10"
-                  : "hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
+                  ? "gloss-convex bg-brand-teal-soft border border-brand-teal/30 shadow-[0_3px_12px_-5px_var(--color-brand-teal)]"
+                  : "border border-transparent hover:bg-foreground/4 dark:hover:bg-white/4 active:bg-foreground/6"
               )}
             >
+              {isActive && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand-teal shadow-[0_0_10px_var(--color-brand-teal)]"
+                />
+              )}
               <Icon
                 size={15}
                 className={cn(
                   "shrink-0 transition-colors duration-150",
                   isActive
-                    ? "text-primary"
+                    ? "text-brand-teal"
                     : "text-foreground/60 group-hover:text-foreground/75 dark:text-foreground/55 dark:group-hover:text-foreground/70"
                 )}
               />
@@ -170,7 +212,59 @@ export default function ControlPanelSidebar({
         })}
       </nav>
 
-      <div className="flex-1" />
+      {navFolders.length > 0 && (
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+          <div className="px-2.5 pt-1 pb-1.5">
+            <span className="font-brand text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/70">
+              {t("sidebar.folders")}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {navFolders.map((folder) => {
+              const isActive = activeFolderId === folder.id;
+              return (
+                <button
+                  key={folder.id}
+                  onClick={() => {
+                    setActiveFolderId(folder.id);
+                    onViewChange("personal-notes");
+                  }}
+                  title={folder.name}
+                  className={cn(
+                    "group flex items-center gap-2.5 w-full h-7 px-2.5 rounded-md outline-none text-left transition-colors duration-150",
+                    "focus-visible:ring-1 focus-visible:ring-brand-teal/40",
+                    isActive
+                      ? "bg-brand-teal-soft text-foreground"
+                      : "hover:bg-foreground/4 dark:hover:bg-white/4"
+                  )}
+                >
+                  <Folder
+                    size={13}
+                    className={cn(
+                      "shrink-0 transition-colors duration-150",
+                      isActive
+                        ? "text-brand-teal"
+                        : "text-foreground/45 group-hover:text-foreground/65 dark:text-foreground/40"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "flex-1 min-w-0 truncate text-[11.5px] transition-colors duration-150",
+                      isActive
+                        ? "text-foreground font-medium"
+                        : "text-foreground/75 group-hover:text-foreground dark:text-foreground/70"
+                    )}
+                  >
+                    {folder.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {navFolders.length === 0 && <div className="flex-1" />}
 
       {showLimitBanner && (
         <div className="px-2 pb-2">
@@ -196,7 +290,7 @@ export default function ControlPanelSidebar({
 
       {showUpgradeBanner && (
         <div className="px-2 pb-2">
-          <div className="relative rounded-xl border border-[#6c50e9]/25 dark:border-[#6c50e9]/40 bg-card bg-gradient-to-b from-[#6c50e9]/15 via-[#6c50e9]/5 to-transparent dark:from-[#6c50e9]/30 dark:via-[#6c50e9]/10 p-3">
+          <div className="relative rounded-xl border border-brand-teal/25 dark:border-brand-teal/35 bg-card bg-gradient-to-b from-brand-teal/12 via-brand-teal/4 to-transparent dark:from-brand-teal/20 dark:via-brand-teal/8 p-3">
             <button
               onClick={() => {
                 setUpgradeDismissed(true);
@@ -230,7 +324,7 @@ export default function ControlPanelSidebar({
             </div>
             <button
               onClick={onUpgrade}
-              className="w-full h-7 rounded-full bg-[#4079ed] text-white text-xs font-medium hover:bg-[#3568d9] active:bg-[#2f5dc4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4079ed]/40 transition-colors"
+              className="w-full h-7 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors"
             >
               {t("sidebar.learnMore")}
             </button>
@@ -294,7 +388,7 @@ export default function ControlPanelSidebar({
                   </p>
                 )}
               </>
-            ) : authLoaded && !isSignedIn ? (
+            ) : ACCOUNTS_ENABLED && authLoaded && !isSignedIn ? (
               <p className="text-xs text-foreground/45 dark:text-foreground/55">
                 {t("sidebar.notSignedIn")}
               </p>

@@ -126,8 +126,9 @@ export default function AddNotesToFolderDialog({
                     <button
                       key={note.id}
                       onClick={() => toggleNote(note.id)}
+                      aria-pressed={isSelected}
                       className={cn(
-                        "w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors",
+                        "w-full flex items-center gap-3 px-2 py-2 rounded-md transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                         "hover:bg-foreground/3 dark:hover:bg-white/3",
                         isSelected && "bg-primary/5 dark:bg-primary/8"
                       )}

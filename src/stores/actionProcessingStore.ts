@@ -5,6 +5,12 @@ import { appendDictionarySuffix } from "../config/prompts";
 import { generateNoteTitle } from "../utils/generateTitle";
 import { buildNoteFormattingOverrides } from "../helpers/noteFormattingOverrides";
 import { tagActionItemOwners, type MentionPerson } from "../utils/mentionMarkdown";
+import {
+  planSummaryChunks,
+  estimateTokens,
+  LOCAL_SERVER_CTX_TOKENS,
+} from "../helpers/summaryChunking";
+import { modelRegistry } from "../models/ModelRegistry";
 import type { ActionItem } from "../types/electron";
 
 export type ActionProcessingStatus = "idle" | "processing" | "success";
@@ -12,6 +18,19 @@ export type ActionProcessingStatus = "idle" | "processing" | "success";
 export interface NoteActionState {
   status: ActionProcessingStatus;
   actionName: string | null;
+  // Epoch ms when processing began, for a live elapsed counter.
+  startedAt?: number;
+  // A rough expected duration (seconds) from the input size, for a soft ETA.
+  estimatedSeconds?: number;
+}
+
+// Local note enhancement has no streamed progress, so estimate from input size:
+// generation time tracks how much text the model has to read and rewrite. This
+// is deliberately rough (hardware varies) — it drives a soft ETA, not a promise.
+// Tuned so a short note is ~15s and a long meeting transcript a few minutes.
+export function estimateEnhanceSeconds(inputChars: number): number {
+  const seconds = 12 + inputChars / 180;
+  return Math.min(600, Math.max(10, Math.round(seconds)));
 }
 
 export interface ActionErrorEvent {
@@ -87,6 +106,86 @@ CONTENT RULES:
 
 Instructions: `;
 
+// Map step for long transcripts: condense one slice into compact notes the final
+// (reduce) pass can combine. Detail-preserving so the final summary isn't starved.
+const MAP_SYSTEM_PROMPT = `You are condensing ONE part of a long meeting transcript that was split because it is too long to process at once. From THIS part only, write compact notes capturing everything a summary would need: key discussion points, decisions, action items with their owners, questions raised, and any names, dates, numbers, and commitments. Keep the speaker labels. Do NOT add a title, introduction, or conclusion, and do not mention that the transcript was split — output only the notes for this part.`;
+
+// Bound per-part output so the combined notes stay well under the window; the reduce
+// pass re-summarizes them into the user's chosen format.
+const MAP_COMPLETION_RESERVE_TOKENS = 1024;
+const MAP_MAX_OUTPUT_TOKENS = 900;
+// Each map pass condenses, so the combined notes shrink round over round; a handful of
+// rounds covers even multi-hour meetings. The cap only bounds pathological cases.
+const MAX_REDUCE_ROUNDS = 5;
+
+type ProcessConfig = Parameters<typeof reasoningService.processText>[3];
+
+// Summarize `content` with a small-context local model via map-reduce: condense
+// oversized input in parts, then combine. When `content` already fits, this is a single
+// pass identical to the old behavior. `finalSystemPrompt` (the user's chosen enhancement
+// style) is applied only to the final combine, so the output format is unchanged.
+async function summarizeLocalLongForm(
+  content: string,
+  modelId: string,
+  finalSystemPrompt: string,
+  baseConfig: ProcessConfig,
+  ctxTokens: number,
+  isCancelled: () => boolean
+): Promise<string> {
+  let current = content;
+
+  for (let round = 0; round < MAX_REDUCE_ROUNDS; round++) {
+    // Fits a single final pass? Produce the real summary in the user's chosen format.
+    const finalPlan = planSummaryChunks(current, {
+      ctxTokens,
+      systemTokens: estimateTokens(finalSystemPrompt),
+    });
+    if (!finalPlan.needsChunking) {
+      return reasoningService.processText(current, modelId, null, {
+        ...baseConfig,
+        systemPrompt: finalSystemPrompt,
+      });
+    }
+
+    // Too big: condense each slice, then loop to try reducing again.
+    const mapPlan = planSummaryChunks(current, {
+      ctxTokens,
+      systemTokens: estimateTokens(MAP_SYSTEM_PROMPT),
+      completionReserveTokens: MAP_COMPLETION_RESERVE_TOKENS,
+    });
+    const partials: string[] = [];
+    for (let i = 0; i < mapPlan.chunks.length; i++) {
+      if (isCancelled()) throw new Error("__cancelled__");
+      const part = await reasoningService.processText(mapPlan.chunks[i], modelId, null, {
+        ...baseConfig,
+        systemPrompt: MAP_SYSTEM_PROMPT,
+        maxTokens: MAP_MAX_OUTPUT_TOKENS,
+      });
+      partials.push(`## Part ${i + 1} of ${mapPlan.chunks.length}\n${part.trim()}`);
+    }
+    const combined = partials.join("\n\n");
+
+    // Safety: if a round fails to shrink (verbose output), stop looping and do a
+    // best-effort final pass on a budget-sized slice rather than spin or 400.
+    if (combined.length >= current.length) {
+      current = combined;
+      break;
+    }
+    current = combined;
+  }
+
+  // Fallback (pathological inputs only): force one final pass on a window-sized slice.
+  const capped =
+    planSummaryChunks(current, {
+      ctxTokens,
+      systemTokens: estimateTokens(finalSystemPrompt),
+    }).chunks[0] ?? current;
+  return reasoningService.processText(capped, modelId, null, {
+    ...baseConfig,
+    systemPrompt: finalSystemPrompt,
+  });
+}
+
 export interface RunActionOptions {
   isCloudMode: boolean;
   modelId: string;
@@ -133,7 +232,12 @@ export function runBackgroundAction(
 
   cancelledFlags.set(noteId, false);
   processingFlags.set(noteId, true);
-  setNoteState(noteId, { status: "processing", actionName: action.name });
+  setNoteState(noteId, {
+    status: "processing",
+    actionName: action.name,
+    startedAt: Date.now(),
+    estimatedSeconds: estimateEnhanceSeconds(noteContent.length),
+  });
 
   (async () => {
     try {
@@ -144,12 +248,31 @@ export function runBackgroundAction(
         options.isMeetingNote ? settings.customDictionary : undefined,
         settings.uiLanguage
       );
-      const enhanced = await reasoningService.processText(noteContent, modelId, null, {
-        systemPrompt,
+      const baseConfig = {
         temperature: 0.3,
         disableThinking: settings.noteFormattingDisableThinking,
         ...providerOverrides,
-      });
+      };
+      // The bundled local model has a small context window, so a long transcript must be
+      // summarized in parts and combined (map-reduce). Cloud/BYOK models have ample
+      // context and keep the single-pass path.
+      const isLocalBundled = providerOverrides.provider === "local";
+      const enhanced = isLocalBundled
+        ? await summarizeLocalLongForm(
+            noteContent,
+            modelId,
+            systemPrompt,
+            baseConfig,
+            Math.min(
+              LOCAL_SERVER_CTX_TOKENS,
+              modelRegistry.getModel(modelId)?.model.contextLength ?? LOCAL_SERVER_CTX_TOKENS
+            ),
+            () => cancelledFlags.get(noteId) === true
+          )
+        : await reasoningService.processText(noteContent, modelId, null, {
+            ...baseConfig,
+            systemPrompt,
+          });
 
       if (cancelledFlags.get(noteId)) return;
 
@@ -216,4 +339,23 @@ export function selectNoteActionState(
 ): NoteActionState {
   if (noteId == null) return IDLE_STATE;
   return state.noteStates[noteId] ?? IDLE_STATE;
+}
+
+/** The first note currently being enhanced, for a global in-progress indicator. */
+export function selectActiveAction(state: ActionProcessingStoreState): {
+  noteId: number;
+  actionName: string | null;
+  startedAt?: number;
+  estimatedSeconds?: number;
+} | null {
+  for (const [id, s] of Object.entries(state.noteStates)) {
+    if (s.status === "processing")
+      return {
+        noteId: Number(id),
+        actionName: s.actionName,
+        startedAt: s.startedAt,
+        estimatedSeconds: s.estimatedSeconds,
+      };
+  }
+  return null;
 }

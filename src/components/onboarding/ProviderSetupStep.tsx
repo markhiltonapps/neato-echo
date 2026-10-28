@@ -7,7 +7,11 @@ import { Input } from "../ui/input";
 import { ProviderIcon } from "../ui/ProviderIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useModelDownload } from "../../hooks/useModelDownload";
-import { useSettingsStore } from "../../stores/settingsStore";
+import {
+  useSettingsStore,
+  selectResolvedLLMConfig,
+  setResolvedLLMConfig,
+} from "../../stores/settingsStore";
 import { usePolicySnapshot } from "../../hooks/usePolicy";
 import {
   filterByokProviderOptionsByPolicy,
@@ -74,6 +78,9 @@ export function SetupStageStepper({ stepId }: { stepId: OnboardingStepId }) {
             : t("onboarding.rehaul.provider.assistant")}
         </span>
       </div>
+      <span className="sr-only">
+        {t("onboarding.rehaul.local.stepOf", { step: assistant ? 2 : 1, total: 2 })}
+      </span>
     </div>
   );
 }
@@ -87,7 +94,7 @@ export function SetupStageStepper({ stepId }: { stepId: OnboardingStepId }) {
  * weight — so the step's own call to action read quieter than the Continue
  * button sitting right under it.
  */
-function StepPrimaryAction({
+export function StepPrimaryAction({
   onClick,
   disabled = false,
   className = "",
@@ -110,7 +117,7 @@ function StepPrimaryAction({
   );
 }
 
-function StepSecondaryAction({
+export function StepSecondaryAction({
   onClick,
   className = "",
   children,
@@ -355,6 +362,24 @@ export function ByokProviderStep({
       store.setCloudTranscriptionMode("byok");
       store.switchCloudTranscriptionProvider("dictation", selectedProvider);
       store.setCloudTranscriptionModel(selectedModel);
+    }
+    if (assistant) {
+      // The assistant branches above only commit the chatIntelligence scope.
+      // Note summaries and "Generate Notes" run on the noteFormatting scope, so
+      // without this it stays empty and the first summary fails with "No AI model
+      // selected." Copy the just-committed chat config (mode/provider/model,
+      // endpoint, and any per-scope key) onto noteFormatting. disableThinking
+      // stays per-scope, matching applyReasoningConfigToAllScopes.
+      const chat = selectResolvedLLMConfig(useSettingsStore.getState(), "chatIntelligence");
+      setResolvedLLMConfig("noteFormatting", {
+        mode: chat.mode,
+        provider: chat.provider,
+        model: chat.model,
+        cloudMode: chat.cloudMode,
+        cloudBaseUrl: chat.cloudBaseUrl,
+        remoteUrl: chat.remoteUrl,
+        customApiKey: chat.customApiKey,
+      });
     }
     onProceed();
   };
@@ -633,7 +658,11 @@ export function LocalModelSetupStep({
         ? "nvidia"
         : "whisper";
     setSelectedProvider(defaultProvider);
-    setSelectedModel("");
+    // Pre-select the provider's recommended/default model (2B for Qwen) so a
+    // user who clicks straight through onboarding still lands on the fast model
+    // for every scope, instead of an empty selection. Transcription keeps its
+    // own default flow.
+    setSelectedModel(assistant ? pickDefaultModelId(modelRegistry.getProvider(defaultProvider)) : "");
     onReadinessChange(false);
   }, [assistant, onReadinessChange, stepId]);
 
@@ -658,6 +687,7 @@ export function LocalModelSetupStep({
         name: model.name,
         size: model.size,
         recommended: model.recommended,
+        description: model.description,
         icon: selectedProvider,
       }));
     }
@@ -671,6 +701,7 @@ export function LocalModelSetupStep({
           name: model.name,
           size: model.size.replace(/(?<=\d)(?=[A-Za-z])/, " "),
           recommended: model.recommended,
+          description: model.description,
           icon: "nvidia",
         }));
     }
@@ -679,6 +710,7 @@ export function LocalModelSetupStep({
       name: model.name,
       size: model.size.replace(/(?<=\d)(?=[A-Za-z])/, " "),
       recommended: model.recommended,
+      description: model.description,
       icon: "openai",
     }));
   }, [assistant, selectedProvider]);
@@ -710,6 +742,11 @@ export function LocalModelSetupStep({
       } else if (selectedProvider === "nvidia") {
         store.setLocalTranscriptionProvider("nvidia");
         store.setParakeetModel(modelId);
+        // Load the model now so the first dictation does not pay the
+        // server start (tens of seconds on a cold PC). Persisting the
+        // provider/model to .env happens on server start, which also
+        // makes the next launch pre-warm it.
+        void window.electronAPI?.parakeetServerStart?.(modelId)?.catch(() => {});
       } else {
         store.setLocalTranscriptionProvider("whisper");
         store.setWhisperModel(modelId);
@@ -816,7 +853,11 @@ export function LocalModelSetupStep({
           return (
             <div
               key={model.id}
-              className="flex min-h-14 items-center gap-3 border-b border-[var(--onboarding-control-border)] px-1 py-2 last:border-b-0"
+              className={`flex min-h-14 items-center gap-3 border-b border-[var(--onboarding-control-border)] px-1 py-2 last:border-b-0 ${
+                model.recommended
+                  ? "-mx-1 my-1 rounded-xl border-b-0 bg-[var(--onboarding-surface)] px-2 ring-1 ring-[var(--onboarding-accent)]"
+                  : ""
+              }`}
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[var(--onboarding-control-border)] bg-[var(--onboarding-surface)]">
                 <ProviderIcon
@@ -831,12 +872,17 @@ export function LocalModelSetupStep({
                 onClick={() => selectInstalledModel(model.id)}
                 className="min-w-0 flex-1 text-left disabled:cursor-default"
               >
-                <span className="block truncate text-sm font-medium text-[var(--onboarding-text-primary)]">
-                  {model.name}
+                <span className="flex items-center gap-2 text-sm font-medium text-[var(--onboarding-text-primary)]">
+                  <span className="truncate">{model.name}</span>
+                  {model.recommended && (
+                    <span className="shrink-0 rounded-full bg-[var(--onboarding-accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--onboarding-accent-foreground)]">
+                      {t("common.recommended")}
+                    </span>
+                  )}
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-[var(--onboarding-text-secondary)]">
+                <span className="mt-0.5 line-clamp-2 block text-xs leading-[1.35] text-[var(--onboarding-text-secondary)]">
                   {model.size}
-                  {!assistant && model.recommended && ` - ${t("common.recommended")}`}
+                  {model.description && ` · ${model.description}`}
                 </span>
               </button>
 
@@ -893,6 +939,14 @@ export function LocalModelSetupStep({
           );
         })}
       </div>
+
+      <p className="mt-3 text-xs leading-[1.45] text-[var(--onboarding-text-secondary)]">
+        {t(
+          assistant
+            ? "onboarding.rehaul.local.otherModelsNoteAssistant"
+            : "onboarding.rehaul.local.otherModelsNoteSpeech"
+        )}
+      </p>
 
       <div className={`mt-4 grid gap-2 ${anyDownloadActive ? "grid-cols-2" : "grid-cols-1"}`}>
         {anyDownloadActive && (

@@ -94,7 +94,7 @@ export function HotkeyGuidanceAccordion({
                 [platformKey]: !prev[platformKey],
               }))
             }
-            className="text-xs text-indigo-600 hover:text-indigo-700"
+            className="text-xs text-primary hover:text-primary/80"
           >
             {showAll[platformKey] ? t("hotkeyGuidance.showFewer") : t("hotkeyGuidance.showAll")}
           </button>

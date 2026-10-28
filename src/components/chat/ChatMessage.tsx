@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import neddyHead from "@/assets/neddy-head.webp";
 import {
   Copy,
   Check,
@@ -211,9 +212,19 @@ export function ChatMessage({
 
   return (
     <div
-      className="group/msg flex justify-start"
+      className="group/msg flex justify-start items-start gap-2"
       style={{ animation: "agent-message-in 200ms ease-out both" }}
     >
+      <img
+        src={neddyHead}
+        alt=""
+        aria-hidden="true"
+        width={26}
+        height={26}
+        draggable={false}
+        decoding="async"
+        className="mt-0.5 h-[26px] w-[26px] shrink-0 rounded-full object-cover shadow-[var(--shadow-card)] select-none"
+      />
       <div
         data-chat-bubble
         className={cn(

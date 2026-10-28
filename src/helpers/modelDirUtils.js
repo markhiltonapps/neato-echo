@@ -38,7 +38,7 @@ function getPreferredCacheRoot(homeCache) {
   if (process.platform === "win32") {
     const redirectedProfile = process.env.USERPROFILE;
     if (redirectedProfile && path.isAbsolute(redirectedProfile)) {
-      return path.join(redirectedProfile, ".cache", "openwhispr");
+      return path.join(redirectedProfile, ".cache", "neato-echo");
     }
   }
 
@@ -122,7 +122,7 @@ function migrateLegacyModelDirs(legacyRoot, targetRoot) {
 
 function getCacheRoot() {
   const homeDir = app?.getPath?.("home") || os.homedir();
-  const homeCache = path.join(homeDir, ".cache", "openwhispr");
+  const homeCache = path.join(homeDir, ".cache", "neato-echo");
   let targetRoot = getPreferredCacheRoot(homeCache);
 
   if (process.platform === "win32" && pathHasProblematicChars(targetRoot)) {

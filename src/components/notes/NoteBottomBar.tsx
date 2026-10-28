@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Square, Loader2, SlidersHorizontal } from "lucide-react";
+import MeetingDevicePanel from "./MeetingDevicePanel";
 import { cn } from "../lib/utils";
 import { SendIcon } from "../ui/SendIcon";
 import { LiveWaveform } from "../ui/LiveWaveform";
 import { analyserRms } from "../../utils/audioLevel";
-import { GRADIENT_CIRCLE } from "../ui/gradientCircle";
+import { WARM_GRADIENT_CIRCLE } from "../ui/gradientCircle";
 import { GLASS_SURFACE } from "../ui/glass";
 import { formatMmSs } from "../../utils/formatDuration";
 import { getMicAnalyser, useMeetingRecordingStore } from "../../stores/meetingRecordingStore";
@@ -59,6 +60,7 @@ export default function NoteBottomBar({
   const containerRef = useRef<HTMLDivElement>(null);
   const [elapsed, setElapsed] = useState(0);
   const [wasRecording, setWasRecording] = useState(isRecording);
+  const [showDevices, setShowDevices] = useState(false);
 
   if (isRecording !== wasRecording) {
     setWasRecording(isRecording);
@@ -127,6 +129,37 @@ export default function NoteBottomBar({
       className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-4 pt-6 pointer-events-none bg-gradient-to-t from-background from-45% to-transparent"
     >
       <div className="flex items-end pointer-events-auto w-full max-w-[600px] mx-auto">
+        {canRecord && isRecording && (
+          <div className="relative shrink-0 mr-2">
+            <button
+              type="button"
+              onClick={() => setShowDevices((v) => !v)}
+              aria-label={t("notes.audioPanel.title")}
+              title={t("notes.audioPanel.title")}
+              aria-expanded={showDevices}
+              className={cn(
+                "flex items-center justify-center w-11 h-11 rounded-full transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                showDevices
+                  ? "bg-primary/18 text-primary"
+                  : "bg-foreground/6 dark:bg-white/8 text-foreground/55 hover:text-foreground hover:bg-foreground/10"
+              )}
+            >
+              <SlidersHorizontal size={16} />
+            </button>
+            {showDevices && (
+              <div
+                className={cn(
+                  "absolute bottom-full mb-2 left-0 rounded-xl overflow-hidden z-20",
+                  "bg-card/98 dark:bg-surface-2/98 backdrop-blur-xl",
+                  "border border-primary/20 dark:border-primary/25 shadow-elevated"
+                )}
+              >
+                <MeetingDevicePanel />
+              </div>
+            )}
+          </div>
+        )}
         {canRecord && (
           <div
             className={cn(
@@ -152,7 +185,7 @@ export default function NoteBottomBar({
                 <span
                   className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
-                    GRADIENT_CIRCLE,
+                    WARM_GRADIENT_CIRCLE,
                     "transition-[filter] duration-150 group-hover:brightness-110"
                   )}
                 >
@@ -170,18 +203,19 @@ export default function NoteBottomBar({
                 tabIndex={micHidden ? -1 : undefined}
                 className={cn(
                   "flex items-center justify-center w-11 h-11 rounded-full",
-                  GRADIENT_CIRCLE,
+                  WARM_GRADIENT_CIRCLE,
+                  "shadow-[var(--shadow-glow-warm)]",
                   "transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
                   "hover:brightness-110",
                   "active:scale-95",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-warm/40",
                   recordingDisabled && "opacity-40 saturate-0 pointer-events-none",
                   isProcessing && "pointer-events-none",
                   micHidden
                     ? "translate-x-10 opacity-0 pointer-events-none"
                     : "translate-x-0 opacity-100"
                 )}
-                aria-label={t("notes.editor.transcribe")}
+                aria-label={t("notes.editor.record")}
                 title={recordingDisabled ? t("common.managedByOrg") : undefined}
               >
                 {isProcessing ? (

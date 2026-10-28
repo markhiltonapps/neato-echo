@@ -1,5 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { formatShortDate } from "../../utils/dateFormatting";
+import { noteDurationSeconds, isShortRecordingDuration } from "../../utils/noteDuration";
+import { NoteOriginIcon } from "./NoteOriginIcon";
 import {
   Check,
   ChevronRight,
@@ -8,14 +11,17 @@ import {
   Folder,
   FolderOpen,
   Info,
+  ListChecks,
   Loader2,
   Lock,
+  Mic,
   MoreHorizontal,
   Pencil,
   Plus,
   Search,
   Share2,
   Smile,
+  X,
   Trash2,
   Users,
 } from "lucide-react";
@@ -92,8 +98,13 @@ const FOLDER_INPUT_CLASS =
   "w-full h-6 bg-foreground/5 dark:bg-white/5 rounded px-2 text-xs text-foreground outline-none border border-primary/30 focus:border-primary/50";
 
 const ROW_BASE_CLASS =
-  "group relative flex items-center gap-1.5 rounded-md cursor-pointer select-none " +
+  "group relative flex items-center gap-1.5 rounded-lg border border-transparent cursor-pointer select-none " +
   "transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-ring/30";
+
+// Active/selected row — a glossy teal card that lifts off the list with a soft
+// teal bloom (the Neddy shell finish). Bound once so every row type matches.
+const ROW_ACTIVE_CLASS =
+  "gloss-convex bg-brand-teal-soft border-brand-teal/25 shadow-[0_2px_8px_-4px_var(--color-brand-teal)]";
 
 const KEBAB_BUTTON_CLASS =
   "h-5 w-5 rounded-sm opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 " +
@@ -152,7 +163,7 @@ interface RowA11yProps {
 }
 
 interface SpacesTreeProps {
-  onDeleteNote: (id: number) => void;
+  onDeleteNote: (id: number) => void | Promise<void>;
   onMoveNote: (noteId: number, target: NoteMoveTarget) => Promise<void>;
   onCreateFolderAndMove: (noteId: number, folderName: string) => void;
   onNewNote: (spaceId: number, folderId: number | null) => void;
@@ -193,7 +204,7 @@ function SectionHeader({
   isDropSuccess?: boolean;
 }) {
   const labelClassName =
-    "text-[10px] font-semibold uppercase tracking-wide text-foreground/50 select-none";
+    "font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/65 select-none";
 
   return (
     <div
@@ -449,7 +460,7 @@ function SpaceRow({
         ROW_BASE_CLASS,
         "h-[30px] px-2",
         isActive
-          ? "bg-primary/8 dark:bg-primary/10"
+          ? ROW_ACTIVE_CLASS
           : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragOver && DROP_TARGET_CLASS,
         isDropSuccess && DROP_SUCCESS_CLASS
@@ -658,7 +669,7 @@ function FolderRow({
         "h-7 pr-2",
         level === 1 ? "pl-2" : "pl-[14px]",
         isActive
-          ? "bg-primary/8 dark:bg-primary/10"
+          ? ROW_ACTIVE_CLASS
           : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragOver && DROP_TARGET_CLASS,
         isDropSuccess && DROP_SUCCESS_CLASS
@@ -682,7 +693,7 @@ function FolderRow({
           "text-xs truncate flex-1 transition-colors duration-150",
           isDragOver || isActive
             ? "text-foreground font-medium"
-            : "text-foreground/50 group-hover:text-foreground/70"
+            : "text-foreground/75 font-medium group-hover:text-foreground/90"
         )}
       >
         {folder.name}
@@ -768,7 +779,7 @@ function FolderRow({
                         );
                       })}
                       {spaceSearch && filteredSpaces.length === 0 && (
-                        <p className="text-xs text-foreground/20 text-center py-1.5">
+                        <p className="text-xs text-foreground/55 text-center py-1.5">
                           {t("notes.spaces.noSpacesFound")}
                         </p>
                       )}
@@ -810,6 +821,24 @@ interface MoveOption {
   isCurrent: boolean;
 }
 
+// A note backed by audio (meeting/upload recording, or one with a derivable
+// duration) vs a typed note — drives the row icon so recordings stand out.
+function isRecordingNote(note: NoteItem): boolean {
+  return (
+    note.note_type === "meeting" ||
+    note.note_type === "upload" ||
+    note.audio_duration_seconds != null ||
+    noteDurationSeconds(note) != null
+  );
+}
+
+function formatDuration(seconds: number): string {
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 function NoteLeaf({
   note,
   level,
@@ -823,6 +852,9 @@ function NoteLeaf({
   fileManagerName,
   canDelete,
   canMove,
+  selectMode = false,
+  isSelected = false,
+  onToggleSelect,
   onOpen,
   onMove,
   onCreateFolderAndMove,
@@ -846,6 +878,9 @@ function NoteLeaf({
   fileManagerName: string;
   canDelete: boolean;
   canMove: boolean;
+  selectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   onOpen: () => void;
   onMove: (target: NoteMoveTarget) => void;
   onCreateFolderAndMove: (noteId: number, folderName: string) => void;
@@ -910,48 +945,95 @@ function NoteLeaf({
   );
 
   const title = note.title || t("notes.list.untitled");
+  const noteDate = formatShortDate(note.created_at);
+  // Prefer the stored duration; fall back to deriving it from the transcript for
+  // recordings made before durations were persisted (memoized so the transcript
+  // is parsed at most once per note).
+  const storedDuration = note.audio_duration_seconds;
+  const noteTranscript = note.transcript;
+  const durationSec = useMemo(
+    () => noteDurationSeconds({ audio_duration_seconds: storedDuration, transcript: noteTranscript }),
+    [storedDuration, noteTranscript]
+  );
+  const short = isShortRecordingDuration(durationSec);
+  const RowIcon = isRecordingNote(note) ? Mic : FileText;
 
   return (
     <div
       role="treeitem"
       aria-level={level}
-      aria-selected={isActive}
+      aria-selected={selectMode ? isSelected : isActive}
       tabIndex={a11y.tabIndex}
       ref={a11y.rowRef}
       onKeyDown={a11y.onKeyDown}
       onFocus={a11y.onFocus}
-      onClick={onOpen}
+      onClick={selectMode ? onToggleSelect : onOpen}
       title={title}
-      {...(canMove ? dragHandlers : {})}
+      {...(!selectMode && canMove ? dragHandlers : {})}
       className={cn(
         ROW_BASE_CLASS,
         "h-7 pr-2",
         indentClassName ?? (level === 3 ? "pl-10" : "pl-[14px]"),
-        isActive
-          ? "bg-primary/8 dark:bg-primary/10"
-          : "hover:bg-foreground/4 dark:hover:bg-white/4",
+        selectMode && isSelected
+          ? ROW_ACTIVE_CLASS
+          : isActive && !selectMode
+            ? ROW_ACTIVE_CLASS
+            : "hover:bg-foreground/4 dark:hover:bg-white/4",
         isDragging && "opacity-40"
       )}
     >
-      <FileText
-        size={13}
-        className={cn(
-          "shrink-0 transition-colors duration-150",
-          isActive
-            ? "text-primary"
-            : "text-foreground/30 dark:text-foreground/20 group-hover:text-foreground/45 dark:group-hover:text-foreground/30"
-        )}
-      />
+      {selectMode ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
+            isSelected ? "bg-primary border-primary" : "border-foreground/20 dark:border-white/20"
+          )}
+        >
+          {isSelected && <Check size={10} className="text-white" strokeWidth={2.5} />}
+        </span>
+      ) : (
+        <RowIcon
+          size={13}
+          className={cn(
+            "shrink-0 transition-colors duration-150",
+            isActive
+              ? "text-primary"
+              : "text-foreground/30 dark:text-foreground/20 group-hover:text-foreground/45 dark:group-hover:text-foreground/30"
+          )}
+        />
+      )}
       <span
         className={cn(
           "text-xs truncate flex-1 transition-colors duration-150",
-          isActive
+          isActive && !selectMode
             ? "text-foreground font-medium"
             : "text-foreground/60 group-hover:text-foreground/80"
         )}
       >
         {title}
       </span>
+      {isRecordingNote(note) && (
+        <NoteOriginIcon origin={note.origin} size={12} className="transition-opacity group-hover:opacity-0" />
+      )}
+      {durationSec != null && durationSec > 0 && (
+        <span
+          role={short ? "img" : undefined}
+          aria-label={short ? t("notes.bulk.shortRecording") : undefined}
+          title={short ? t("notes.bulk.shortRecording") : undefined}
+          className={cn(
+            "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px transition-opacity group-hover:opacity-0",
+            short ? "bg-warning/15 text-warning" : "text-foreground/50"
+          )}
+        >
+          {formatDuration(durationSec)}
+        </span>
+      )}
+      {noteDate && (
+        <span className="font-brand text-[10px] tabular-nums text-foreground/50 shrink-0 transition-opacity group-hover:opacity-0">
+          {noteDate}
+        </span>
+      )}
       {Boolean(note.is_shared) && (
         <Share2
           size={11}
@@ -1148,10 +1230,112 @@ export default function SpacesTree({
   const folders = useFolders();
   const folderCounts = useFolderCounts();
   const spaceRootCounts = useSpaceRootCounts();
-  const notesByContainer = useNotesByContainer();
+  const notesByContainerRaw = useNotesByContainer();
+  // Newest first: order every container's notes by recording/creation date so
+  // the most recent meeting is at the top.
+  const notesByContainer = useMemo(() => {
+    const ts = (n: NoteItem) => new Date(n.created_at || n.updated_at || 0).getTime();
+    const out: Record<string, NoteItem[]> = {};
+    for (const [key, arr] of Object.entries(notesByContainerRaw)) {
+      out[key] = [...arr].sort((a, b) => ts(b) - ts(a));
+    }
+    return out;
+  }, [notesByContainerRaw]);
   const expanded = useExpandedContainers();
   const activeContext = useActiveContext();
   const activeNoteId = useActiveNoteId();
+
+  // Persistent search (content + semantic, via searchNotes) and a date-range
+  // filter over the notes list. When either is active, the tree is replaced by
+  // a flat, newest-first results list.
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<NoteItem[] | null>(null);
+  const [rangePreset, setRangePreset] = useState<"all" | "today" | "week" | "month">("all");
+
+  // Multi-select mode for bulk delete/move (e.g. clearing accidental recordings).
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  // Focus returns here when Select mode ends (via Cancel, Esc, or a bulk delete)
+  // so keyboard users are not dropped to the top of the page.
+  const selectToggleRef = useRef<HTMLButtonElement>(null);
+  const toggleSelected = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    requestAnimationFrame(() => selectToggleRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    const id = setTimeout(async () => {
+      try {
+        const res = await window.electronAPI.searchNotes(q, 50);
+        if (!cancelled) setSearchResults(res ?? []);
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [query]);
+
+  const inRange = useCallback(
+    (n: NoteItem) => {
+      if (rangePreset === "all") return true;
+      const time = new Date(n.created_at || n.updated_at || 0).getTime();
+      if (Number.isNaN(time)) return false;
+      const now = new Date();
+      const start = new Date(now);
+      if (rangePreset === "today") start.setHours(0, 0, 0, 0);
+      else if (rangePreset === "week") {
+        start.setDate(now.getDate() - now.getDay());
+        start.setHours(0, 0, 0, 0);
+      } else {
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+      }
+      return time >= start.getTime();
+    },
+    [rangePreset]
+  );
+
+  const filterActive = query.trim().length > 0 || rangePreset !== "all";
+
+  const filteredResults = useMemo(() => {
+    if (!filterActive) return [];
+    let base: NoteItem[];
+    if (searchResults != null) {
+      base = searchResults;
+    } else {
+      // Range-only: gather the loaded notes across every container, de-duped.
+      const seen = new Set<number>();
+      base = [];
+      for (const arr of Object.values(notesByContainer)) {
+        for (const n of arr) {
+          if (!seen.has(n.id)) {
+            seen.add(n.id);
+            base.push(n);
+          }
+        }
+      }
+    }
+    const ts = (n: NoteItem) => new Date(n.created_at || n.updated_at || 0).getTime();
+    return base.filter(inRange).sort((a, b) => ts(b) - ts(a));
+  }, [filterActive, searchResults, notesByContainer, inRange]);
   const isTreeLoading = useIsTreeLoading();
   const { isSignedIn, user } = useAuth();
   const teamCapability = useTeamSpacesCapability(isSignedIn);
@@ -1281,6 +1465,58 @@ export default function SpacesTree({
   const requestDeleteNote = (note: NoteItem): void => {
     if (!canDeleteNote(note)) return;
     onDeleteNote(note.id);
+  };
+
+  // Folders (and team-space roots) a bulk selection can be moved into — mirrors
+  // the per-note move menu, flattened for the bulk action bar.
+  const bulkMoveOptions = useMemo(() => {
+    const options: { key: string; label: string; target: NoteMoveTarget }[] = [];
+    for (const space of spaces) {
+      if (space.kind === "team") {
+        options.push({
+          key: spaceContainerKey(space.id),
+          label: spaceDisplayName(space, t),
+          target: { spaceId: space.id, folderId: null },
+        });
+      }
+      for (const folder of folders.filter((f) => f.space_id === space.id)) {
+        options.push({
+          key: folderContainerKey(folder.id),
+          label: folder.name,
+          target: { spaceId: space.id, folderId: folder.id },
+        });
+      }
+    }
+    return options;
+  }, [spaces, folders, t]);
+
+  const handleBulkDelete = (): void => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    showConfirmDialog({
+      title: t("notes.bulk.deleteTitle"),
+      description: t("notes.bulk.deleteConfirm", { count: ids.length }),
+      confirmText: t("common.delete"),
+      onConfirm: async () => {
+        for (const id of ids) {
+          try {
+            await onDeleteNote(id);
+          } catch {
+            // Keep going; the store drops each note as its delete lands.
+          }
+        }
+        exitSelectMode();
+      },
+    });
+  };
+
+  const handleBulkMove = async (target: NoteMoveTarget): Promise<void> => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      await moveNoteSafely(id, target);
+    }
+    exitSelectMode();
   };
 
   const openCreateSpace = (workspaceId: string | null = null): void => {
@@ -1631,6 +1867,35 @@ export default function SpacesTree({
       if (activeContext) onNewNote(activeContext.spaceId, activeContext.folderId);
       return;
     }
+    // Select mode owns Enter/Space (toggle, not open), plus Esc / select-all /
+    // Delete accelerators so bulk cleanup is fully keyboard-operable.
+    if (selectMode) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        exitSelectMode();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setSelectedIds(
+          new Set(visibleRows.filter((r) => r.type === "note").map((r) => r.note.id))
+        );
+        return;
+      }
+      if ((e.key === "Enter" || e.key === " ") && row.type === "note") {
+        e.preventDefault();
+        toggleSelected(row.note.id);
+        return;
+      }
+      if (
+        (e.key === "Delete" || (e.key === "Backspace" && (e.metaKey || e.ctrlKey))) &&
+        selectedIds.size > 0
+      ) {
+        e.preventDefault();
+        handleBulkDelete();
+        return;
+      }
+    }
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
@@ -1798,6 +2063,9 @@ export default function SpacesTree({
       fileManagerName={fileManagerName}
       canDelete={canDeleteNote(note)}
       canMove={canMoveNote(note)}
+      selectMode={selectMode}
+      isSelected={selectedIds.has(note.id)}
+      onToggleSelect={() => toggleSelected(note.id)}
       onOpen={() => activateRow({ type: "note", key: `n:${note.id}`, note, parentKey, level })}
       onMove={(target) => requestMoveNote(note.id, target)}
       onCreateFolderAndMove={onCreateFolderAndMove}
@@ -1806,6 +2074,56 @@ export default function SpacesTree({
       t={t}
     />
   );
+
+  // Chunk a long, newest-first note list into date buckets for scanning. Notes
+  // are already sorted newest-first, so a bucket boundary just needs a label.
+  const noteDateBucket = (note: NoteItem): { key: string; label: string } => {
+    const time = new Date(note.created_at || note.updated_at || 0).getTime();
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    const startWeek = new Date(startToday);
+    startWeek.setDate(startToday.getDate() - startToday.getDay());
+    const startMonth = new Date(startToday);
+    startMonth.setDate(1);
+    if (!Number.isFinite(time)) return { key: "earlier", label: t("dateGroup.earlier") };
+    if (time >= startToday.getTime()) return { key: "today", label: t("dateGroup.today") };
+    if (time >= startWeek.getTime()) return { key: "week", label: t("dateGroup.week") };
+    if (time >= startMonth.getTime()) return { key: "month", label: t("dateGroup.month") };
+    return { key: "earlier", label: t("dateGroup.earlier") };
+  };
+
+  // Below this count the headers are noise, so short folders render unchanged.
+  const DATE_GROUP_MIN_NOTES = 8;
+
+  // Renders a container's notes with presentational date-bucket separators. The
+  // separators are aria-hidden and non-interactive: they never enter the tree's
+  // keyboard-nav flat index or act as drag/drop targets.
+  const renderNotesWithDateGroups = (
+    notes: NoteItem[],
+    renderOne: (note: NoteItem) => React.ReactNode
+  ): React.ReactNode => {
+    if (notes.length < DATE_GROUP_MIN_NOTES) return notes.map(renderOne);
+    const out: React.ReactNode[] = [];
+    let lastKey: string | null = null;
+    for (const note of notes) {
+      const bucket = noteDateBucket(note);
+      if (bucket.key !== lastKey) {
+        out.push(
+          <div
+            key={`date-group-${bucket.key}-${note.id}`}
+            role="presentation"
+            aria-hidden="true"
+            className="px-3 pt-2 pb-0.5 font-brand text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60 select-none"
+          >
+            {bucket.label}
+          </div>
+        );
+        lastKey = bucket.key;
+      }
+      out.push(renderOne(note));
+    }
+    return out;
+  };
 
   const renderFolder = (folder: FolderItem, parentKey?: string, level: 1 | 2 = 2) => {
     const folderKey = folderContainerKey(folder.id);
@@ -1871,7 +2189,7 @@ export default function SpacesTree({
         />
         <TreeChildren open={isExpanded}>
           <div className="space-y-px">
-            {(notesByContainer[folderKey] ?? []).map((note) =>
+            {renderNotesWithDateGroups(notesByContainer[folderKey] ?? [], (note) =>
               level === 1 ? renderNote(note, 2, folderKey, "pl-8") : renderNote(note, 3, folderKey)
             )}
           </div>
@@ -1920,7 +2238,7 @@ export default function SpacesTree({
             />
           </div>
         )}
-        {(rootNotes ?? []).map((note) =>
+        {renderNotesWithDateGroups(rootNotes ?? [], (note) =>
           flattened ? renderNote(note, 1, undefined, "pl-[30px]") : renderNote(note, 2, spaceKey)
         )}
         {showSkeletons && <SkeletonRows />}
@@ -2047,9 +2365,146 @@ export default function SpacesTree({
 
   return (
     <>
+      <div className="px-2 pt-1 pb-1.5 space-y-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 h-7 px-2 rounded-md border border-border/50 dark:border-white/10">
+          <Search size={12} className="text-muted-foreground/50 shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("notes.list.searchPlaceholder")}
+            aria-label={t("notes.list.searchPlaceholder")}
+            className="flex-1 bg-transparent text-[11px] text-foreground placeholder:text-muted-foreground/40 outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              aria-label={t("common.dismiss")}
+              className="shrink-0 rounded text-muted-foreground/40 hover:text-foreground/70 outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1" role="group" aria-label={t("notes.list.filterByDate")}>
+          {(["all", "today", "week", "month"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setRangePreset(p)}
+              aria-pressed={rangePreset === p}
+              className={cn(
+                "font-brand text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                rangePreset === p
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground/70 hover:text-foreground/90 border border-transparent"
+              )}
+            >
+              {t(`filter.${p}`)}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center">
+          <button
+            ref={selectToggleRef}
+            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            aria-pressed={selectMode}
+            className={cn(
+              "ml-auto inline-flex items-center gap-1 font-brand text-[10px] uppercase tracking-[0.1em] px-2 py-1 rounded border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+              selectMode
+                ? "bg-primary/10 text-primary border-primary/20"
+                : "text-muted-foreground/60 hover:text-foreground/80 border-border/50 dark:border-white/10"
+            )}
+          >
+            <ListChecks size={11} />
+            {selectMode ? t("common.cancel") : t("notes.bulk.select")}
+          </button>
+        </div>
+      </div>
+
+      {filterActive && (
+        <div role="list" className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px">
+          {filteredResults.length === 0 ? (
+            <div className="px-3 py-8 text-center text-xs text-muted-foreground/70">
+              {t("notes.list.noResults")}
+            </div>
+          ) : (
+            filteredResults.map((note) => {
+              const resultSelected = selectedIds.has(note.id);
+              const resultDur = noteDurationSeconds(note);
+              const resultShort = isShortRecordingDuration(resultDur);
+              const ResultIcon = isRecordingNote(note) ? Mic : FileText;
+              return (
+                <button
+                  key={note.id}
+                  onClick={() => (selectMode ? toggleSelected(note.id) : setActiveNoteId(note.id))}
+                  aria-pressed={selectMode ? resultSelected : undefined}
+                  className={cn(
+                    "flex items-center gap-2 w-full h-7 pl-[14px] pr-2 rounded-md text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                    (selectMode ? resultSelected : activeNoteId === note.id)
+                      ? ROW_ACTIVE_CLASS
+                      : "hover:bg-foreground/4 dark:hover:bg-white/4"
+                  )}
+                >
+                  {selectMode ? (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
+                        resultSelected
+                          ? "bg-primary border-primary"
+                          : "border-foreground/20 dark:border-white/20"
+                      )}
+                    >
+                      {resultSelected && (
+                        <Check size={10} className="text-white" strokeWidth={2.5} />
+                      )}
+                    </span>
+                  ) : (
+                    <ResultIcon
+                      size={13}
+                      className={cn(
+                        "shrink-0",
+                        activeNoteId === note.id ? "text-primary" : "text-foreground/50"
+                      )}
+                    />
+                  )}
+                  <span
+                    className={cn(
+                      "text-xs truncate flex-1",
+                      activeNoteId === note.id && !selectMode
+                        ? "text-foreground font-medium"
+                        : "text-foreground/60"
+                    )}
+                  >
+                    {note.title || t("notes.list.untitled")}
+                  </span>
+                  {resultDur != null && resultDur > 0 && (
+                    <span
+                      role={resultShort ? "img" : undefined}
+                      aria-label={resultShort ? t("notes.bulk.shortRecording") : undefined}
+                      title={resultShort ? t("notes.bulk.shortRecording") : undefined}
+                      className={cn(
+                        "font-brand text-[10px] tabular-nums shrink-0 rounded px-1 py-px",
+                        resultShort ? "bg-warning/15 text-warning" : "text-foreground/50"
+                      )}
+                    >
+                      {formatDuration(resultDur)}
+                    </span>
+                  )}
+                  <span className="font-brand text-[10px] tabular-nums text-foreground/50 shrink-0">
+                    {formatShortDate(note.created_at)}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
       <div
         role="tree"
         aria-label={t("notes.list.title")}
+        aria-multiselectable={selectMode}
+        hidden={filterActive}
         className="flex-1 overflow-y-auto px-1.5 pb-2 space-y-px"
       >
         <div role="none" className="group/section">
@@ -2149,7 +2604,7 @@ export default function SpacesTree({
                         >
                           <span
                             title={workspace.name}
-                            className="min-w-0 text-[10px] font-medium text-foreground/40 truncate"
+                            className="min-w-0 font-brand text-[10px] uppercase tracking-[0.12em] text-foreground/60 truncate"
                           >
                             {workspace.name}
                           </span>
@@ -2201,6 +2656,61 @@ export default function SpacesTree({
           </div>
         )}
       </div>
+
+      {selectMode && (
+        <div className="shrink-0 border-t border-border/40 dark:border-white/8 bg-background/95 backdrop-blur px-2.5 py-2 space-y-1.5">
+          <span
+            role="status"
+            aria-live="polite"
+            className="block font-brand text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 tabular-nums"
+          >
+            {t("notes.bulk.selectedCount", { count: selectedIds.size })}
+          </span>
+          {/* Stacked full-width buttons so neither label clips in the narrow column. */}
+          <div className="flex items-stretch gap-1.5">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedIds.size === 0}
+                  className="h-7 flex-1 min-w-0 px-2 text-xs gap-1"
+                >
+                  <Folder size={12} className="shrink-0" />
+                  <span className="truncate">{t("notes.bulk.moveTo")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+                {bulkMoveOptions.length === 0 ? (
+                  <DropdownMenuItem disabled className={MENU_ITEM_CLASS}>
+                    {t("notes.bulk.noFolders")}
+                  </DropdownMenuItem>
+                ) : (
+                  bulkMoveOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.key}
+                      onClick={() => void handleBulkMove(option.target)}
+                      className={MENU_ITEM_CLASS}
+                    >
+                      <span className="truncate flex-1">{option.label}</span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedIds.size === 0}
+              onClick={handleBulkDelete}
+              className="h-7 flex-1 min-w-0 px-2 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 size={12} className="shrink-0" />
+              <span className="truncate">{t("common.delete")}</span>
+            </Button>
+          </div>
+        </div>
+      )}
 
       <CreateSpaceDialog
         open={showCreateSpace}

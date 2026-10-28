@@ -3,12 +3,12 @@ const crypto = require("crypto");
 const { openExternalUrl } = require("./externalUrlOpener");
 
 const OAUTH_TIMEOUT_MS = 120000;
-const DEFAULT_DESKTOP_CALLBACK_URL = "https://openwhispr.com/auth/desktop-callback";
+const DEFAULT_DESKTOP_CALLBACK_URL = "https://echo.neatoventures.com/connected.html";
 
 const PROTOCOL_BY_CHANNEL = {
-  development: "openwhispr-dev",
-  staging: "openwhispr-staging",
-  production: "openwhispr",
+  development: "neatoecho-dev",
+  staging: "neatoecho-staging",
+  production: "neatoecho",
 };
 
 // Thrown by handleCallback to control the error code shown on the hosted

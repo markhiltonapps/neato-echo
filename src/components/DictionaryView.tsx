@@ -246,7 +246,7 @@ export default function DictionaryView() {
           </div>
 
           {/* ─── Dictionary list ─── */}
-          <div className="rounded-md border border-foreground/8 dark:border-white/6 bg-foreground/[0.02] dark:bg-white/[0.03] px-4 py-3">
+          <div className="gloss-convex rounded-xl border border-foreground/8 dark:border-white/6 bg-card/50 dark:bg-white/[0.03] shadow-[var(--shadow-card)] px-4 py-3">
             {userWords.length > 0 && (
               <>
                 <div className="flex items-center justify-between">

@@ -24,6 +24,7 @@ import McpIntegrationCard from "./McpIntegrationCard";
 import googleCalendarIcon from "../assets/icons/google-calendar.svg";
 import microsoftCalendarIcon from "../assets/icons/microsoft-calendar.svg";
 import appleCalendarIcon from "../assets/icons/apple-calendar.svg";
+import { ACCOUNTS_ENABLED } from "../config/edition";
 
 const API_DOCS_URL = "https://docs.openwhispr.com/api/overview";
 
@@ -118,13 +119,19 @@ function CalendarAccountRows({
             <button
               onClick={() => onUnlink(account.email)}
               disabled={disconnectingEmail === account.email}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
+              // Always visible (was hover-only, which made "how do I reconnect?"
+              // impossible to answer): the label spells out the disconnect →
+              // reconnect flow so a stale connection is recoverable.
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
               aria-label={t(`${i18nKey}.disconnect`)}
             >
               {disconnectingEmail === account.email ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Unlink className="h-3.5 w-3.5" />
+                <>
+                  <Unlink className="h-3.5 w-3.5" />
+                  <span>{t(`${i18nKey}.disconnect`)}</span>
+                </>
               )}
             </button>
           </div>
@@ -429,6 +436,11 @@ export default function IntegrationsView({ isPaid, onUpgrade }: IntegrationsView
         </SettingsPanel>
       </div>
 
+{/* API, MCP and CLI are OpenWhispr cloud/paid features with no local
+          equivalent yet. Hidden in the local-first edition; a future local CLI
+          and MCP server can reintroduce their own cards when built. */}
+      {ACCOUNTS_ENABLED && (
+        <>
       <div>
         <SectionLabel>{t("integrations.sections.api")}</SectionLabel>
         <SettingsPanel>
@@ -473,6 +485,8 @@ export default function IntegrationsView({ isPaid, onUpgrade }: IntegrationsView
         <SectionLabel>{t("integrations.sections.cli")}</SectionLabel>
         <CliIntegrationCard isPaid={isPaid} onUpgrade={onUpgrade} />
       </div>
+        </>
+      )}
 
       {!hasAccounts && (
         <div className="rounded-lg border border-border/40 dark:border-border-subtle/40 bg-muted/20 dark:bg-surface-2/30 p-4 flex items-start gap-3">
